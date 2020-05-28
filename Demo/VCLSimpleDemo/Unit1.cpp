@@ -16,96 +16,96 @@ TForm1 *Form1;
 //---------------------------------------------------------------------------
 
 __fastcall TForm1::TForm1(TComponent* Owner)
-	: TForm1( Owner, StoreOpts::All, nullptr )
+    : TForm1( Owner, StoreOpts::All, nullptr )
 {
 }
 //---------------------------------------------------------------------------
 
 __fastcall TForm1::TForm1( TComponent* Owner, StoreOpts StoreOptions,
-							   Anafestica::TConfigNode* const RootNode )
-	: TConfigRegistryForm( Owner, StoreOptions, RootNode )
+                               Anafestica::TConfigNode* const RootNode )
+    : TConfigRegistryForm( Owner, StoreOptions, RootNode )
 {
-	selectedFontName_ = Label1->Font->Name;
-	SetupCaption();
-	LoadFontListUIControl();
-	RestoreProperties();
-	SelectCurrentFont();
+    selectedFontName_ = Label1->Font->Name;
+    SetupCaption();
+    LoadFontListUIControl();
+    RestoreProperties();
+    SelectCurrentFont();
 }
 //---------------------------------------------------------------------------
 
 __fastcall TForm1::~TForm1()
 {
-	try {
-		SaveProperties();
-	}
-	catch ( ... ) {
-	}
+    try {
+        SaveProperties();
+    }
+    catch ( ... ) {
+    }
 }
 //---------------------------------------------------------------------------
 
 String TForm1::GetModuleFileName()
 {
-	return GetModuleName( reinterpret_cast<unsigned>( HInstance ) );
+    return GetModuleName( reinterpret_cast<unsigned>( HInstance ) );
 }
 //---------------------------------------------------------------------------
 
 void TForm1::SetupCaption()
 {
-	TFileVersionInfo const Info( GetModuleFileName() );
-	Caption =
-		Format(
-			_T( "%s, Ver %s" ),
-			ARRAYOFCONST( (
-				Application->Title,
-				Info.ProductVersion
-			) )
-		);
+    TFileVersionInfo const Info( GetModuleFileName() );
+    Caption =
+        Format(
+            _T( "%s, Ver %s" ),
+            ARRAYOFCONST( (
+                Application->Title,
+                Info.ProductVersion
+            ) )
+        );
 }
 //---------------------------------------------------------------------------
 
 void TForm1::LoadFontListUIControl()
 {
-	comboboxFontName->Items->Assign( Screen->Fonts );
+    comboboxFontName->Items->Assign( Screen->Fonts );
 }
 //---------------------------------------------------------------------------
 
 void TForm1::SelectCurrentFont()
 {
-	comboboxFontName->ItemIndex =
-		comboboxFontName->Items->IndexOf( SelectedFontName );
+    comboboxFontName->ItemIndex =
+        comboboxFontName->Items->IndexOf( SelectedFontName );
 }
 //---------------------------------------------------------------------------
 
 void TForm1::SetSelectedFontName( String Val )
 {
-	if ( selectedFontName_ != Val ) {
-		selectedFontName_ = Val;
-		lblClock->Font->Name = Val;
-	}
+    if ( selectedFontName_ != Val ) {
+        selectedFontName_ = Val;
+        lblClock->Font->Name = Val;
+    }
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TForm1::comboboxFontNameChange(TObject *Sender)
 {
-	SelectedFontName = comboboxFontName->Text;
+    SelectedFontName = comboboxFontName->Text;
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TForm1::Timer1Timer(TObject *Sender)
 {
-	lblClock->Caption = Now().FormatString( _T( "hh.nn.ss ") );
+    lblClock->Caption = Now().FormatString( _T( "hh.nn.ss ") );
 }
 //---------------------------------------------------------------------------
 
 void TForm1::RestoreProperties()
 {
-	RESTORE_LOCAL_PROPERTY( SelectedFontName );
+    RESTORE_LOCAL_PROPERTY( SelectedFontName );
 }
 //---------------------------------------------------------------------------
 
 void TForm1::SaveProperties() const
 {
-	SAVE_LOCAL_PROPERTY( SelectedFontName );
+    SAVE_LOCAL_PROPERTY( SelectedFontName );
 }
 //---------------------------------------------------------------------------
 

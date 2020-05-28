@@ -1,6 +1,7 @@
 __astcache/
 __history/
 __recovery/
+Docs/
 Win32/
 Win64/
 *.bak

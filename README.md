@@ -3,7 +3,7 @@ Header only library for persistence of application settings in the Windows Regis
 
 ## Getting Started
 
-This library allows you to easily give persistence to your FMX and VCL applications with very few changes to the existing code base. Saving the position, size and status of the modules, along with other custom attributes, is very simple: just add a few lines of code.
+This library allows you to easily give persistence to your FMX and VCL applications with very few changes to the existing code base. Saving the position, size and state of the forms, along with other custom attributes, is very simple: just add a few lines of code.
 
 The library itself is made only by header files and therefore it is easy to use and to include in your codebase, and does not require additional compilation steps: you just have to include the necessary header files in your project. Can also be used in contexts other than GUI applications, but its real advantages are seen in the writing of the latters, where it certainly simplifies the management of the persistence of application attributes such as the position, size and state of the forms, up to the settings of the whole application.
 
@@ -72,7 +72,9 @@ In order to complete the installation, the last important thing to do is to add 
 
 ### Using the library
 
-In this repository, at the Anafestica/Demo/VCLSimpleDemo/ path, there is a Demo app that shows how to make a custom text attribute persistent (as well as the position, size and state of the Form). It is one of the simplest scenarios for the management of persistent attributes: it is therefore assumed that the data refer to the Form itself, so it will be stored with the other typical attributes of a Form, that is position, size and status.
+Before starting, it's better to state that the following operations can be skipped by loading one of reference applications in Anafestica/App (then saving them as a copy in a different place) or by saving a prototype of a "typical" application in the object repository for subsequent use, so as not to have to repeatedly perform the steps that we are going to describe for each new project. So don't be frightened if the steps seem long and tortuous: you will only have to do them once. Or never do them, if you load a reference project and save it somewhere else (in this case I recommend changing the GUID of the project, by hand, inside the cbproj file, to make it universally unique).
+
+In this repository, in the Anafestica/Demo/VCLSimpleDemo/ path, there is a Demo app that shows how to make a custom text attribute persistent (as well as the position, size and state of the Form). It is one of the simplest scenarios for the management of persistent attributes: it is therefore assumed that the data refer to the Form itself, so it will be stored with the other typical attributes of a Form, that is position, size and state.
 
 The demo application is a clock gadget where you can change the font typeface. The application must be able to allow the choice of the font and remember it between different execution sessions.
 
@@ -118,7 +120,7 @@ Now, let's edit the file, e.g with Notepad: hence, let's remove all <VerInfo_Key
 
 Let's save the modified project file the reopens it in the IDE. If there's problems please take the backup copy and try again.
 
-Now, let's reduce the size of the main form a bit... for example with the Width property set to 340 and the Height property to 200and  copy in to the clipboard this snippet, then paste it to the main form:
+Now, let's reduce the size of the main form a bit... for example with the Width property set to 340 and the Height property to 200. Next, copy in to the clipboard this snippet, then paste it to the main form:
 
 ```dfm
 object lblClock: TLabel
@@ -253,7 +255,7 @@ class TForm1 : public TConfigRegistryForm
 ...
 ```
 
-The type alias is necessary to make happy the IDE's Form designer that doesn't like the syntax of C++ templates. Just because the TForm1 class derives from this type of alias, it allows it to acquire intrinsic ability to save its attributes, such as position, size and status and, optionally, the specific attributes of the application that the programmer will want to save.
+The type alias is necessary to make happy the IDE's Form designer that doesn't like the syntax of C++ templates. Just because the TForm1 class derives from this type of alias, it allows it to acquire intrinsic ability to save its attributes, such as position, size and state and, optionally, the specific attributes of the application that the programmer will want to save.
 
 Next, there is a new constructor that takes several parameters and also a destructor:
 
@@ -291,7 +293,132 @@ Proceding step by step in the explanation, it's possible to note a non-static me
 
 The other methods are only the result of a simple functional decomposition aimed at simplifying the reading of the code (and, obviously, to make the toxicity-metric utilities happy).
 
-WORK IN PROGRESS
+Now all that remains is to look at the implementation of the methods, and provide the event handlers for the combobox that contains the list of fonts and for the timer that updates the lblClock caption. In reality, there is another important thing (mentioned previously) to do: provide for the destruction of the forms before the application returns from the WinMain function. But we'll see it later.
+
+Let's implement the two (empty) event handlers by double clicking on Timer1 and comboboxFontName:
+
+<img src="https://i.ibb.co/hFktX8x/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-19.png" alt="Generating event handlers">
+
+Now copy and paste in the Unit1.cpp file the following code:
+
+```cpp
+//---------------------------------------------------------------------------
+
+#include <vcl.h>
+#pragma hdrstop
+
+#include <anafestica/FileVersionInfo.h>
+
+#include "Unit1.h"
+
+using Anafestica::TFileVersionInfo;
+
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+#pragma resource "*.dfm"
+TForm1 *Form1;
+//---------------------------------------------------------------------------
+
+__fastcall TForm1::TForm1(TComponent* Owner)
+    : TForm1( Owner, StoreOpts::All, nullptr )
+{
+}
+//---------------------------------------------------------------------------
+
+__fastcall TForm1::TForm1( TComponent* Owner, StoreOpts StoreOptions,
+                           Anafestica::TConfigNode* const RootNode )
+    : TConfigRegistryForm( Owner, StoreOptions, RootNode )
+{
+    selectedFontName_ = Label1->Font->Name;
+    SetupCaption();
+    LoadFontListUIControl();
+    RestoreProperties();
+    SelectCurrentFont();
+}
+//---------------------------------------------------------------------------
+
+__fastcall TForm1::~TForm1()
+{
+    try {
+        SaveProperties();
+    }
+    catch ( ... ) {
+    }
+}
+//---------------------------------------------------------------------------
+
+String TForm1::GetModuleFileName()
+{
+    return GetModuleName( reinterpret_cast<unsigned>( HInstance ) );
+}
+//---------------------------------------------------------------------------
+
+void TForm1::SetupCaption()
+{
+    Caption =
+        Format(
+            _T( "%s, Ver %s" ),
+            ARRAYOFCONST( (
+                Application->Title,
+                TFileVersionInfo{ GetModuleFileName() }.ProductVersion
+            ) )
+        );
+}
+//---------------------------------------------------------------------------
+
+void TForm1::LoadFontListUIControl()
+{
+    comboboxFontName->Items->Assign( Screen->Fonts );
+}
+//---------------------------------------------------------------------------
+
+void TForm1::SelectCurrentFont()
+{
+    comboboxFontName->ItemIndex =
+        comboboxFontName->Items->IndexOf( SelectedFontName );
+}
+//---------------------------------------------------------------------------
+
+void TForm1::SetSelectedFontName( String Val )
+{
+    if ( selectedFontName_ != Val ) {
+        selectedFontName_ = Val;
+        lblClock->Font->Name = Val;
+    }
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::comboboxFontNameChange(TObject *Sender)
+{
+    SelectedFontName = comboboxFontName->Text;
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::Timer1Timer(TObject *Sender)
+{
+    lblClock->Caption = Now().FormatString( _T( "hh.nn.ss") );
+}
+//---------------------------------------------------------------------------
+
+void TForm1::RestoreProperties()
+{
+    RESTORE_LOCAL_PROPERTY( SelectedFontName );
+}
+//---------------------------------------------------------------------------
+
+void TForm1::SaveProperties() const
+{
+    SAVE_LOCAL_PROPERTY( SelectedFontName );
+}
+//---------------------------------------------------------------------------
+```
+
+Now let's dissect the newly pasted code. 
+
+The 
+
+
+
 
 It use a TComboBox which will be filled with the list of fonts present on the system each time the application is started. 
 
@@ -317,6 +444,47 @@ __fastcall TForm1::TForm1( TComponent* Owner, StoreOpts StoreOptions,
 void TForm1::LoadFontListUIControl()
 {
     comboboxFontName->Items->Assign( Screen->Fonts );
+}
+//---------------------------------------------------------------------------
+```
+
+```cpp
+//---------------------------------------------------------------------------
+
+#include <vcl.h>
+#pragma hdrstop
+#include <tchar.h>
+//---------------------------------------------------------------------------
+USEFORM("Unit1.cpp", Form1);
+//---------------------------------------------------------------------------
+int WINAPI _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)
+{
+    try
+    {
+        Application->Initialize();
+        Application->MainFormOnTaskBar = true;
+        Application->CreateForm(__classid(TForm1), &Form1);
+        Application->Run();
+        while ( auto const Cnt = Screen->FormCount ) {
+            delete Screen->Forms[Cnt - 1];
+        }
+    }
+    catch (Exception &exception)
+    {
+        Application->ShowException(&exception);
+    }
+    catch (...)
+    {
+        try
+        {
+            throw Exception("");
+        }
+        catch (Exception &exception)
+        {
+            Application->ShowException(&exception);
+        }
+    }
+    return 0;
 }
 //---------------------------------------------------------------------------
 ```

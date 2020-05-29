@@ -93,7 +93,7 @@ void __fastcall TForm1::comboboxFontNameChange(TObject *Sender)
 
 void __fastcall TForm1::Timer1Timer(TObject *Sender)
 {
-    lblClock->Caption = Now().FormatString( _T( "hh.nn.ss ") );
+    lblClock->Caption = Now().FormatString( _T( "hh.nn.ss") );
 }
 //---------------------------------------------------------------------------
 

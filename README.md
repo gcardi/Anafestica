@@ -70,4 +70,255 @@ In order to complete the installation, the last important thing to do is to add 
 
 <img src="https://i.ibb.co/JcgH89t/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-7.png" alt="BCC32C">
 
+### Using the library
+
+In this repository, at the Anafestica/Demo/VCLSimpleDemo/ path, there is a Demo app that shows how to make a custom text attribute persistent (as well as the position, size and state of the Form). It is one of the simplest scenarios for the management of persistent attributes: it is therefore assumed that the data refer to the Form itself, so it will be stored with the other typical attributes of a Form, that is position, size and status.
+
+The demo application is a clock gadget where you can change the font typeface. The application must be able to allow the choice of the font and remember it between different execution sessions.
+
+<img src="https://i.ibb.co/t4hqQFz/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-8.png" alt="Demo app screenshot">
+
+The structure of this application is very simple. Now let's see how to build it from scratch.
+
+Let's create a new VCL application for C ++ Builder: 
+
+<img src="https://i.ibb.co/KrL66P5/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-9.png" alt="C++ VCL app creation">
+
+Next, let's add the 64 bit platform for Windows:
+
+<img src="https://i.ibb.co/59VN2Rq/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-10.png" alt="Add the 64 bit platform for Windows">
+
+Now let's make some essential "adjustments" to the project. From the Project->Options menu (Shift + Ctrl + F11):
+
+Turn off classic C++ compiler (it's better for all platforms):
+
+<img src="https://i.ibb.co/7NGKxzm/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-12.png" alt="Turn off classic C++ compiler">
+
+Set appropriate values ​​for CompanyName, ProductName and ProductVersion in the version info keys for all platforms. Note: if you skip this step, when you start the application it will give you a "resource not found error". The application needs these values ​​because it uses them to create the HKCU \ CompanyName \ ProductName \ ProductVersion path in the Registry.
+
+<img src="https://i.ibb.co/qdDQQP3/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-13.png" alt="Set version info keys">
+
+Let's save the project.
+
+<img src="https://i.ibb.co/v4CDpkG/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-11.png" alt="Save demo project">
+
+Now **close** the project.
+
+Close the project? Why the hell do you need to close the project?
+
+Because the template project contained in the IDE and used to start this application, as it is, doesn't propagate the settings you made so far on all the platforms and their associated configurations. So now, with a simple text editor, we can go to remove the problematic values inside the project file (.cbproj). 
+
+Let's open the main project configuration file (but it's better to make a backup copy of this file first):
+
+<img src="https://i.ibb.co/PGrNRth/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-14.png" alt="Fix project file from broken template"></a>
+
+Now, let's edit the file, e.g with Notepad: hence, let's remove all <VerInfo_Keys> tags from all nodes except the first one, which is usually <PropertyGroup Condition = "'$ (Base)'! = ''">:
+  
+<img src="https://i.ibb.co/LJDXWnm/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-15.png" alt="Clear extra Ver Info Keys">
+
+Let's save the modified project file the reopens it in the IDE. If there's problems please take the backup copy and try again.
+
+Now, let's reduce the size of the main form a bit... for example with the Width property set to 340 and the Height property to 200and  copy in to the clipboard this snippet, then paste it to the main form:
+
+```dfm
+object lblClock: TLabel
+  Left = 0
+  Top = 56
+  Width = 324
+  Height = 105
+  Align = alBottom
+  Alignment = taCenter
+  Anchors = [akLeft, akTop, akRight, akBottom]
+  AutoSize = False
+  Caption = '--:--:--'
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -53
+  Font.Name = 'Tahoma'
+  Font.Style = []
+  ParentFont = False
+  Layout = tlCenter
+  ExplicitWidth = 331
+  ExplicitHeight = 184
+end
+```
+
+Now the main form should have this look:
+
+<img src="https://i.ibb.co/JjDNWWQ/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-16.png" alt="Main Form with label control">
+
+Add this snippet to the form:
+
+```dfm
+object comboboxFontName: TComboBox
+  Left = 24
+  Top = 24
+  Width = 145
+  Height = 21
+  Style = csDropDownList
+  TabOrder = 0
+end
+object Label1: TLabel
+  Left = 24
+  Top = 8
+  Width = 52
+  Height = 13
+  Caption = 'Font Name'
+end
+object Timer1: TTimer
+  Left = 224
+  Top = 24
+end
+```
+Now the form should be like this:
+
+<img src="https://i.ibb.co/zn0Hz91/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-18.png" alt="Complete GUI">
+
+At this point, we can modify the Unit1.h file (the header file of the main form) as the following (you can copy and paste these lines directly in the code editor for the Unit1.h file):
+
+```cpp
+//---------------------------------------------------------------------------
+
+#ifndef Unit1H
+#define Unit1H
+
+//---------------------------------------------------------------------------
+
+#include <System.Classes.hpp>
+#include <Vcl.Controls.hpp>
+#include <Vcl.ExtCtrls.hpp>
+#include <Vcl.StdCtrls.hpp>
+
+#include <anafestica/PersistFormVCL.h>
+#include <anafestica/CfgRegistrySingleton.h>
+
+//---------------------------------------------------------------------------
+
+using TConfigRegistryForm =
+    Anafestica::TPersistFormVCL<Anafestica::TConfigRegistrySingleton>;
+
+//---------------------------------------------------------------------------
+
+class TForm1 : public TConfigRegistryForm
+{
+__published:    // IDE-managed Components
+    TComboBox *comboboxFontName;
+    TLabel *Label1;
+    TLabel *lblClock;
+    TTimer *Timer1;
+private:    // User declarations
+    String selectedFontName_;
+
+    static String GetModuleFileName();
+    void SetupCaption();
+    void RestoreProperties();
+    void SaveProperties() const;
+    void LoadFontListUIControl();
+    void SelectCurrentFont();
+    void SetSelectedFontName( String Val );
+
+    __property String SelectedFontName = {
+        read = selectedFontName_,
+        write = SetSelectedFontName
+    };
+public:     // User declarations
+    __fastcall TForm1( TComponent* Owner );
+    __fastcall TForm1( TComponent* Owner, StoreOpts StoreOptions,
+                       Anafestica::TConfigNode* const RootNode = nullptr );
+    __fastcall ~TForm1();
+};
+//---------------------------------------------------------------------------
+extern PACKAGE TForm1 *Form1;
+//---------------------------------------------------------------------------
+#endif
+```
+
+We can see several additional lines compared to the original file. 
+
+There are two additional includes and one type alias. The type alias is used as base class of TForm1 in place of the more classic TForm:
+
+```cpp
+...
+#include <anafestica/PersistFormVCL.h>
+#include <anafestica/CfgRegistrySingleton.h>
+
+//---------------------------------------------------------------------------
+
+using TConfigRegistryForm =
+	Anafestica::TPersistFormVCL<Anafestica::TConfigRegistrySingleton>;
+
+//---------------------------------------------------------------------------
+
+class TForm1 : public TConfigRegistryForm
+...
+```
+
+The type alias is necessary to make happy the IDE's Form designer that doesn't like the syntax of C++ templates. Just because the TForm1 class derives from this type of alias, it allows it to acquire intrinsic ability to save its attributes, such as position, size and status and, optionally, the specific attributes of the application that the programmer will want to save.
+
+Next, there is a new constructor that takes several parameters and also a destructor:
+
+```cpp
+    ...
+    __fastcall TForm1( TComponent* Owner, StoreOpts StoreOptions,
+                       Anafestica::TConfigNode* const RootNode = nullptr );
+    __fastcall ~TForm1();
+    ...
+```
+
+The constructor will takes care to read the user defined attributes from the persistent storage; conversely the destructor save them.
+
+Now we will see some lines of code containing data, function signatures and a property.
+
+```cpp
+private:    // User declarations
+    String selectedFontName_;
+
+    static String GetModuleFileName();
+    void SetupCaption();
+    void RestoreProperties();
+    void SaveProperties() const;
+    void LoadFontListUIControl();
+    void SelectCurrentFont();
+    void SetSelectedFontName( String Val );
+
+    __property String SelectedFontName = {
+        read = selectedFontName_,
+        write = SetSelectedFontName
+    };
+```
+
+Proceding step by step in the explanation, it's possible to note a non-static member variable named selectedFontName_ which name is self explanatory. This variable is directly connected to the getter of the property SelectedFontName. The setter of the SelectedFontName property is linked to the TForm1's non-static and non-const member function, called SetSelectedFontName. The presence of this property is important (despite it is a private member), since it allows you to store and retrieve very easily the attribute it represents, that is, with only two lines of code: one used to retrieve the value and the other to save the latter.
+
+The other methods are only the result of a simple functional decomposition aimed at simplifying the reading of the code (and, obviously, to make the toxicity-metric utilities happy).
+
+WORK IN PROGRESS
+
+It use a TComboBox which will be filled with the list of fonts present on the system each time the application is started. 
+
+```cpp
+__fastcall TForm1::TForm1(TComponent* Owner)
+  : TForm1( Owner, StoreOpts::All, nullptr )
+{
+}
+//---------------------------------------------------------------------------
+
+__fastcall TForm1::TForm1( TComponent* Owner, StoreOpts StoreOptions,
+                           Anafestica::TConfigNode* const RootNode )
+  : TConfigRegistryForm( Owner, StoreOptions, RootNode )
+{
+    selectedFontName_ = Label1->Font->Name;
+    SetupCaption();
+    LoadFontListUIControl();
+    RestoreProperties();
+    SelectCurrentFont();
+}
+//---------------------------------------------------------------------------
+
+void TForm1::LoadFontListUIControl()
+{
+    comboboxFontName->Items->Assign( Screen->Fonts );
+}
+//---------------------------------------------------------------------------
+```
+
 **TO BE CONTINUED**

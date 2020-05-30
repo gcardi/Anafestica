@@ -1,23 +1,19 @@
 # Quick tour
 
-Suppose the goal is to create a small application consisting of a single form. The application must be able to save the position, size and state of the form together with an additional attribute. To make sense of this application, let's try writing a small clock gadget. This gadget must allow the selection of the font used to show the time. This is how it could be: 
+Suppose the goal is to create a small application consisting of a single form. The application must be able to save the position, size, and state of the form together with an additional attribute. To make sense of this "journey" into the library, let's try writing a small clock gadget. This gadget must allow (and remember) the selection of the font used to show the time. Here's how it could be designed:
 
 <img src="https://i.ibb.co/t4hqQFz/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-8.png" alt="Demo app screenshot">
 
-The application GUI is simple but getting persistence of form and custom attributes is not so simple: requires a fair amount of code.
-Using the Anafestica library greatly simplify the process: in short, it only takes a few lines of code to save a form in the Windows registry, as it's possible to see below:
+The application is simple. Get the persistence of form and custom attributes "by hand" is not so simple: requires a fair amount of code.
+On the other hand, using the Anafestica library greatly simplify the process: in short, it only takes a few lines of code to save a form in the Windows registry, as it's possible to see below:
 
 <img src="https://i.ibb.co/4RMBg1Y/1.png" alt="Sample header file">
 
 <img src="https://i.ibb.co/TBNYKRk/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-2.png" alt="Sample implementation">
 
-But the whole story is a little longer. You may wonder where you have been stored in the Registry the Form's attributes. Specifically, which place in the Registry? In the most obvious one, clearly: i.e. in the 
+But the whole story is a little longer. Where were the attributes of the form stored? In particular, which place in the register? In the most obvious place: in the `HKCU/Software/_Vendor/Product/Version_` registry key.
 
-> _HKCU/Software/Vendor/Product/Version_ 
-
-key. 
-
-But where the hell does the *Vendor*, *Product*, and *Version* parts get the library from? It's simple: from the project's version info keys. Namely:
+But where the hell does the *Vendor*, *Product*, and *Version* parts get the library from? How does the library user set these values? The answer is simple: from the project's version info keys. Namely:
 
 <img src="https://i.ibb.co/x3ZK9gZ/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-3.png" alt="Project Info Keys sample settings">
 
@@ -25,17 +21,17 @@ So, the position, size, and the state for the Form1 are stored in:
 
 <img src="https://i.ibb.co/ws7wRyp/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-4.png" alt="Sample registry node layout">
 
-Note that the state of the form has not been saved, as the form was never closed when it was in maximized or minimized state. Yes, you got it right, the library only saves values other than the default.
+Note that, as the form was never closed when it was maximized or minimized, the state of the form has not been saved. Yes, just right, the library only saves values other than the default.
 
 Since the library uses one or more singletons for the serialization process, the other few lines of code (to be added only once), are used to ensure that the application forms are destroyed before the singletons gone. To ensure correct behavior, you need to modify the project source file as:
 
 <img src="https://i.ibb.co/gt7MDYs/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-5.png" alt="Addings to project source">
 
-Later will see how to easily manage custom attributes through properties. It is not strictly necessary to use properties, but using them makes the code more readable. Surely it's possible to have more granular control, if you want, on the persistence process, by calling the library classes' methods directly, without using the macros.
+To manage custom attributes would be better to use properties. It is not strictly necessary to use properties, but using them makes the code more readable. Properties are very handful when used along with some library macro. Surely it's possible to have more granular control over the persistence process, by calling the library classes' methods directly instead of using the aforementioned macros. 
 
-Before starting, it's better to state that the following operations can be skipped by loading one of the reference applications in Anafestica/App (then saving them as a copy in a different place) or by saving a prototype of a "typical" application in the object repository for subsequent use, so as not to have to repeatedly perform the steps that we are going to describe for each new project.
+However, before starting it's better to know that the following operations can be skipped by loading one of the reference applications in Anafestica/App (then saving them as a copy in a different place) or by saving a prototype of a "typical" application into the IDE's object repository for subsequent use, so as not to have to repeatedly perform the subsequent steps for each new project.
 
-In this repository there's a [demo application](Demo/VCLSimpleDemo) that shows how to make a custom text attribute persistent (as well as the position, size, and state of the Form). It is the example that will be replicated in the following steps. It is one of the simplest scenarios for the management of persistent attributes.
+In this GitHub repository there's [the clock gadget example](Demo/VCLSimpleDemo) that will be replicated in the following steps. As it uses properties along with macros, it is one of the simplest scenarios for the management of persistent attributes.
 
 The structure of this application is very simple. Now let's see how to build it from scratch.
 

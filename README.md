@@ -1,12 +1,6 @@
 # Anafestica
 Header only library for the persistence of application settings in the Windows Registry or in other "media" (JSON, XML, etc.)
 
-## Getting Started
-
-This library allows you to easily give persistence to your FMX and VCL applications with very few changes to the existing codebase. Saving the position, the size, and the state of the forms, along with other custom attributes, is very simple: just add a few lines of code.
-
-The library itself is made only by header files and therefore it is easy to use and to include in your codebase and does not require additional compilation steps: you just have to include the necessary header files in your project. Can also be used in contexts other than GUI applications, but its real advantages are seen in the writing of the latter, where it certainly simplifies the management of the persistence of application attributes such as the position, size, and state of the forms, up to the settings of the whole application.
-
 ## Rationale
 
 The idea behind the library is to have a hierarchical polymorphic container that resembles the Windows registry, but with a more generalized interface. This container consists of nodes which, for example in the case of the Windows registry, containing a copy of keys and values related to a specific Windows registry key. These keys and values, if already existing, are loaded from the medium (in this case from a Windows Registry key) when the application starts and remains in memory for the whole application execution session. You can read or modify these keys and values, but everything remains confined to the application's memory. When the application ends, the container is usually saved at the correct position, in the appropriate storage medium, and with its default format. If, in the meantime, the application crashes, the data initially loaded from the storage medium remain unchanged.
@@ -14,6 +8,12 @@ The idea behind the library is to have a hierarchical polymorphic container that
 The library is mainly made by two parts: a container part (which is generalized) and a serialization part. This allow to have a coherent interface by the application point of view but permit to store persistent data on different storage medium or format. For example, usually, persistent data of applications are stored in the Windows Registry, respecting some conventions regarding the nature of the application itself (nature intended as a normal application or, e.g., a service application or other application type). But, changing the serialization part, it's possible to use the filesystem and specify a particular data format (e.g JSON, or XML, or INI files, etc...). Maybe even store data on network services or hardware dongles. It depends on the serialization object, which is selectable as it is a template parameter (i.e it's passed as a Policy). You can also have several supported serialization formats in the same application. As a serialization format is ever associated with a specific container, there are no limits to the possible combinations and the number of usable containers. Each container links a specific serializer with the own serialization format.
 
 In this refactored public version, the only reader/writer present is for the Windows Registry, but future versions will be able to store data in JSON and XML files. It also should be very easy for users to extend the serialization in different media or formats.
+
+## Getting Started
+
+This library allows you to easily give persistence to your FMX and VCL applications with very few changes to the existing codebase. Saving the position, the size, and the state of the forms, along with other custom attributes, is very simple: just add a few lines of code.
+
+The library itself is made only by header files and therefore it is easy to use and to include in your codebase and does not require additional compilation steps: you just have to include the necessary header files in your project. Can also be used in contexts other than GUI applications, but its real advantages are seen in the writing of the latter, where it certainly simplifies the management of the persistence of application attributes such as the position, size, and state of the forms, up to the settings of the whole application.
 
 ### Prerequisites
 
@@ -46,5 +46,7 @@ To complete the installation, the last important thing to do is to add the refer
 
 <img src="https://i.ibb.co/JcgH89t/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-7.png" alt="BCC32C">
 
+## More
 
+Try a [Quick Tour](QUICK_TOUR.md) in Anafestica.
 

@@ -1,17 +1,18 @@
 # Quick tour
 
-Suppose the goal is to create a small application consisting of a single form. The application must be able to save the position, size, and state of the form together with an additional attribute. To make sense of this "journey" into the library, let's try writing a small clock gadget. This gadget must allow (and remember) the selection of the font used to show the time. Here's how it could be designed:
+Suppose the goal is to create a small application consisting of a single form. The application must be able to save the position, size, and state of the form along with an additional attribute. To make sense of this "journey" into the library, let's try writing a small clock gadget. This gadget must allow (and remember) the selection of the font used to show the time. Also, even the form position, the size, and the state have to be stored. 
+
+Here's how it could be the form layout:
 
 <img src="https://i.ibb.co/t4hqQFz/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-8.png" alt="Demo app screenshot">
 
-The application is simple. Get the persistence of form and custom attributes "by hand" is not so simple: requires a fair amount of code.
-On the other hand, using the Anafestica library greatly simplify the process: in short, it only takes a few lines of code to save a form in the Windows registry, as it's possible to see below:
+The application is simple. Get the persistence of the form and of the custom attributes "by hand" is not so simple: requires to write a fair amount of code. On the other hand, using the Anafestica library greatly simplify the process: in short, it only takes a few lines of code to save a form in the Windows registry, as it's possible to see below:
 
 <img src="https://i.ibb.co/4RMBg1Y/1.png" alt="Sample header file">
 
 <img src="https://i.ibb.co/TBNYKRk/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-2.png" alt="Sample implementation">
 
-But the whole story is a little longer. Where were the attributes of the form stored? In particular, which place in the register? In the most obvious place: in the `HKCU/Software/_Vendor/Product/Version_` registry key.
+But the whole story is a little longer. For example, where are the attributes of the form stored? In particular, which place in the Windows Registry? In the most obvious place: in the `HKCU/Software/_Vendor/Product/Version_` registry key.
 
 But where the hell does the *Vendor*, *Product*, and *Version* parts get the library from? How does the library user set these values? The answer is simple: from the project's version info keys. Namely:
 
@@ -59,18 +60,21 @@ Let's save the project.
 
 Now **close** the project.
 
-Close the project? Why the hell it's necessary to close the project? Because the template project contained in the IDE and used to initially create this application, as it is doesn't propagate the settings you made so far on all the platforms and their associated configurations. So now, with a simple text editor, we can go to remove the problematic values inside the project file (.cbproj).
-Let's open the main project configuration file (but it's better to make a backup copy of this file first):
+Why the hell it's necessary to close the project? Because the template project contained in the IDE and used to initially create this application, as it is, doesn't propagate the settings you made so far on all the platforms and their associated configurations. So now, with a simple text editor, it's possible to remove the problematic lines inside the project file (.cbproj).
+
+Let's create a backup copy of the main configuration file of the project then open it in an editor:
 
 <img src="https://i.ibb.co/PGrNRth/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-14.png" alt="Fix project file from broken template"></a>
 
-Now, let's edit the file, e.g with Notepad: hence, let's remove all `<VerInfo_Keys>` tags from all nodes except the first one, which is usually `<PropertyGroup Condition = "'$ (Base)'! = ''">`:
+Now, let's edit the file: hence, let's remove all `<VerInfo_Keys>` tags from all nodes except the first one, which is usually `<PropertyGroup Condition = "'$ (Base)'! = ''">`:
   
 <img src="https://i.ibb.co/LJDXWnm/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-15.png" alt="Clear extra Ver Info Keys">
 
 Let's save the modified project file, then reopen it in the IDE. If you have problems, let's take the backup copy and try again.
 
-Now, let's reduce the size of the main form a bit: for example, with the Width property set to 340 and the Height property to 200. Next, copy into the clipboard the following snippet, then paste it to the main form:
+Now, let's reduce the size of the main form a bit: for example, with the Width property set to 340 and the Height property to 200. 
+
+Next, let's copy into the clipboard the following snippet, then paste it into the main form:
 
 ```dfm
 object lblClock: TLabel
@@ -188,7 +192,7 @@ extern PACKAGE TForm1 *Form1;
 
 We can see several additional lines compared to the original file. 
 
-There are two additional includes and one type-alias. The type-alias is a base class of `TForm1` in place of the more classic `TForm`:
+There are two additional includes and one type-alias. The type-alias is the base class of `TForm1` in place of the more classic `TForm`:
 
 ```cpp
 ...
@@ -206,7 +210,7 @@ class TForm1 : public TConfigRegistryForm
 ...
 ```
 
-The type-alias `TConfigRegistryForm` is necessary to make happy the IDE's Form designer that doesn't like the syntax of C++ templates. Just because the `TForm1` class derives from this type-alias, gives to the form itself the intrinsic capability to save its attributes, such as position, size, and state and, optionally, other specific attributes of the form that the programmer will want to save.
+The type-alias `TConfigRegistryForm` is necessary to make happy the IDE's Form designer that doesn't like the syntax of C++ templates. Just because the `TForm1` class derives from this type-alias, gives to the form itself the intrinsic capability to save its attributes, such as the position, the size, the state and, optionally, other specific attributes of the form that the programmer will want to save.
 Next, there is a new constructor that takes several parameters and also a destructor:
 
 ```cpp
@@ -239,7 +243,7 @@ private:    // User declarations
     };
 ```
 
-Proceeding step by step with this presentation, it's possible to note a non-static member variable named `selectedFontName_` which name is pretty self-explanatory. This variable is directly connected to the getter of the property `SelectedFontName`. The setter of the `SelectedFontName` property is linked to the `TForm1`'s non-static and non-const member function, called `SetSelectedFontName`. The presence of this property is important (despite it is a private member) since it allows you to store and retrieve very easily the attribute it represents. 
+Let's proceed step by step: it's possible to note a non-static member variable named `selectedFontName_` which name is pretty self-explanatory. This variable is directly connected to the getter of the property `SelectedFontName`. The setter of the `SelectedFontName` property is linked to the `TForm1`'s non-static and non-const member function, called `SetSelectedFontName`. 
 
 The remaining methods are only the result of a simple functional decomposition aimed at simplifying the reading of the code (and to make the toxicity-metrics utilities happy).
 

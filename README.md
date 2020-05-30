@@ -1,7 +1,9 @@
 # Anafestica
-Header only library for the persistence of application settings in the Windows Registry or in other "media" (JSON, XML, etc.)
+An header-only library for the persistence of application settings in the Windows Registry or in other "media" (JSON, XML, etc.)
 
 ## Rationale
+
+This library allows you to easily give persistence to your FMX and VCL applications with very few changes to the existing codebase. Saving the position, the size, and the state of the forms, along with other custom attributes, is very simple: just add a few lines of code.
 
 The idea behind the library is to have a hierarchical polymorphic container that resembles the Windows registry, but with a more generalized interface. This container consists of nodes which, for example in the case of the Windows registry, containing a copy of keys and values related to a specific Windows registry key. These keys and values, if already existing, are loaded from the medium (in this case from a Windows Registry key) when the application starts and remains in memory for the whole application execution session. You can read or modify these keys and values, but everything remains confined to the application's memory. When the application ends, the container is usually saved at the correct position, in the appropriate storage medium, and with its default format. If, in the meantime, the application crashes, the data initially loaded from the storage medium remain unchanged.
 
@@ -10,8 +12,6 @@ The library is mainly made by two parts: a container part (which is generalized)
 In this refactored public version, the only reader/writer present is for the Windows Registry, but future versions will be able to store data in JSON and XML files. It also should be very easy for users to extend the serialization in different media or formats.
 
 ## Getting Started
-
-This library allows you to easily give persistence to your FMX and VCL applications with very few changes to the existing codebase. Saving the position, the size, and the state of the forms, along with other custom attributes, is very simple: just add a few lines of code.
 
 The library itself is made only by header files and therefore it is easy to use and to include in your codebase and does not require additional compilation steps: you just have to include the necessary header files in your project. Can also be used in contexts other than GUI applications, but its real advantages are seen in the writing of the latter, where it certainly simplifies the management of the persistence of application attributes such as the position, size, and state of the forms, up to the settings of the whole application.
 

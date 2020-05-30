@@ -1,6 +1,11 @@
 # Quick tour
 
-Some pictures may be worth a thousand words: just add some declarations and a constructor to make a Form save itself in the Windows Registry.
+Suppose the goal is to create a small application consisting of a single form. The application must be able to save the position, size and state of the form together with an additional attribute. To make sense of this application, let's try writing a small clock gadget. This gadget must allow the selection of the font used to show the time. This is how it could be: 
+
+<img src="https://i.ibb.co/t4hqQFz/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-8.png" alt="Demo app screenshot">
+
+The application GUI is simple but getting persistence of form and custom attributes is not so simple: requires a fair amount of code.
+Using the Anafestica library greatly simplify the process: in short, it only takes a few lines of code to save a form in the Windows registry, as it's possible to see below:
 
 <img src="https://i.ibb.co/4RMBg1Y/1.png" alt="Sample header file">
 
@@ -35,10 +40,6 @@ Later we will see how to easily manage custom attributes through properties. It 
 Before starting, it's better to state that the following operations can be skipped by loading one of the reference applications in Anafestica/App (then saving them as a copy in a different place) or by saving a prototype of a "typical" application in the object repository for subsequent use, so as not to have to repeatedly perform the steps that we are going to describe for each new project. So don't be frightened if the steps seem long and tortuous: you will only have to do them once. Or never do them, if you load a reference project and save it somewhere else (in this case I recommend changing the GUID of the project, by hand, inside the cbproj file, to make it universally unique).
 
 In this repository, in the Anafestica/Demo/VCLSimpleDemo/ path, there is a Demo app that shows how to make a custom text attribute persistent (as well as the position, size, and state of the Form). It is one of the simplest scenarios for the management of persistent attributes: it is therefore assumed that the data refer to the Form itself, so it will be stored with the other typical attributes of a Form, that is the position, size, and state.
-
-The demo application is a "clock gadget" where you can change the font typeface. The application must be able to allow the choice of the font and remember it between different execution sessions.
-
-<img src="https://i.ibb.co/t4hqQFz/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-8.png" alt="Demo app screenshot">
 
 The structure of this application is very simple. Now let's see how to build it from scratch.
 

@@ -17,7 +17,7 @@ But the whole story is a little longer. You may wonder where you have been store
 
 key. 
 
-But where the hell does the Vendor, Product, and Version parts get the library from? It's simple: from the project's version info keys. Namely:
+But where the hell does the *Vendor*, *Product*, and *Version* parts get the library from? It's simple: from the project's version info keys. Namely:
 
 <img src="https://i.ibb.co/x3ZK9gZ/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-3.png" alt="Project Info Keys sample settings">
 
@@ -31,15 +31,11 @@ Since the library uses one or more singletons for the serialization process, the
 
 <img src="https://i.ibb.co/gt7MDYs/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-5.png" alt="Addings to project source">
 
-In fact, it's known that "the Singleton" is more of an anti-pattern than a pattern, due to the fact that it is not possible to control his order of destruction respect to other singletons. Even if Forms aren't singleton per se, on some target platforms, as with specific product versions, the forms are destroyed after the singletons used to serialize the attributes on storage mediums. So, forcing the destruction of the forms before the WinMain exits, we can be sure that the Forms' attributes are correctly saved when the application exits.
+Later will see how to easily manage custom attributes through properties. It is not strictly necessary to use properties, but using them makes the code more readable. Surely it's possible to have more granular control, if you want, on the persistence process, by calling the library classes' methods directly, without using the macros.
 
-In this GitHub repository, there are two applications (VCL and FMX) which constitute two basic examples of how to structure a persistent application (or modify an existing one so that it offers persistence.) These applications, as well as the forms that make them up, can also be imported into the Object Repository in order to be readily available for the creation of other new forms or new applications.
+Before starting, it's better to state that the following operations can be skipped by loading one of the reference applications in Anafestica/App (then saving them as a copy in a different place) or by saving a prototype of a "typical" application in the object repository for subsequent use, so as not to have to repeatedly perform the steps that we are going to describe for each new project.
 
-Later we will see how to easily manage custom attributes through properties. It is not strictly necessary to use properties, but using them certainly makes the code more readable. Surely you can have granular control, if you want, on the persistence process by calling the library object methods directly without going through macros.
-
-Before starting, it's better to state that the following operations can be skipped by loading one of the reference applications in Anafestica/App (then saving them as a copy in a different place) or by saving a prototype of a "typical" application in the object repository for subsequent use, so as not to have to repeatedly perform the steps that we are going to describe for each new project. So don't be frightened if the steps seem long and tortuous: you will only have to do them once. Or never do them, if you load a reference project and save it somewhere else (in this case I recommend changing the GUID of the project, by hand, inside the cbproj file, to make it universally unique).
-
-In this repository, in the Anafestica/Demo/VCLSimpleDemo/ path, there is a Demo app that shows how to make a custom text attribute persistent (as well as the position, size, and state of the Form). It is one of the simplest scenarios for the management of persistent attributes: it is therefore assumed that the data refer to the Form itself, so it will be stored with the other typical attributes of a Form, that is the position, size, and state.
+In this repository there's a [demo application](Demo/VCLSimpleDemo) that shows how to make a custom text attribute persistent (as well as the position, size, and state of the Form). It is the example that will be replicated in the following steps. It is one of the simplest scenarios for the management of persistent attributes.
 
 The structure of this application is very simple. Now let's see how to build it from scratch.
 
@@ -57,7 +53,7 @@ Turn off the "classic C++ compiler" (it's better to do it for all the platforms)
 
 <img src="https://i.ibb.co/7NGKxzm/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-12.png" alt="Turn off classic C++ compiler">
 
-Set the appropriate values for CompanyName, ProductName, and ProductVersion in the version info keys for all platforms. Note: if you skip this step, when you start the application it will give you a "resource not found error". The application needs these values because it uses them to create the HKCU\CompanyName\ProductName\ProductVersion path in the Registry.
+Set the appropriate values for *CompanyName*, *ProductName*, and *ProductVersion* in the version info keys for all platforms. Note: if you skip this step, when you start the application it will give you a "resource not found error". The application needs these values because it uses them to access the `HKCU\CompanyName\ProductName\ProductVersion` path in the Windows Registry.
 
 <img src="https://i.ibb.co/qdDQQP3/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-13.png" alt="Set version info keys">
 
@@ -67,17 +63,16 @@ Let's save the project.
 
 Now **close** the project.
 
-Close the project? Why the hell do you need to close the project? Because the template project contained in the IDE and used to start this application, as it is, doesn't propagate the settings you made so far on all the platforms and their associated configurations. So now, with a simple text editor, we can go to remove the problematic values inside the project file (.cbproj). 
-
+Close the project? Why the hell it's necessary to close the project? Because the template project contained in the IDE and used to initially create this application, as it is doesn't propagate the settings you made so far on all the platforms and their associated configurations. So now, with a simple text editor, we can go to remove the problematic values inside the project file (.cbproj).
 Let's open the main project configuration file (but it's better to make a backup copy of this file first):
 
 <img src="https://i.ibb.co/PGrNRth/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-14.png" alt="Fix project file from broken template"></a>
 
-Now, let's edit the file, e.g with Notepad: hence, let's remove all <VerInfo_Keys> tags from all nodes except the first one, which is usually <PropertyGroup Condition = "'$ (Base)'! = ''">:
+Now, let's edit the file, e.g with Notepad: hence, let's remove all `<VerInfo_Keys>` tags from all nodes except the first one, which is usually `<PropertyGroup Condition = "'$ (Base)'! = ''">`:
   
 <img src="https://i.ibb.co/LJDXWnm/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-15.png" alt="Clear extra Ver Info Keys">
 
-Let's save the modified project file the reopens it in the IDE. If there are problems, please take the backup copy and try again.
+Let's save the modified project file, then reopen it in the IDE. If you have problems, let's take the backup copy and try again.
 
 Now, let's reduce the size of the main form a bit: for example, with the Width property set to 340 and the Height property to 200. Next, copy into the clipboard the following snippet, then paste it to the main form:
 
@@ -215,8 +210,7 @@ class TForm1 : public TConfigRegistryForm
 ...
 ```
 
-The type alias is necessary to make happy the IDE's Form designer that doesn't like the syntax of C++ templates. Just because the TForm1 class derives from this type of alias, it allows it to acquire intrinsic ability to save its attributes, such as position, size and state and, optionally, the specific attributes of the application that the programmer will want to save.
-
+The type-alias `TConfigRegistryForm` is necessary to make happy the IDE's Form designer that doesn't like the syntax of C++ templates. Just because the `TForm1` class derives from this type-alias, gives to the form itself the intrinsic capability to save its attributes, such as position, size, and state and, optionally, other specific attributes of the form that the programmer will want to save.
 Next, there is a new constructor that takes several parameters and also a destructor:
 
 ```cpp
@@ -227,9 +221,9 @@ Next, there is a new constructor that takes several parameters and also a destru
     ...
 ```
 
-The constructor will take care to read the user-defined attributes from the persistent storage; conversely, the destructor saves them.
+The constructor will take care to read the user-defined attributes from the persistent storage; on the other hand, the destructor saves them. If attributes do not exist (for example, during the first-time run), default values will be used as they are designed with the ide.
 
-Now we will see some lines of code containing data, function signatures, and a property.
+Now we will see some form's lines of code containing data, function signatures, and a property.
 
 ```cpp
 private:    // User declarations
@@ -249,11 +243,11 @@ private:    // User declarations
     };
 ```
 
-Proceeding step by step with the explanation, it's possible to note a non-static member variable named `selectedFontName_` which name is self-explanatory. This variable is directly connected to the getter of the property `SelectedFontName`. The setter of the `SelectedFontName` property is linked to the `TForm1`'s non-static and non-const member function, called `SetSelectedFontName`. The presence of this property is important (despite it is a private member) since it allows you to store and retrieve very easily the attribute it represents, that is, with only two lines of code: one used to retrieve the value and the other to save the latter.
+Proceeding step by step with this presentation, it's possible to note a non-static member variable named `selectedFontName_` which name is pretty self-explanatory. This variable is directly connected to the getter of the property `SelectedFontName`. The setter of the `SelectedFontName` property is linked to the `TForm1`'s non-static and non-const member function, called `SetSelectedFontName`. The presence of this property is important (despite it is a private member) since it allows you to store and retrieve very easily the attribute it represents. 
 
 The remaining methods are only the result of a simple functional decomposition aimed at simplifying the reading of the code (and to make the toxicity-metrics utilities happy).
 
-Now all that remains is to look at the implementation of the methods and provide the event handlers for the combobox that contains the list of fonts and for `Timer1`, the timer that updates the `lblClock` caption. In reality, there is another important thing (mentioned previously) to do: provide for the destruction of the forms before the application returns from the WinMain function. But we'll see it later.
+Now all that remains is to look at the implementation of the methods and provide the event handlers for the combo-box that contains the list of fonts and for `Timer1`, the timer that updates the label `lblClock` caption. There is another important thing to do: provide for the destruction of the forms before the application returns from the WinMain function. But we'll see it later.
 
 Let's implement the two (empty) event handlers by double-clicking on `Timer1` and `comboboxFontName`:
 
@@ -373,9 +367,9 @@ void TForm1::SaveProperties() const
 //---------------------------------------------------------------------------
 ```
 
-NNow let's dissect the newly pasted code. 
+Now, let's dissect the newly pasted code. 
 
-We have two constructors respect to the one usually proposed by the default template application generated by the IDE.
+Note that there's two constructors respect to the one usually proposed by the default template application generated by the IDE.
 
 ```cpp
 __fastcall TForm1::TForm1(TComponent* Owner)
@@ -396,11 +390,11 @@ __fastcall TForm1::TForm1( TComponent* Owner, StoreOpts StoreOptions,
 }
 ```
 
-The first is a forwarding constructor, which proposes some default values to the second constructor, which is the constructor who does the real job.  The second constructor, respect to a standard TForm constructor, takes two additional parameters. The first parameter is an enum that tells which form attributes are to be stored when the form closes: for example, all, only-position, only-size, none-at-all, and so on). The second parameter it's a pointer to a specific node object, which establishes the location of all the attributes to save on the related storage medium, along with the implicitly associated format (if this pointer is a nullptr then will be chosen an appropriate default object). 
+The first is a forwarding constructor, which proposes some default values to the second constructor, which is the constructor who does the real job.  The second constructor, respect to a standard TForm constructor, takes two additional parameters. The first parameter is an enum that tells which form attributes are to be stored when it closes: for example, all the attributes, only the position, only the size, none at all, and so on). The second parameter it's a pointer to a specific node object, which establishes the place where all the attributes should be saved on the related storage medium, along with the implicitly associated format (if this pointer is a *nullptr* then will be chosen an appropriate default object). 
 
 Next, in the constructor body, we have several statements.
 
-This line assigns a default value for `selectedFontName_`. Doing so is important because it takes this value from the GUI as originally designed in the IDE, so that can't be any surprises at run-time when the application executes for the first time.
+This line assigns a default value for `selectedFontName_`. Doing so is important, because it takes this value from the GUI as originally designed in the IDE, so that can't be any "surprises" at run-time when the application executes for the first time.
 
 ```cpp
     selectedFontName_ = Label1->Font->Name;
@@ -443,7 +437,8 @@ __fastcall TForm1::~TForm1()
 }
 ```
 
-Now, the two key-functions. They are responsible for retrieving and storing additional form attributes. They use two macros that greatly simplify the job: the RESTORE_LOCAL_PROPERTY macro for retrieving, and the SAVE_LOCAL_PROPERY macro for storing. For each property you want to manage, you have to add the corresponding lines in the SaveProperties or the RestoreProperties functions.
+Now, the two key-functions, namely `SaveProperties` and `RestoreProperties`. They are responsible for retrieving and storing additional form attributes. In this sample, they use two macros that greatly simplify the job: the `RESTORE_LOCAL_PROPERTY` macro for retrieving the attribute, and the `SAVE_LOCAL_PROPERY` macro for storing it. For each property you want to make persistent, you have to add the corresponding lines in the `SaveProperties` or the `RestoreProperties` functions. The particle _LOCAL_ in the macro names means that the attribute is saved or restored in the main form's node, i.e. "local" to the form itself.
+
 
 ```cpp
 void TForm1::RestoreProperties()
@@ -459,7 +454,7 @@ void TForm1::SaveProperties() const
 //---------------------------------------------------------------------------
 ```
 
-A final note to remember: put a cycle to destroy all the forms before exiting from the WinMain functions in the main module of the project:
+Finally, let's write a loop to destroy all the forms before exiting from the WinMain functions in the main module of the project:
 
 ```cpp
         while ( auto const Cnt = Screen->FormCount ) {
@@ -467,7 +462,7 @@ A final note to remember: put a cycle to destroy all the forms before exiting fr
         }
 ```
 
-The overall picture is:
+The overall text is:
 
 Project1.cpp
 ```cpp

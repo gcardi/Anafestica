@@ -16,20 +16,20 @@ TForm1 *Form1;
 //---------------------------------------------------------------------------
 
 __fastcall TForm1::TForm1(TComponent* Owner)
-    : TForm1( Owner, StoreOpts::All, nullptr )
+	: TForm1( Owner, StoreOpts::All, nullptr )
 {
 }
 //---------------------------------------------------------------------------
 
 __fastcall TForm1::TForm1( TComponent* Owner, StoreOpts StoreOptions,
-                               Anafestica::TConfigNode* const RootNode )
-    : TConfigRegistryForm( Owner, StoreOptions, RootNode )
+						   Anafestica::TConfigNode* const RootNode )
+	: TConfigRegistryForm( Owner, StoreOptions, RootNode )
 {
-    selectedFontName_ = Label1->Font->Name;
-    SetupCaption();
-    LoadFontListUIControl();
-    RestoreProperties();
-    SelectCurrentFont();
+	selectedFontName_ = Label1->Font->Name;
+	SetupCaption();
+	LoadFontListUIControl();
+	RestoreProperties();
+	SelectCurrentFont();
 }
 //---------------------------------------------------------------------------
 
@@ -51,13 +51,12 @@ String TForm1::GetModuleFileName()
 
 void TForm1::SetupCaption()
 {
-    TFileVersionInfo const Info( GetModuleFileName() );
-    Caption =
-        Format(
-            _T( "%s, Ver %s" ),
-            ARRAYOFCONST( (
-                Application->Title,
-                Info.ProductVersion
+	Caption =
+		Format(
+			_T( "%s, Ver %s" ),
+			ARRAYOFCONST( (
+				Application->Title,
+				TFileVersionInfo{ GetModuleFileName() }.ProductVersion
             ) )
         );
 }
@@ -65,7 +64,7 @@ void TForm1::SetupCaption()
 
 void TForm1::LoadFontListUIControl()
 {
-    comboboxFontName->Items->Assign( Screen->Fonts );
+	comboboxFontName->Items->Assign( Screen->Fonts );
 }
 //---------------------------------------------------------------------------
 

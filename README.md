@@ -15,6 +15,37 @@ The library is mainly made by two parts: a container part (which is generalized)
 
 In this refactored public version, the only reader/writer present is for the Windows Registry, but future versions will be able to store data in JSON and XML files. It also should be very easy for users to extend the serialization in different media or formats.
 
+### Prerequisites
+
+YYou need to install the boost libraries first because this library uses `boost::variant` instead of `std::variant` due to an unresolved bug in the standard C++Builder's library, which prevents direct assignment of values to `std::variant`. See [RSP-27418](https://quality.embarcadero.com/browse/RSP-27418) on Embarcadero Quality Portal.
+
+So, to get boost libraries (e.g. 1.68.0), you can use GetIt.
+
+<img src="https://i.ibb.co/FmPznnX/3-611-D020-B-2-C12-4839-8567-A7-E8-A650940-E.png" alt="Figure 3">
+
+Note that only _clang-based_ compilers are supported by this library, so you need to install boost libraries for **bcc32c** and **bcc64**.
+
+### Installing
+
+Clone the repository to $(BDSCOMMONDIR) which, normally, is %public%\Documents\Embarcadero\Studio\XX.X, where XX.X corresponds to the version of RAD Studio you want to refer. For example, for RAD Studio 10.3.3, $(BDSCOMMONDIR) corresponds to %public%\Documents\Embarcadero\Studio\XX.X which, in turn, is usually C:\Users\Public\Documents\Embarcadero\Studio\20.0.
+
+```
+C:\Users\Public\Documents\Embarcadero\Studio\21.0>git clone https://github.com/gcardi/Anafestica.git
+Cloning into 'Anafestica'...
+remote: Enumerating objects: 36, done.
+remote: Counting objects: 100% (36/36), done.
+remote: Compressing objects: 100% (27/27), done.
+remote: Total 36 (delta 9), reused 32 (delta 9), pack-reused 0
+Unpacking objects: 100% (36/36), done.
+
+C:\Users\Public\Documents\Embarcadero\Studio\21.0>dir
+```
+To complete the installation, the last important thing to do is to add the references to this library to the include path(s) of the development system. Using the IDE menu _Tool -> Options_, add the $(BDSCOMMONDIR)\Anafestica path to both bcc32c and bcc64 settings:
+
+<img src="https://i.ibb.co/RBQxLGt/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-6.png" alt="BCC64">
+
+<img src="https://i.ibb.co/JcgH89t/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-7.png" alt="BCC32C">
+
 ## Quick tour
 
 Some pictures may be worth a thousand words: just add some declarations and a constructor to make a Form save itself in the Windows Registry.
@@ -49,38 +80,7 @@ In this GitHub repository, there are two applications (VCL and FMX) which consti
 
 Later we will see how to easily manage custom attributes through properties. It is not strictly necessary to use properties, but using them certainly makes the code more readable. Surely you can have granular control, if you want, on the persistence process by calling the library object methods directly without going through macros.
 
-### Prerequisites
-
-YYou need to install the boost libraries first because this library uses `boost::variant` instead of `std::variant` due to an unresolved bug in the standard C++Builder's library, which prevents direct assignment of values to `std::variant`. See [RSP-27418](https://quality.embarcadero.com/browse/RSP-27418) on Embarcadero Quality Portal.
-
-So, to get boost libraries (e.g. 1.68.0), you can use GetIt.
-
-<img src="https://i.ibb.co/FmPznnX/3-611-D020-B-2-C12-4839-8567-A7-E8-A650940-E.png" alt="Figure 3">
-
-Note that only _clang-based_ compilers are supported by this library, so you need to install boost libraries for **bcc32c** and **bcc64**.
-
-### Installing
-
-Clone the repository to $(BDSCOMMONDIR) which, normally, is %public%\Documents\Embarcadero\Studio\XX.X, where XX.X corresponds to the version of RAD Studio you want to refer. For example, for RAD Studio 10.3.3, $(BDSCOMMONDIR) corresponds to %public%\Documents\Embarcadero\Studio\XX.X which, in turn, is usually C:\Users\Public\Documents\Embarcadero\Studio\20.0.
-
-```
-C:\Users\Public\Documents\Embarcadero\Studio\21.0>git clone https://github.com/gcardi/Anafestica.git
-Cloning into 'Anafestica'...
-remote: Enumerating objects: 36, done.
-remote: Counting objects: 100% (36/36), done.
-remote: Compressing objects: 100% (27/27), done.
-remote: Total 36 (delta 9), reused 32 (delta 9), pack-reused 0
-Unpacking objects: 100% (36/36), done.
-
-C:\Users\Public\Documents\Embarcadero\Studio\21.0>dir
-```
-To complete the installation, the last important thing to do is to add the references to this library to the include path(s) of the development system. Using the IDE menu _Tool -> Options_, add the $(BDSCOMMONDIR)\Anafestica path to both bcc32c and bcc64 settings:
-
-<img src="https://i.ibb.co/RBQxLGt/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-6.png" alt="BCC64">
-
-<img src="https://i.ibb.co/JcgH89t/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-7.png" alt="BCC32C">
-
-### Using the library
+### Using the library - an example
 
 Before starting, it's better to state that the following operations can be skipped by loading one of the reference applications in Anafestica/App (then saving them as a copy in a different place) or by saving a prototype of a "typical" application in the object repository for subsequent use, so as not to have to repeatedly perform the steps that we are going to describe for each new project. So don't be frightened if the steps seem long and tortuous: you will only have to do them once. Or never do them, if you load a reference project and save it somewhere else (in this case I recommend changing the GUID of the project, by hand, inside the cbproj file, to make it universally unique).
 

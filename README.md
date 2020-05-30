@@ -42,7 +42,7 @@ Unpacking objects: 100% (36/36), done.
 
 C:\Users\Public\Documents\Embarcadero\Studio\21.0>dir
 ```
-To complete the installation, the last important thing to do is to add the references to this library to the include path(s) of the development system. Using the IDE menu _Tool -> Options_, add the $(BDSCOMMONDIR)\Anafestica path to both bcc32c and bcc64 settings:
+To complete the installation, the last important step is to add the references to this library in the include path(s) of the development system. Using the IDE menu _Tool -> Options_, add the $(BDSCOMMONDIR)\Anafestica path to both bcc32c and bcc64 settings:
 
 <img src="https://i.ibb.co/RBQxLGt/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-6.png" alt="BCC64">
 

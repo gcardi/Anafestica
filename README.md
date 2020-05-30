@@ -21,7 +21,7 @@ The library itself is made only by header files and therefore it is easy to use 
 
 Is necessary to install the boost libraries first because this library uses `boost::variant` instead of `std::variant` due to an unresolved bug in the standard C++Builder's library, which prevents direct assignment of values to `std::variant`. See [RSP-27418](https://quality.embarcadero.com/browse/RSP-27418) on Embarcadero Quality Portal.
 
-So, to get boost libraries (e.g. 1.68.0), it's possible can use GetIt.
+So, to get boost libraries (e.g. 1.68.0), it's possible to use GetIt.
 
 <img src="https://i.ibb.co/FmPznnX/3-611-D020-B-2-C12-4839-8567-A7-E8-A650940-E.png" alt="Figure 3">
 

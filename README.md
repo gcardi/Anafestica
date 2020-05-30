@@ -7,7 +7,15 @@ This library allows you to easily give persistence to your FMX and VCL applicati
 
 The library itself is made only by header files and therefore it is easy to use and to include in your codebase, and does not require additional compilation steps: you just have to include the necessary header files in your project. Can also be used in contexts other than GUI applications, but its real advantages are seen in the writing of the latters, where it certainly simplifies the management of the persistence of application attributes such as the position, size and state of the forms, up to the settings of the whole application.
 
+## Rationale
+
+The idea behind the library is to have a hierarchical polymorphic container that resembles the Windows registry, but with a more gerneralized interface. This container consists of nodes which, for example in the case of the Windows registry, containing a copy of keys and values related to a specific Windows registry key. These keys and values, if already existing, are loaded from the medium (in this case from a Windows Registry key) when the application starts and remains in memory for the whole application execution session. You can read or modify these keys and values, but everything still remains confined to the application's memory. When the application ends, the container is usually saved at the correct position, in the appropriate storage medium and with its default format. If, in the meantime, the application crashes, the data initially loaded from the storage medium remain unchanged.
+
+The library is mainly made by two parts: a container part (which is generalized) and a serialization part. This allow to have a coherent interface by the application point of view, but permit to store persistent data on different storage medium or format. For example, usually, persistent data of applications are stored in the Windows Registry, respecting some conventions regarding the nature of the application itself (nature inteded as normal application or, e.g., a service application or other application type). But, changing the serialization part, it's possible to use the filesystem and specify a particular data format (e.g JSON, or XML, or INI files, etc...). Maybe even store data on network services or hardware dongles. It depends on the serialization object, which is selectable as it is a template parameter (i.e it's passed as a Policy). You can also have several supported serialization format in the same application. As a serialization format is ever associated to a specific container, there's no limits to the possible combinations and to the amount of usable containers. Each container links a specific serializator with the own serialization format.
+
 In this refactored public version, the only reader/writer present is for the Windows Registry, but future versions will be able to store data in JSON and XML files. Also should be very easy for users to extend the serialization on different media or formats.
+
+## Quick tour
 
 Some pictures may be worth a thousand words... just add some declarations and a contructor to make a Form save itself in the Windows Registry.
 
@@ -29,13 +37,15 @@ So, the position, size for the Form1 is stored in:
 
 <img src="https://i.ibb.co/ws7wRyp/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-4.png" alt="Sample registry node layout">
 
-Note that the state of the form has not been saved. Yes, the library only saves values other than the default.
+Note that the state of the form has not been saved, as the form was never closed when it was in maximized or minimized state. Yes, you got it right, the library only saves values other than the default.
 
-Since the library uses one or more singletons for serialization, the other few lines of code (to be added only once), are used to ensure that the application forms are destroyed before the aforesaid singletons. To ensure the correct behaviour, it's necessary to modify the project source file in this fashion:
+Since the library uses one or more singletons for the serialization process, the other few lines of code (to be added only once), are used to ensure that the application forms are destroyed before the aforesaid singletons. To ensure the correct behaviour, it's necessary to modify the project source file in this fashion:
 
 <img src="https://i.ibb.co/gt7MDYs/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-5.png" alt="Addings to project source">
 
-In this GitHub repository there are two applications (VCL and FMX) which constitute two basic examples on how to structure an application (or modify an existing one) so that it offers persistence. These applications, as well as the forms that make them up, can also be imported into the Object Repository in order to be readily available for the creation of other new forms or new applications.
+It is in fact known that "the Singleton" is more of an anti-pattern than a pattern, due to the fact that it is not possible to control his order of destruction respect to other singletons. Even if Forms aren't singleton per se, on some target platforms, as with specific product versions, the forms are destroyed after the singletons used to serialize the attributes on storage mediums. So, forcing the destruction of the forms before the WinMain exits, we can be sure that the Forms' attributes are be correctly saved when the application exits.
+
+In this GitHub repository there are two applications (VCL and FMX) which constitute two basic examples on how to structure a persistent application (or modify an existing one so that it offers persistence.) These applications, as well as the forms that make them up, can also be imported into the Object Repository in order to be readily available for the creation of other new forms or new applications.
 
 Later we will see how to easily manage custom attributes through properties. It is not strictly necessary to use properties, but using them certainly makes the code more readable. Surely you can have granular control, if you want, on the persistence process by calling the library object methods directly without going through macros.
 
@@ -237,7 +247,7 @@ extern PACKAGE TForm1 *Form1;
 
 We can see several additional lines compared to the original file. 
 
-There are two additional includes and one type alias. The type alias is used as base class of TForm1 in place of the more classic TForm:
+There are two additional includes and one type alias. The type alias is used as base class of `TForm1` in place of the more classic `TForm`:
 
 ```cpp
 ...
@@ -289,13 +299,13 @@ private:    // User declarations
     };
 ```
 
-Proceding step by step in the explanation, it's possible to note a non-static member variable named selectedFontName_ which name is self explanatory. This variable is directly connected to the getter of the property SelectedFontName. The setter of the SelectedFontName property is linked to the TForm1's non-static and non-const member function, called SetSelectedFontName. The presence of this property is important (despite it is a private member), since it allows you to store and retrieve very easily the attribute it represents, that is, with only two lines of code: one used to retrieve the value and the other to save the latter.
+Proceding step by step in the explanation, it's possible to note a non-static member variable named `selectedFontName_` which name is self explanatory. This variable is directly connected to the getter of the property `SelectedFontName`. The setter of the `SelectedFontName` property is linked to the `TForm1`'s non-static and non-const member function, called `SetSelectedFontName`. The presence of this property is important (despite it is a private member), since it allows you to store and retrieve very easily the attribute it represents, that is, with only two lines of code: one used to retrieve the value and the other to save the latter.
 
 The other methods are only the result of a simple functional decomposition aimed at simplifying the reading of the code (and, obviously, to make the toxicity-metric utilities happy).
 
-Now all that remains is to look at the implementation of the methods, and provide the event handlers for the combobox that contains the list of fonts and for the timer that updates the lblClock caption. In reality, there is another important thing (mentioned previously) to do: provide for the destruction of the forms before the application returns from the WinMain function. But we'll see it later.
+Now all that remains is to look at the implementation of the methods, and provide the event handlers for the combobox that contains the list of fonts and for `Timer1`, the timer that updates the `lblClock` caption. In reality, there is another important thing (mentioned previously) to do: provide for the destruction of the forms before the application returns from the WinMain function. But we'll see it later.
 
-Let's implement the two (empty) event handlers by double clicking on Timer1 and comboboxFontName:
+Let's implement the two (empty) event handlers by double clicking on `Timer1` and `comboboxFontName`:
 
 <img src="https://i.ibb.co/hFktX8x/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-19.png" alt="Generating event handlers">
 
@@ -415,9 +425,34 @@ void TForm1::SaveProperties() const
 
 Now let's dissect the newly pasted code. 
 
-The 
+We have two constructor respect to the one usually proposed by the default template application generated by the IDE.
 
+```cpp
+__fastcall TForm1::TForm1(TComponent* Owner)
+    : TForm1( Owner, StoreOpts::All, nullptr )
+{
+}
+//---------------------------------------------------------------------------
 
+__fastcall TForm1::TForm1( TComponent* Owner, StoreOpts StoreOptions,
+                           Anafestica::TConfigNode* const RootNode )
+    : TConfigRegistryForm( Owner, StoreOptions, RootNode )
+{
+    selectedFontName_ = Label1->Font->Name;
+    SetupCaption();
+    LoadFontListUIControl();
+    RestoreProperties();
+    SelectCurrentFont();
+}
+```
+
+The first is a forwarding constructor which proposes some default values ​​to the second constructor, which is the constructor who does the real job. The second constructor, respect to a standard TForm constructor, takes two additiona parameters: the former is enum which tells which form's attributes are to be stored when the form closes (all, only position, only size, none... etc); the second parameter it's a pointer to a specific node object which estabilish the position of the Form's attributes (and also the custom additional attributes) on the related storage medium along with the implicitly associated format (if this pointer is null, will be chosen an appropriate default object). Next, in the constructor body, we have several statements.
+
+This line assigns a default value for `selectedFontName_`, and doing so is important because it takes the value from the GUI, as it was originally designed. No surprise for the default value because at run time, when the application is run for the first time, the control appears as it was designed in the IDE.
+
+```cpp
+    selectedFontName_ = Label1->Font->Name;
+```
 
 
 It use a TComboBox which will be filled with the list of fonts present on the system each time the application is started. 
@@ -489,4 +524,4 @@ int WINAPI _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)
 //---------------------------------------------------------------------------
 ```
 
-**TO BE CONTINUED**
+*TO BE CONTINUED*

@@ -419,7 +419,7 @@ Finally, set the `comboboxFontName` to reflect the font name just restored from 
     SelectCurrentFont();
 ```
 
-Let's spend a few words for the destructor. A destructor who throws exceptions is known to be evil. As the destructor is responsible for writing the custom attributes on the node associated with the form, it must protect himself from any exceptions that could occur in the calling of SaveProperties() function.
+Let's spend a few words for the destructor. A destructor who throws exceptions is known to be evil. As the destructor is responsible for writing the custom attributes on the node associated with the form, it must protect himself from any exceptions that could occur in the calling of `SaveProperties()` function.
 
 ```cpp
 __fastcall TForm1::~TForm1()
@@ -432,7 +432,9 @@ __fastcall TForm1::~TForm1()
 }
 ```
 
-Now, the two key-functions, namely `SaveProperties` and `RestoreProperties`. They are responsible for retrieving and storing additional form attributes. In this sample, they use two macros that greatly simplify the job: the `RESTORE_LOCAL_PROPERTY` macro for retrieving the attribute, and the `SAVE_LOCAL_PROPERY` macro for storing it. For each property you want to make persistent, you have to add the corresponding lines in the `SaveProperties` or the `RestoreProperties` functions. The particle _LOCAL_ in the macro names means that the attribute is saved or restored in the main form's node, i.e. "local" to the form itself.
+The `SaveProperties()' function stores all the custom attributes into the container.
+
+Now, let's discuss the two key-functions, namely `SaveProperties` and `RestoreProperties`. They are responsible for retrieving and storing additional form attributes. In this sample, they use two macros that greatly simplify the job: the `RESTORE_LOCAL_PROPERTY` macro for retrieving the attribute, and the `SAVE_LOCAL_PROPERTY` macro for storing it. For each property you want to make persistent, you have to add the corresponding lines in the `SaveProperties` or the `RestoreProperties` functions. The particle *LOCAL* in the macro names means that the attribute is saved or restored in the main form's node, i.e. "local" to the form itself.
 
 
 ```cpp

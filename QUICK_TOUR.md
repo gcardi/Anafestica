@@ -6,7 +6,7 @@ Here's how it could be the form layout:
 
 <img src="https://i.ibb.co/t4hqQFz/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-8.png" alt="Demo app screenshot">
 
-The application is simple. Get the persistence of the form and of the custom attributes "by hand" is not so simple: requires to write a fair amount of code. On the other hand, using the Anafestica library greatly simplify the process: in short, it only takes a few lines of code to save a form in the Windows registry, as it's possible to see below:
+The application is conceptually simple. Alas, obtaining the persistence of the form and the custom attributes, "by hand", is not so simple: it requires writing a fair amount of code. On the other hand, using the Anafestica library greatly simplify the process: in short, it only takes a few lines of code to save a form in the Windows registry, as it's possible to see below:
 
 <img src="https://i.ibb.co/4RMBg1Y/1.png" alt="Sample header file">
 
@@ -16,17 +16,17 @@ The whole story is a little longer, and the meaning of those lines of code will 
 
 As this application must use the Windows Registry, a question immediately comes to mind: where are the attributes of the form stored? In particular, which place in the Windows Registry? 
 
-The answer is easy. In the most obvious place: in the `HKCU/Software/_Vendor/Product/Version_` registry key.
+The answer is easy. In the most obvious place: in the `HKCU\Software\Vendor\Product\Version\FormName\` registry key.
 
-Where the hell does the *Vendor*, *Product*, and *Version* parts get the library from? How does the library user set these values? Also, this answer is simple: from the project's version info keys. Namely:
+The *FormName* part is taken from the `Name` property of the  `Form1` object, but where the *Vendor*, *Product*, and *Version* parts get the library from? How does the library user set these values? The answer is simple: from the project's version info keys. Namely:
 
 <img src="https://i.ibb.co/x3ZK9gZ/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-3.png" alt="Project Info Keys sample settings">
 
-So, the position, size, and the state for the Form1 are stored in:
+So, the position, size, and the state for the Form1 are stored in `HKCU\Software\TestCompany\TestAnafestica\1.0\Form1\`:
 
 <img src="https://i.ibb.co/ws7wRyp/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-4.png" alt="Sample registry node layout">
 
-Note that, as the form was never closed when it was maximized or minimized, the state of the form has not been saved. Yes, just right, the library only saves values other than the default.
+As the form was never closed when it was maximized or minimized, the state of the form has not been saved. Yes, just right, the library only saves values other than the default.
 
 Since the library usually uses one or more singletons for the serialization process, the other few lines of code (to be added only once), are used to ensure that the application forms are destroyed before the singletons gone. To ensure correct behavior, you need to add a few lines the project source file as:
 

@@ -38,15 +38,15 @@ In this GitHub repository there's [the clock gadget example](Demo/VCLSimpleDemo)
 
 Now let's see how to build it from scratch.
 
-Let's create a new VCL application for C++ Builder: 
+Create a new VCL application for C++ Builder: 
 
 <img src="https://i.ibb.co/KrL66P5/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-9.png" alt="C++ VCL app creation">
 
-Next, let's add the 64-bit platform for Windows:
+Next, add the 64-bit platform for Windows:
 
 <img src="https://i.ibb.co/59VN2Rq/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-10.png" alt="Add the 64 bit platform for Windows">
 
-Now let's make some essential "adjustments" to the project. From the Project->Options menu (Shift + Ctrl + F11):
+Now make some essential "adjustments" to the project. From the Project->Options menu (Shift + Ctrl + F11):
 
 Turn off the "classic C++ compiler" (it's better to do it for all the platforms):
 
@@ -66,19 +66,19 @@ Now **close** the project.
 
 Why it's necessary to close the project? Because the template project contained in the IDE and used to initially create this application, as it is, doesn't propagate the settings you made so far on all the platforms and their associated configurations. So now, with a simple text editor, it's possible to remove the problematic lines inside the project file (.cbproj).
 
-Let's create before a backup copy of the main configuration file of the project then open it in an editor:
+Create a backup copy of the main project file (.cbproj). Then open the original file in an editor:
 
 <img src="https://i.ibb.co/PGrNRth/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-14.png" alt="Fix project file from broken template"></a>
 
-Now, let's edit the file: hence, let's remove all `<VerInfo_Keys>` tags from all nodes except the first one, which is usually `<PropertyGroup Condition = "'$ (Base)'! = ''">`:
+Now, edit the file: hence, remove all `<VerInfo_Keys>` tags from all nodes except the first one, which is usually `<PropertyGroup Condition = "'$ (Base)'! = ''">`:
   
 <img src="https://i.ibb.co/LJDXWnm/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-15.png" alt="Clear extra Ver Info Keys">
 
-Let's save the modified project file, then reopen it in the IDE. If you have problems, let's take the backup copy and try again.
+Save the modified project file, then reopen it in the IDE. If you have problems, take the backup copy and try again.
 
 Now, let's reduce the size of the main form a bit: for example, with the Width property set to 340 and the Height property to 200. 
 
-Next, let's copy into the clipboard the following snippet, then paste it into the main form (right-click on the form then select Edit -> Paste from the context menu). This creates the necessary components without needs to drag them from the IDE's component palette:
+Next, copy into the clipboard the following snippet, then paste it into the main form (right-click on the form then select Edit -> Paste from the context menu). This creates the necessary components without needs to drag them from the IDE's component palette:
 
 ```dfm
 object lblClock: TLabel
@@ -126,7 +126,7 @@ Now the main form should look like:
 
 <img src="https://i.ibb.co/zn0Hz91/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-18.png" alt="Complete GUI">
 
-At this point, let's modify the Unit1.h file (the header file of the main form) as the following (you can copy and paste these lines directly in the code editor for the Unit1.h file):
+At this point, modify the Unit1.h file (the header file of the main form) as the following (you can copy and paste these lines directly in the code editor for the Unit1.h file):
 
 ```cpp
 //---------------------------------------------------------------------------
@@ -393,13 +393,13 @@ This line assigns a default value for `selectedFontName_`. Doing so is important
     selectedFontName_ = Label1->Font->Name;
 ```
 
-Then we set the main form caption:
+This sets the main form caption:
 
 ```cpp
     SetupCaption();
 ```
     
-Now, `comboboxFontName` filled with the list of fonts present on the system each time the application starts. 
+Now, `comboboxFontName` is filled with the list of fonts present on the system each time the application starts. 
 
 ```cpp
     LoadFontListUIControl();
@@ -411,13 +411,13 @@ Then, read all the custom properties. We will go deeper in the description of th
     RestoreProperties();
 ```
 
-Finally, set the `comboboxFontName` to reflect the font name just restored from the Windows Registry.
+Finally, the next line sets the `comboboxFontName` to reflect the font name just restored from the Windows Registry.
 
 ```cpp
     SelectCurrentFont();
 ```
 
-Let's spend a few words for the destructor. A destructor who throws exceptions is known to be evil. As the destructor is responsible for writing the custom attributes on the node associated with the form, it must protect himself from any exceptions that could occur in the calling of `SaveProperties()` function.
+Let's spend a few words for the destructor. A destructor who throws exceptions is known to be evil. As the destructor is responsible for writing the custom attributes on the node associated with the form, it must protect itself from any exceptions that could occur in the calling of `SaveProperties()` function.
 
 ```cpp
 __fastcall TForm1::~TForm1()
@@ -430,7 +430,7 @@ __fastcall TForm1::~TForm1()
 }
 ```
 
-The `SaveProperties()' function stores all the custom attributes into the container.
+The `SaveProperties()' function has the responsibility is to store all the custom attributes into the container.
 
 Now, let's discuss the two key-functions, namely `SaveProperties` and `RestoreProperties`. They are responsible for retrieving and storing additional form attributes. In this sample, they use two macros that greatly simplify the job: the `RESTORE_LOCAL_PROPERTY` macro for retrieving the attribute, and the `SAVE_LOCAL_PROPERTY` macro for storing it. For each property you want to make persistent, you have to add the corresponding lines in the `SaveProperties` or the `RestoreProperties` functions. The particle *LOCAL* in the macro names means that the attribute is saved or restored in the main form's node, i.e. "local" to the form itself.
 
@@ -501,17 +501,17 @@ int WINAPI _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)
 //---------------------------------------------------------------------------
 ```
 
-Ok!
+Ok! We're almost done.
 
-Let's compile the application and run it.
+Compile the application, then run it.
 
 <img src="https://i.ibb.co/17yWWNQ/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-20.png" alt="First run">
 
-Now let's select another font and move the form in a different screen position or change the size.
+Now select a font different from the default one, then move the form in a different screen position or change the size.
 
 <img src="https://i.ibb.co/60sspnX/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-21.png" alt="Font and position is changed">
 
-Let's close the application and have a look at the Registry:
+Close the application and have a look at the Registry:
 
 <img src="https://i.ibb.co/0rWs9QJ/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-22.png" alt="The registry after the first application run">
 

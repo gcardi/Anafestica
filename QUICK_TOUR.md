@@ -126,7 +126,7 @@ Now the main form should look like:
 
 <img src="https://i.ibb.co/zn0Hz91/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-18.png" alt="Complete GUI">
 
-At this point, we can modify the Unit1.h file (the header file of the main form) as the following (you can copy and paste these lines directly in the code editor for the Unit1.h file):
+At this point, let's modify the Unit1.h file (the header file of the main form) as the following (you can copy and paste these lines directly in the code editor for the Unit1.h file):
 
 ```cpp
 //---------------------------------------------------------------------------
@@ -185,9 +185,7 @@ extern PACKAGE TForm1 *Form1;
 #endif
 ```
 
-We can see several additional lines compared to the original file. 
-
-There are two additional includes and one type-alias. The type-alias is the base class of `TForm1` in place of the more classic `TForm`:
+Compared to the original file, there are two additional includes and one type-alias. The type-alias is the base class of `TForm1` in place of the more classic `TForm`:
 
 ```cpp
 ...

@@ -15,13 +15,13 @@ The current library version includes the serializer for the Windows Registry onl
 
 ## Getting Started
 
-The library itself is made only by header files and therefore it is easy to use and to include in the codebase and does not require additional compilation steps: just needs to include the necessary header files in the project. Can also be used in contexts other than GUI applications, but its real advantages are seen in the writing of the latter, where it certainly simplifies the management of the persistence of application attributes such as the position, size, and state of the forms, up to the settings of the whole application.
+The library itself is made only by header files and therefore it is easy to use and to include in the codebase and does not require additional compilation steps: just needs to include the necessary header files into the project. Can also be used in contexts other than GUI applications, but its real advantages are seen in the writing of the latter, where it certainly simplifies the management of the persistence of application attributes such as the position, size, and state of the forms, up to the settings of the whole application.
 
 ### Prerequisites / Dependecies
 
 It is necessary to install the boost libraries first. Anafestica uses "boost::variant" instead of "std::variant" due to an unresolved bug in the standard C++Builder's library, which prevents direct assignment of values to std::variant (See (https://quality.embarcadero.com/browse/RSP-27418) on Embarcadero Quality Portal).
 
-The boost-variant class is contained in one of the boost project libraries. So it's necessary to get the needed boost library. Luckily, it's possible to use the IDE's GetIt tool to install seamlessly the boost libraries (e.g. 1.68.0 for Rad Studio 10.3 or 1.70.0 for Rad Studio 10.4).
+The "boost::variant" class is contained in one of the boost project libraries. So it's necessary to obtain "boost libraries" first. Luckily, it's possible to use the IDE's GetIt tool to install seamlessly the boost libraries (e.g. 1.68.0 for Rad Studio 10.3 or 1.70.0 for Rad Studio 10.4).
 
 <img src="https://i.ibb.co/FmPznnX/3-611-D020-B-2-C12-4839-8567-A7-E8-A650940-E.png" alt="Figure 3">
 

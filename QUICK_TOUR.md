@@ -12,9 +12,13 @@ The application is simple. Get the persistence of the form and of the custom att
 
 <img src="https://i.ibb.co/TBNYKRk/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-2.png" alt="Sample implementation">
 
-But the whole story is a little longer. For example, where are the attributes of the form stored? In particular, which place in the Windows Registry? In the most obvious place: in the `HKCU/Software/_Vendor/Product/Version_` registry key.
+The whole story is a little longer, and the meaning of those lines of code will be revealed shortly, but it's immediately possible to note that the amount of additional code is minimal.
 
-But where the hell does the *Vendor*, *Product*, and *Version* parts get the library from? How does the library user set these values? The answer is simple: from the project's version info keys. Namely:
+As this application must use the Windows Registry, a question immediately comes to mind: where are the attributes of the form stored? In particular, which place in the Windows Registry? 
+
+The answer is easy. In the most obvious place: in the `HKCU/Software/_Vendor/Product/Version_` registry key.
+
+Where the hell does the *Vendor*, *Product*, and *Version* parts get the library from? How does the library user set these values? Also, this answer is simple: from the project's version info keys. Namely:
 
 <img src="https://i.ibb.co/x3ZK9gZ/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-3.png" alt="Project Info Keys sample settings">
 
@@ -24,13 +28,13 @@ So, the position, size, and the state for the Form1 are stored in:
 
 Note that, as the form was never closed when it was maximized or minimized, the state of the form has not been saved. Yes, just right, the library only saves values other than the default.
 
-Since the library uses one or more singletons for the serialization process, the other few lines of code (to be added only once), are used to ensure that the application forms are destroyed before the singletons gone. To ensure correct behavior, you need to modify the project source file as:
+Since the library usually uses one or more singletons for the serialization process, the other few lines of code (to be added only once), are used to ensure that the application forms are destroyed before the singletons gone. To ensure correct behavior, you need to add a few lines the project source file as:
 
 <img src="https://i.ibb.co/gt7MDYs/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-5.png" alt="Addings to project source">
 
-To manage custom attributes would be better to use properties. It is not strictly necessary to use properties, but using them makes the code more readable. Properties are very handful when used along with some library macro. Surely it's possible to have more granular control over the persistence process, by calling the library classes' methods directly instead of using the aforementioned macros. 
+To manage custom attributes would be better to use properties. It is not strictly necessary to use properties, but using them makes the code more readable. Properties are very handful when used along with some library macro. Surely it's possible to have more granular control over the persistence process, by calling the library classes' methods directly instead of using the aforementioned macros, but the macros use makes life easier.
 
-However, before starting it's better to know that the following operations can be skipped by loading one of the reference applications in Anafestica/App (then saving them as a copy in a different place) or by saving a prototype of a "typical" application into the IDE's object repository for subsequent use, so as not to have to repeatedly perform the subsequent steps for each new project.
+However, before continuing, it is better to know that all the steps described here can be skipped by loading one of the reference applications in the [App](Appl) folder (then saving them as a copy in a different place) or saving a prototype of "typical application" in the IDE's object repository for subsequent use, so you don't have to do repeatedly the next steps for each new project.
 
 In this GitHub repository there's [the clock gadget example](Demo/VCLSimpleDemo) that will be replicated in the following steps. As it uses properties along with macros, it is one of the simplest scenarios for the management of persistent attributes.
 

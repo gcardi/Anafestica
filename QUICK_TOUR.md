@@ -503,4 +503,20 @@ int WINAPI _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)
 //---------------------------------------------------------------------------
 ```
 
+Ok!
 
+Let's compile the application and run it.
+
+<img src="https://i.ibb.co/17yWWNQ/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-20.png" alt="First run">
+
+Now let's select another font and move the form in a different screen position or change the size.
+
+<img src="https://i.ibb.co/60sspnX/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-21.png" alt="Font and position is changed">
+
+Let's close the application and have a look at the Registry:
+
+<img src="https://i.ibb.co/0rWs9QJ/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-22.png" alt="The registry after the first application run">
+
+Finally, it's possible to see that the Form1's screen coordinates were written along with the name of the selected font. Note that the _REG_SZ_ value containing the font name was written with the name _SelectedFontName_, i.e. the same chosen name for the property in the source code. Also, note that the _State_ of the form (i.e Normal, maximized, or Minimized) wasn't written: this because the form's state still is "Normal", i.e the default value, like designed for TForm1 in the IDE. Yes, the library (at least for the Registry) saves only values different from defaults.
+
+Of course, it's possible to have subnodes or nodes relative to the application's base key, i.e. at the same level of Form1's key, but they are slightly more advanced topics to treat in other documents.

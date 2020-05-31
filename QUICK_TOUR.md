@@ -18,7 +18,7 @@ As this application must use the Windows Registry, a question immediately comes 
 
 The answer is easy. In the most obvious place: in the `HKCU\Software\Vendor\Product\Version\FormName\` registry key.
 
-The *FormName* part is taken from the `Name` property of the  `Form1` object, but where the *Vendor*, *Product*, and *Version* parts get the library from? How does the library user set these values? The answer is simple: from the project's version info keys. Namely:
+The *FormName* part is taken from the `Name` property of the  `Form1` object, but where the *Vendor*, *Product*, and *Version* parts come from? How does the library user set these values? The answer is simple: from the project's version info keys. Namely:
 
 <img src="https://i.ibb.co/x3ZK9gZ/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-3.png" alt="Project Info Keys sample settings">
 
@@ -26,21 +26,19 @@ So, the position, size, and the state for the Form1 are stored in `HKCU\Software
 
 <img src="https://i.ibb.co/ws7wRyp/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-4.png" alt="Sample registry node layout">
 
-As the form was never closed when it was maximized or minimized, the state of the form has not been saved. Yes, just right, the library only saves values other than the default.
-
-Since the library usually uses one or more singletons for the serialization process, the other few lines of code (to be added only once), are used to ensure that the application forms are destroyed before the singletons gone. To ensure correct behavior, you need to add a few lines the project source file as:
+Since the library, usually, uses one or more singletons for the serialization process, the other few lines of code (to be added only once), are used to ensure that the application forms are destroyed before the singletons gone. To ensure correct behavior, you need to add a few lines the project source file, as in the following snippet:
 
 <img src="https://i.ibb.co/gt7MDYs/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-5.png" alt="Addings to project source">
 
-To manage custom attributes would be better to use properties. It is not strictly necessary to use properties, but using them makes the code more readable. Properties are very handful when used along with some library macro. Surely it's possible to have more granular control over the persistence process, by calling the library classes' methods directly instead of using the aforementioned macros, but the macros use makes life easier.
+To manage custom attributes is better to use properties. It is not strictly necessary to use properties, but using them makes the code more readable. Properties are very handful when used along with some library macro. However, it's possible to have more granular control over the persistence process, by calling the library classes' methods directly instead of using the aforementioned macros, but the macros use makes life smoother.
 
-However, before continuing, it is better to know that all the steps described here can be skipped by loading one of the reference applications in the [App](Appl) folder (then saving them as a copy in a different place) or saving a prototype of "typical application" in the IDE's object repository for subsequent use, so you don't have to do repeatedly the next steps for each new project.
+> *Before continuing, it is better to know that all the steps described here can be skipped by loading one of the reference applications in the [App](Appl) folder (then saving them as a copy in a different place) or saving a prototype of "typical application" in the IDE's object repository for subsequent use, so you don't have to repeat the next steps for each new project.*
 
 In this GitHub repository there's [the clock gadget example](Demo/VCLSimpleDemo) that will be replicated in the following steps. As it uses properties along with macros, it is one of the simplest scenarios for the management of persistent attributes.
 
-The structure of this application is very simple. Now let's see how to build it from scratch.
+Now let's see how to build it from scratch.
 
-Let's create a new VCL application for C ++ Builder: 
+Let's create a new VCL application for C++ Builder: 
 
 <img src="https://i.ibb.co/KrL66P5/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-9.png" alt="C++ VCL app creation">
 
@@ -54,9 +52,11 @@ Turn off the "classic C++ compiler" (it's better to do it for all the platforms)
 
 <img src="https://i.ibb.co/7NGKxzm/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-12.png" alt="Turn off classic C++ compiler">
 
-Set the appropriate values for *CompanyName*, *ProductName*, and *ProductVersion* in the version info keys for all platforms. Note: if you skip this step, when you start the application it will give you a "resource not found error". The application needs these values because it uses them to access the `HKCU\CompanyName\ProductName\ProductVersion` path in the Windows Registry.
+Set the appropriate values for *CompanyName*, *ProductName*, and *ProductVersion* in the version info keys for all platforms. 
 
 <img src="https://i.ibb.co/qdDQQP3/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-13.png" alt="Set version info keys">
+
+> *Note: if you skip the previous step, when you start the application it will give you a "resource not found error". The application needs these values because it uses them to access the `HKCU\CompanyName\ProductName\ProductVersion` path in the Windows Registry.*
 
 Let's save the project.
 
@@ -64,9 +64,9 @@ Let's save the project.
 
 Now **close** the project.
 
-Why the hell it's necessary to close the project? Because the template project contained in the IDE and used to initially create this application, as it is, doesn't propagate the settings you made so far on all the platforms and their associated configurations. So now, with a simple text editor, it's possible to remove the problematic lines inside the project file (.cbproj).
+Why it's necessary to close the project? Because the template project contained in the IDE and used to initially create this application, as it is, doesn't propagate the settings you made so far on all the platforms and their associated configurations. So now, with a simple text editor, it's possible to remove the problematic lines inside the project file (.cbproj).
 
-Let's create a backup copy of the main configuration file of the project then open it in an editor:
+Let's create before a backup copy of the main configuration file of the project then open it in an editor:
 
 <img src="https://i.ibb.co/PGrNRth/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-14.png" alt="Fix project file from broken template"></a>
 
@@ -78,7 +78,7 @@ Let's save the modified project file, then reopen it in the IDE. If you have pro
 
 Now, let's reduce the size of the main form a bit: for example, with the Width property set to 340 and the Height property to 200. 
 
-Next, let's copy into the clipboard the following snippet, then paste it into the main form:
+Next, let's copy into the clipboard the following snippet, then paste it into the main form (right-click on the form then select Edit -> Paste from the context menu). This creates the necessary components without needs to drag them from the IDE's component palette:
 
 ```dfm
 object lblClock: TLabel
@@ -101,15 +101,6 @@ object lblClock: TLabel
   ExplicitWidth = 331
   ExplicitHeight = 184
 end
-```
-
-Now the main form should have this look:
-
-<img src="https://i.ibb.co/JjDNWWQ/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-16.png" alt="Main Form with label control">
-
-Add this snippet to the form: i.e., copy and paste it directly to the form in the Designer:
-
-```dfm
 object comboboxFontName: TComboBox
   Left = 24
   Top = 24
@@ -131,7 +122,7 @@ object Timer1: TTimer
 end
 ```
 
-Now the form should be like this:
+Now the main form should look like:
 
 <img src="https://i.ibb.co/zn0Hz91/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-18.png" alt="Complete GUI">
 

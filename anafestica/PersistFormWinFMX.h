@@ -62,7 +62,11 @@ __fastcall TPersistFormWinFMX<CfgSingleton>::TPersistFormWinFMX(
     , storeOptions_( StoreOptions )
     , configNode_( GetOrCreateConfigNode( RootNode ) )
 {
-    ReadValues();
+	try {
+    	ReadValues();
+    }
+    catch ( ... ) {
+    }
 }
 //---------------------------------------------------------------------------
 
@@ -76,7 +80,11 @@ __fastcall TPersistFormWinFMX<CfgSingleton>::TPersistFormWinFMX(
     , storeOptions_( StoreOptions )
     , configNode_( GetOrCreateConfigNode( RootNode ) )
 {
-    ReadValues();
+	try {
+    	ReadValues();
+    }
+    catch ( ... ) {
+    }
 }
 //---------------------------------------------------------------------------
 

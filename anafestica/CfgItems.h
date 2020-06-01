@@ -330,9 +330,9 @@ void TConfigNode::Write( W& Writer, String Id ) const
 
 #define RESTORE_VALUE( NODE, KEY_NAME, VALUE ) \
 {\
-    std::remove_reference_t< decltype( VALUE )> Tmp{ VALUE }; \
-    ( NODE ).GetItemAs( ( KEY_NAME ), Tmp ); \
-    VALUE = Tmp; \
+	std::remove_reference_t< decltype( VALUE )> Tmp{ VALUE }; \
+	( NODE ).GetItemAs( ( KEY_NAME ), Tmp ); \
+	VALUE = Tmp; \
 }
 
 #define SAVE_VALUE( NODE, KEY_NAME, VALUE ) \

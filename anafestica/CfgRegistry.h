@@ -345,7 +345,7 @@ size_t TRegistry::ReadStringsTo( String Name, OutIt It )
         throw ERegistryException( &_SInvalidRegType, ARRAYOFCONST(( Name )) );
     }
 
-    // deduce il tipo di ritorno dalla funzione stessa
+	// deduces the return type from the function itself
     decltype( ReadStringsTo( Name, It ) ) Cnt {};
 
     auto Start = std::begin( Data );
@@ -478,32 +478,32 @@ protected:
                 "(ll)|" "(ull)|" "(b)|"   "(sz)|"
                 "(dt)|" "(flt)|" "(dbl)|" "(cur)|"
                 "(sl)|" "(sv)|"  "(dab)|" "(vb)"
-            "))\\))\?$"
-        );
+			"))\\))\?$"
+		);
 
-        using RegObjType = std::remove_reference_t<decltype( *registry_ )>;
+		using RegObjType = std::remove_reference_t<decltype( *registry_ )>;
 
-        using ValueBuilder =
-            std::function<
-                TConfigNodeValueType (
-                    RegObjType &, // Registry Object
-                    String        // Key Name
-                )
-            >;
+		using ValueBuilder =
+			std::function<
+				TConfigNodeValueType (
+					RegObjType &, // Registry Object
+					String        // Key Name
+				)
+			>;
 
-        std::array<ValueBuilder,20> Builders {
-            // CLASS  TAG      REG_TYPE      API
-            // -----  -------  ------------  ----------------
+		static std::array<ValueBuilder,20> Builders {
+			// CLASS  TAG      REG_TYPE      API
+			// -----  -------  ------------  ----------------
 
-            // i32    (i)      REG_DWORD     ReadInteger
-            []( RegObjType& Reg, String KeyName ) {
-                return Reg.ReadInteger( KeyName );
-            },
+			// i32    (i)      REG_DWORD     ReadInteger
+			[]( RegObjType& Reg, String KeyName ) {
+				return Reg.ReadInteger( KeyName );
+			},
 
-            // u32    (u)      REG_DWORD     ReadInteger
-            []( RegObjType& Reg, String KeyName ) {
-                return static_cast<unsigned>( Reg.ReadInteger( KeyName ) );
-            },
+			// u32    (u)      REG_DWORD     ReadInteger
+			[]( RegObjType& Reg, String KeyName ) {
+				return static_cast<unsigned>( Reg.ReadInteger( KeyName ) );
+			},
 
             // i32    (l)      REG_DWORD     ReadInteger
             []( RegObjType& Reg, String KeyName ) {
@@ -548,9 +548,9 @@ protected:
             // u8     (b)      REG_DWORD     ReadInteger
             []( RegObjType& Reg, String KeyName ) {
                 return static_cast<bool>( Reg.ReadInteger( KeyName ) );
-            },
+			},
 
-            // sz     (sz)     REG_SZ        ReadString
+			// sz     (sz)     REG_SZ        ReadString
             []( RegObjType& Reg, String KeyName ) {
                 return Reg.ReadString( KeyName );
             },
@@ -599,9 +599,9 @@ protected:
 
             // vb     (vb)     REG_BINARY    ReadBinaryDataTo
             []( RegObjType& Reg, String KeyName ) {
-                auto Size = Reg.GetDataSize( KeyName );
+				auto Size = Reg.GetDataSize( KeyName );
                 if ( Size < 0 ) {
-                    throw Exception(
+					throw Exception(
                         _T( "Registry Key %s\\%s has invalid data size" ),
                         ARRAYOFCONST((
                             Reg.CurrentPath,
@@ -615,95 +615,95 @@ protected:
             },
         };
 
-        struct PutItem {
-            void operator()(
-                TConfigNode::ValueContType& Values,
-                String Name,
-                TConfigNode::ValueType const & Value
-            ) const {
-                TConfigNode::PutItemTo(
-                    Values, Name,
-                    TConfigNode::ValuePairType{
-                        Value, TConfigNode::Operation::None
-                    }
-                );
-            }
-        };
+		struct PutItem {
+			void operator()(
+				TConfigNode::ValueContType& Values,
+				String Name,
+				TConfigNode::ValueType const & Value
+			) const {
+				TConfigNode::PutItemTo(
+					Values, Name,
+					TConfigNode::ValuePairType{
+						Value, TConfigNode::Operation::None
+					}
+				);
+			}
+		};
 
-        TConfigNode::ValueContType Values;
-        if ( OpenKeyReadOnly( KeyName ) ) {
-            auto RegValues = std::make_unique<TStringList>();
-            registry_->GetValueNames( RegValues.get() );
-            cmatch_type ms;
-            for ( auto ValueName : RegValues.get() ) {
-                if ( regex_match( ValueName.c_str(), ms, re ) ) {
-                    auto It = std::begin( ms );
-                    std::advance( It, 1 );
-                    String const Name = It->str().c_str();
-                    std::advance( It, 2 );
-                    It =
-                        find_if(
-                            It, std::end( ms ),
-                            []( auto const & m ) { return m.matched; }
-                        );
-                    if ( It != std::end( ms ) ) {
-                        auto const Idx = distance( std::begin( ms ), It ) - 3;
-                        auto Val = Builders[Idx]( *registry_, ValueName );
-                        PutItem{}( Values, Name, Val );
-                    }
-                    else {
-                        auto [Type,Size] = registry_->GetExDataType( ValueName );
-                        switch ( Type ) {
-                            case TExRegDataType::Binary:
-                                PutItem{}( Values, Name, registry_->ReadBinaryData( ValueName ) );
-                                break;
-                            case TExRegDataType::Dword:
-                                PutItem{}( Values, Name, registry_->ReadInteger( ValueName ) );
-                                break;
-                            case TExRegDataType::MultiSz: {
-                                    // It should use make_shared, but generates an AV on first access
-                                    // See: https://quality.embarcadero.com/browse/RSP-27633
-                                    //auto StringList = std::make_shared<TStringList>();
-                                    auto StringList = std::shared_ptr<TStringList>( new TStringList() );
-                                    registry_->ReadStrings( ValueName, *StringList );
-                                    PutItem{}( Values, Name, StringList );
-                                }
-                                break;
-                            case TExRegDataType::Qword:
-                                PutItem{}(
-                                    Values, Name,
-                                    registry_->ReadQWORD<long long>( ValueName )
-                                );
-                                break;
-                            case TExRegDataType::Sz:
-                                PutItem{}( Values, Name, registry_->ReadString( ValueName ) );
-                                break;
-                            case TExRegDataType::ExpandSz:
-                                PutItem{}( Values, Name, registry_->ReadExpandString( ValueName ) );
-                                break;
-                            default:
-                                throw Exception(
-                                    _T( "Registry Key %s\\%s has an invalid data type" ),
-                                    ARRAYOFCONST((
-                                        registry_->CurrentPath,
-                                        ValueName
-                                    ))
-                                );
-                        }
-                    }
-                }
-            }
-        }
+		TConfigNode::ValueContType Values;
+		if ( OpenKeyReadOnly( KeyName ) ) {
+			auto RegValues = std::make_unique<TStringList>();
+			registry_->GetValueNames( RegValues.get() );
+			cmatch_type ms;
+			for ( auto ValueName : RegValues.get() ) {
+				if ( regex_match( ValueName.c_str(), ms, re ) ) {
+					auto It = std::begin( ms );
+					std::advance( It, 1 );
+					String const Name = It->str().c_str();
+					std::advance( It, 2 );
+					It =
+						find_if(
+							It, std::end( ms ),
+							[]( auto const & m ) { return m.matched; }
+						);
+					if ( It != std::end( ms ) ) {
+						auto const Idx = distance( std::begin( ms ), It ) - 3;
+						auto Val = Builders[Idx]( *registry_, ValueName );
+						PutItem{}( Values, Name, Val );
+					}
+					else {
+						auto [Type,Size] = registry_->GetExDataType( ValueName );
+						switch ( Type ) {
+							case TExRegDataType::Binary:
+								PutItem{}( Values, Name, registry_->ReadBinaryData( ValueName ) );
+								break;
+							case TExRegDataType::Dword:
+								PutItem{}( Values, Name, registry_->ReadInteger( ValueName ) );
+								break;
+							case TExRegDataType::MultiSz: {
+									// It should use make_shared, but generates an AV on first access
+									// See: https://quality.embarcadero.com/browse/RSP-27633
+									//auto StringList = std::make_shared<TStringList>();
+									auto StringList = std::shared_ptr<TStringList>( new TStringList() );
+									registry_->ReadStrings( ValueName, *StringList );
+									PutItem{}( Values, Name, StringList );
+								}
+								break;
+							case TExRegDataType::Qword:
+								PutItem{}(
+									Values, Name,
+									registry_->ReadQWORD<long long>( ValueName )
+								);
+								break;
+							case TExRegDataType::Sz:
+								PutItem{}( Values, Name, registry_->ReadString( ValueName ) );
+								break;
+							case TExRegDataType::ExpandSz:
+								PutItem{}( Values, Name, registry_->ReadExpandString( ValueName ) );
+								break;
+							default:
+								throw Exception(
+									_T( "Registry Key %s\\%s has an invalid data type" ),
+									ARRAYOFCONST((
+										registry_->CurrentPath,
+										ValueName
+									))
+								);
+						}
+					}
+				}
+			}
+		}
 
-        return Values;
-    }
+		return Values;
+	}
 
-    virtual TConfigNode::NodeContType DoCreateNodeList( String KeyName ) override {
-        TConfigNode::NodeContType Nodes;
+	virtual TConfigNode::NodeContType DoCreateNodeList( String KeyName ) override {
+		TConfigNode::NodeContType Nodes;
 
-        if ( OpenKeyReadOnly( KeyName ) ) {
-            auto RegKeys = std::make_unique<TStringList>();
-            registry_->GetKeyNames( RegKeys.get() );
+		if ( OpenKeyReadOnly( KeyName ) ) {
+			auto RegKeys = std::make_unique<TStringList>();
+			registry_->GetKeyNames( RegKeys.get() );
             for ( auto const & Key : RegKeys.get() ) {
                 Nodes[Key] = std::move( std::make_unique<TConfigNode>() );
             }

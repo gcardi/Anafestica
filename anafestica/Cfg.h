@@ -13,7 +13,7 @@ namespace Anafestica {
 
 class TConfig {
 public:
-	TConfig( bool ReadOnly, bool FlushAllItems )
+    TConfig( bool ReadOnly, bool FlushAllItems )
       : readOnly_{ ReadOnly }
       , flushAllItems_{ FlushAllItems }
       , root_( new TConfigNode )
@@ -49,11 +49,11 @@ protected:
     virtual void DoDeleteNode( String KeyName ) = 0;
     virtual void DoFlush() = 0;
 private:
-	using TConfigNodePtr = std::unique_ptr<TConfigNode>;
+    using TConfigNodePtr = std::unique_ptr<TConfigNode>;
 
     bool readOnly_ {};
     bool flushAllItems_ {};
-	TConfigNodePtr root_;
+    TConfigNodePtr root_;
 };
 
 //---------------------------------------------------------------------------

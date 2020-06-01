@@ -19,7 +19,7 @@ namespace Registry {
 
 class TConfigHModSingleton {
 public:
-	Anafestica::TConfig& GetConfig() {
+    Anafestica::TConfig& GetConfig() {
         static auto Cfg =
             std::make_unique<TConfig>(
                 HKEY_CURRENT_USER,
@@ -32,7 +32,7 @@ public:
         return *Cfg;
     }
 private:
-	static String GetProductPath() {
+    static String GetProductPath() {
         TFileVersionInfo const Info(
             GetModuleName( reinterpret_cast<unsigned>( HInstance ) )
         );

@@ -19,23 +19,21 @@ namespace Anafestica {
 class TConfigNode
 {
 public:
-	TConfigNode() = default;
+    TConfigNode() = default;
     TConfigNode( TConfigNode const & ) = delete;
     TConfigNode& operator=( TConfigNode const & ) = delete;
-    //TConfigNode( TConfigNode&& ) = delete;
-    //TConfigNode& operator=( TConfigNode&& ) = delete;
 
-	enum class Operation { None, Write, Erase };
+    enum class Operation { None, Write, Erase };
 
-	using KeyType = String;
+    using KeyType = String;
 
-	using ValueType = TConfigNodeValueType;
+    using ValueType = TConfigNodeValueType;
 
-	using ValuePairType = std::pair<ValueType,Operation>;
-	using TConfigNodePtr = std::unique_ptr<TConfigNode>;
+    using ValuePairType = std::pair<ValueType,Operation>;
+    using TConfigNodePtr = std::unique_ptr<TConfigNode>;
 
-	using ValueContType = std::map<KeyType,ValuePairType>;
-	using NodeContType = std::map<KeyType,TConfigNodePtr>;
+    using ValueContType = std::map<KeyType,ValuePairType>;
+    using NodeContType = std::map<KeyType,TConfigNodePtr>;
 
     TConfigNode& GetSubNode( String Id ) {
         auto p =
@@ -98,7 +96,7 @@ public:
 
     size_t GetNodeCount() const noexcept { return nodeItems_.size(); }
 
-	template<typename OutputIterator>
+    template<typename OutputIterator>
     void EnumerateNodes( OutputIterator Output ) const;
 
     size_t GetValueCount() const noexcept {

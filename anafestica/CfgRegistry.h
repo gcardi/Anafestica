@@ -437,18 +437,16 @@ void TRegistry::WriteStrings( String Name, InIt Begin, InIt End )
 
 class TConfig : public Anafestica::TConfig {
 public:
-	TConfig( HKEY HKey, String RootPath, bool ReadOnly = false,
+    TConfig( HKEY HKey, String RootPath, bool ReadOnly = false,
              bool FlushAllItems = false )
         : Anafestica::TConfig( ReadOnly, FlushAllItems )
         , rootPath_( RootPath ) , hKey_( HKey )
     {
-::OutputDebugString( _T( "CREA" ) );
         RegObjRAII Reg{ *this };
         GetRootNode().Read( *this, String() );
     }
 
-	~TConfig() {
-::OutputDebugString( _T( "DISTRUGGI" ) );
+    ~TConfig() {
         try {
             if ( !GetReadOnlyFlag() ) {
                 DoFlush();
@@ -458,10 +456,8 @@ public:
         }
     }
 
-	TConfig( TConfig const & ) = delete;
-	TConfig& operator=( TConfig const & ) = delete;
-	//TConfig( TConfig&& ) = delete;
-	//TConfig& operator=( TConfig&& ) = delete;
+    TConfig( TConfig const & ) = delete;
+    TConfig& operator=( TConfig const & ) = delete;
 private:
     #if !defined(_UNICODE)
       using regex_type = std::regex;
@@ -473,7 +469,7 @@ private:
       using std_string = std::wstring;
     #endif
 protected:
-	virtual TConfigNode::ValueContType DoCreateValueList( String KeyName ) override {
+    virtual TConfigNode::ValueContType DoCreateValueList( String KeyName ) override {
         regex_type re(
             _T( "" )
             "^(.*\?)(\?::(\\((\?:"
@@ -665,7 +661,8 @@ protected:
                                 PutItem{}( Values, Name, registry_->ReadInteger( ValueName ) );
                                 break;
                             case TExRegDataType::MultiSz: {
-                                    // si dovrebbe usare make_shared, ma da un AV al primo accesso
+                                    // It should use make_shared, but generates an AV on first access
+                                    // See: https://quality.embarcadero.com/browse/RSP-27633
                                     //auto StringList = std::make_shared<TStringList>();
                                     auto StringList = std::shared_ptr<TStringList>( new TStringList() );
                                     registry_->ReadStrings( ValueName, *StringList );
@@ -701,7 +698,7 @@ protected:
         return Values;
     }
 
-	virtual TConfigNode::NodeContType DoCreateNodeList( String KeyName ) override {
+    virtual TConfigNode::NodeContType DoCreateNodeList( String KeyName ) override {
         TConfigNode::NodeContType Nodes;
 
         if ( OpenKeyReadOnly( KeyName ) ) {
@@ -714,7 +711,7 @@ protected:
         return Nodes;
     }
 
-	virtual void DoSaveValueList( String KeyName, TConfigNode::ValueContType const & Values ) override {
+    virtual void DoSaveValueList( String KeyName, TConfigNode::ValueContType const & Values ) override {
         if ( !Values.empty() ) {
             if ( OpenKey( KeyName, true ) ) {
                 for ( auto& v : Values ) {
@@ -735,7 +732,7 @@ protected:
         }
     }
 
-	virtual void DoSaveNodeList( String KeyName, TConfigNode::NodeContType const & Nodes ) override {
+    virtual void DoSaveNodeList( String KeyName, TConfigNode::NodeContType const & Nodes ) override {
         for ( auto const & n : Nodes ) {
             if ( GetAlwaysFlushNodeFlag() || n.second->IsModified() ) {
                 n.second->Write(
@@ -748,33 +745,33 @@ protected:
         }
     }
 
-	virtual void DoDeleteNode( String KeyName ) override { DeleteKey( KeyName ); }
+    virtual void DoDeleteNode( String KeyName ) override { DeleteKey( KeyName ); }
 
-	virtual void DoFlush() override {
+    virtual void DoFlush() override {
         RegObjRAII Reg{ *this };
         GetRootNode().Write( *this, String() );
     }
 
-	virtual bool DoGetForcedWritesFlag() const { return false; }
+    virtual bool DoGetForcedWritesFlag() const { return false; }
 private:
-	String rootPath_;
-	HKEY hKey_;
-	std::unique_ptr<TRegistry> registry_;
+    String rootPath_;
+    HKEY hKey_;
+    std::unique_ptr<TRegistry> registry_;
 
-	void CreateRegistryObject() {
+    void CreateRegistryObject() {
         registry_ =
             std::move( std::make_unique<Anafestica::Registry::TRegistry>() );
         registry_->RootKey = hKey_;
     }
 
-	void DestroyAndCloseRegistryObject() {
+    void DestroyAndCloseRegistryObject() {
         if ( !registry_->CurrentPath.IsEmpty() ) {
             registry_->CloseKey();
         }
         registry_.reset();
     }
 
-	bool OpenKey( String Path, bool CanCreate = false ) {
+    bool OpenKey( String Path, bool CanCreate = false ) {
         String const Key = ExcludeTrailingBackslash( rootPath_ + Path );
         if ( registry_->CurrentPath != Key ) {
             if ( !registry_->CurrentPath.IsEmpty() ) {
@@ -785,7 +782,7 @@ private:
         return true;
     }
 
-	bool OpenKeyReadOnly( String Path ) {
+    bool OpenKeyReadOnly( String Path ) {
         String const Key = ExcludeTrailingBackslash( rootPath_ + Path );
         if ( registry_->CurrentPath != Key ) {
             if ( !registry_->CurrentPath.IsEmpty() ) {
@@ -796,16 +793,16 @@ private:
         return true;
     }
 
-	void SaveValue( TConfigNode::ValueContType::value_type const & v ) {
+    void SaveValue( TConfigNode::ValueContType::value_type const & v ) {
         boost::apply_visitor(
             SaveVisitor{ *registry_, v.first }, v.second.first
         );
     }
 
-	template<typename PairType>
-	void DeleteValue( PairType const & v ) { registry_->DeleteValue( v.first ); }
+    template<typename PairType>
+    void DeleteValue( PairType const & v ) { registry_->DeleteValue( v.first ); }
 
-	void DeleteKey( String Path ) {
+    void DeleteKey( String Path ) {
         auto const Key = ExcludeTrailingBackslash( rootPath_ + Path );
         if ( !registry_->CurrentPath.IsEmpty() ) {
             if ( registry_->CurrentPath == Key ) {

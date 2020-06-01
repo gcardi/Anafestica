@@ -25,7 +25,7 @@ public:
     __fastcall TPersistFormWinFMX( System::Classes::TComponent* Owner,
                                    StoreOpts StoreOptions = StoreOpts::All,
                                    TConfigNode* const RootNode = nullptr );
-	__fastcall TPersistFormWinFMX( System::Classes::TComponent* AOwner,
+    __fastcall TPersistFormWinFMX( System::Classes::TComponent* AOwner,
                                    NativeInt Dummy,
                                    StoreOpts StoreOptions = StoreOpts::All,
                                    TConfigNode* const RootNode = nullptr );

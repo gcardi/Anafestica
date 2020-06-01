@@ -19,11 +19,11 @@ namespace Anafestica {
 // overriding the dynamic functions of delphi is not a problem.
 class TPersistBaseForm : public Vcl::Forms::TForm {
 public:
-	template<typename...A>
-	__fastcall TPersistBaseForm( A...Args )
+    template<typename...A>
+    __fastcall TPersistBaseForm( A...Args )
       : Vcl::Forms::TForm( std::forward<A...>( Args )... ) {}
 protected:
-	DYNAMIC void __fastcall DoShow() {
+    DYNAMIC void __fastcall DoShow() {
         Vcl::Forms::TForm::DoShow();
         DoRestoreState();
     }
@@ -45,10 +45,10 @@ public:
     __fastcall TPersistFormVCL( System::Classes::TComponent* Owner,
                                 StoreOpts StoreOptions = StoreOpts::All,
                                 TConfigNode* const RootNode = nullptr );
-	__fastcall TPersistFormVCL( System::Classes::TComponent* AOwner, int Dummy,
+    __fastcall TPersistFormVCL( System::Classes::TComponent* AOwner, int Dummy,
                                 StoreOpts StoreOptions = StoreOpts::All,
                                 TConfigNode* const RootNode = nullptr );
-	__fastcall TPersistFormVCL( HWND ParentWindow,
+    __fastcall TPersistFormVCL( HWND ParentWindow,
                                 StoreOpts StoreOptions = StoreOpts::All,
                                 TConfigNode* const RootNode = nullptr );
     void __fastcall BeforeDestruction();
@@ -81,7 +81,6 @@ __fastcall TPersistFormVCL<CfgSingleton>::TPersistFormVCL(
                                             System::Classes::TComponent* Owner,
                                             StoreOpts StoreOptions,
                                             TConfigNode* const RootNode )
-//  : Vcl::Forms::TForm( Owner )
   : inherited( Owner )
   , storeOptions_( StoreOptions )
   , configNode_( GetOrCreateConfigNode( RootNode ) )
@@ -94,7 +93,6 @@ __fastcall TPersistFormVCL<CfgSingleton>::TPersistFormVCL(
                                           System::Classes::TComponent* AOwner,
                                           int Dummy, StoreOpts StoreOptions,
                                           TConfigNode* const RootNode )
-  //: Vcl::Forms::TForm( AOwner, Dummy )
   : inherited( AOwner, Dummy )
   , storeOptions_( StoreOptions )
   , configNode_( GetOrCreateConfigNode( RootNode ) )
@@ -106,7 +104,6 @@ template<typename CfgSingleton>
 __fastcall TPersistFormVCL<CfgSingleton>::TPersistFormVCL( HWND ParentWindow,
                                                   StoreOpts StoreOptions,
                                                   TConfigNode* const RootNode )
-  //: Vcl::Forms::TForm( ParentWindow )
   : inherited( ParentWindow )
   , storeOptions_( StoreOptions )
   , configNode_( GetOrCreateConfigNode( RootNode ) )
@@ -210,22 +207,22 @@ void TPersistFormVCL<CfgSingleton>::SaveValues()
         }
         if ( HaveToSaveOrRestorePos( storeOptions_ ) ) {
             SAVE_VALUE(
-            	configNode_, IdLeft_,
-            	static_cast<int>( WndPl.rcNormalPosition.left )
+                configNode_, IdLeft_,
+                static_cast<int>( WndPl.rcNormalPosition.left )
             );
             SAVE_VALUE(
-            	configNode_, IdTop_,
-            	static_cast<int>( WndPl.rcNormalPosition.top )
+                configNode_, IdTop_,
+                static_cast<int>( WndPl.rcNormalPosition.top )
             );
         }
         if ( HaveToSaveOrRestoreSize( storeOptions_ ) ) {
             SAVE_VALUE(
-            	configNode_, IdRight_,
-            	static_cast<int>( WndPl.rcNormalPosition.right )
+                configNode_, IdRight_,
+                static_cast<int>( WndPl.rcNormalPosition.right )
             );
             SAVE_VALUE(
-            	configNode_, IdBottom_,
-            	static_cast<int>( WndPl.rcNormalPosition.bottom )
+                configNode_, IdBottom_,
+                static_cast<int>( WndPl.rcNormalPosition.bottom )
             );
         }
         if ( HaveToSaveOrRestoreState( storeOptions_ ) ) {

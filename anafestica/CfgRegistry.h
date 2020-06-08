@@ -577,13 +577,14 @@ protected:
 
             // sl     (sl)     REG_MULTI_SZ  ReadStrings
             []( RegObjType& Reg, String KeyName ) {
-                // si dovrebbe usare make_shared, ma da un AV al primo accesso
-                //auto StringList = std::make_shared<TStringList>();
-                auto StringList =
-                    std::shared_ptr<TStringList>( new TStringList{} );
-                Reg.ReadStrings( KeyName, *StringList );
-                return StringList;
-            },
+				// It should use make_shared, but generates an AV on first access
+				// See: https://quality.embarcadero.com/browse/RSP-27633
+				//auto StringList = std::make_shared<TStringList>();
+				auto StringList =
+					std::shared_ptr<TStringList>( new TStringList{} );
+				Reg.ReadStrings( KeyName, *StringList );
+				return StringList;
+			},
 
             // sv     (sv)     REG_MULTI_SZ  ReadStringsTo
             []( RegObjType& Reg, String KeyName ) {
@@ -820,20 +821,16 @@ private:
         }
         RegObjRAII( RegObjRAII const & ) = delete;
         RegObjRAII& operator=( RegObjRAII const & ) = delete;
-        //RegObjRAII( RegObjRAII&& ) = delete;
-        //RegObjRAII& operator=( RegObjRAII&& ) = delete;
-    private:
-        TConfig& cfg_;
-    };
+	private:
+		TConfig& cfg_;
+	};
 
-    class SaveVisitor : public boost::static_visitor<void> {
-    public:
-        SaveVisitor( TRegistry& Reg, String Name )
-            : reg_{ Reg }, name_{ Name } {}
-        SaveVisitor( SaveVisitor const & ) = delete;
-        SaveVisitor& operator=( SaveVisitor const & ) = delete;
-        //SaveVisitor( SaveVisitor&& ) = delete;
-        //SaveVisitor& operator=( SaveVisitor&& ) = delete;
+	class SaveVisitor : public boost::static_visitor<void> {
+	public:
+		SaveVisitor( TRegistry& Reg, String Name )
+			: reg_{ Reg }, name_{ Name } {}
+		SaveVisitor( SaveVisitor const & ) = delete;
+		SaveVisitor& operator=( SaveVisitor const & ) = delete;
 
         // REG_BINARY    - Binary data in any form.
         // REG_DWORD     - 32-bit number.
@@ -943,9 +940,9 @@ private:
             );
         }
 
-        void operator()( std::shared_ptr<TStrings> Val ) const {  // sl            REG_MULTI_SZ  WriteStrings
-            //reg_.WriteStrings(
-            //    Format( _T( "%s:(sl)" ), ARRAYOFCONST(( name_ )) ), *Val
+		void operator()( std::shared_ptr<TStrings> Val ) const {  // sl            REG_MULTI_SZ  WriteStrings
+			//reg_.WriteStrings(
+			//    Format( _T( "%s:(sl)" ), ARRAYOFCONST(( name_ )) ), *Val
             //);
             reg_.WriteStrings( name_, *Val );
         }

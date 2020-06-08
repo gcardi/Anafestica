@@ -32,8 +32,8 @@ using TConfigNodeValueType =
       , float
       , double
       , System::Currency
-      , std::shared_ptr<TStrings>
-      , std::vector<String>
+	  , std::shared_ptr<TStrings>
+	  , std::vector<String>
       , TBytes
       , std::vector<Byte>
     >;

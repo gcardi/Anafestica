@@ -24,14 +24,14 @@ public:
       : Vcl::Forms::TForm( std::forward<A...>( Args )... ) {}
 protected:
     DYNAMIC void __fastcall DoShow() {
-		Vcl::Forms::TForm::DoShow();
-		try {
-			DoRestoreState();
-		}
-		catch (...) {
-		}
-	}
-	virtual void DoRestoreState() = 0;
+        Vcl::Forms::TForm::DoShow();
+        try {
+            DoRestoreState();
+        }
+        catch (...) {
+        }
+    }
+    virtual void DoRestoreState() = 0;
 private:
 };
 
@@ -61,7 +61,7 @@ public:
     void ReadValues();
     void SaveValues();
 protected:
-	virtual void DoRestoreState() override;
+    virtual void DoRestoreState() override;
 private:
     static constexpr LPCTSTR IdLeft_{ _T( "Left" ) };
     static constexpr LPCTSTR IdTop_{ _T( "Top" ) };
@@ -117,7 +117,7 @@ __fastcall TPersistFormVCL<CfgSingleton>::TPersistFormVCL( HWND ParentWindow,
 template<typename CfgSingleton>
 void TPersistFormVCL<CfgSingleton>::DoRestoreState()
 {
-	ReadValues();
+    ReadValues();
 }
 //---------------------------------------------------------------------------
 
@@ -145,37 +145,37 @@ void TPersistFormVCL<CfgSingleton>::ReadValues()
     if ( storeOptions_ != StoreOpts::None ) {
         if ( HaveToSaveOrRestorePos( storeOptions_ ) ) {
             int pLeft { BoundsRect.Left };
-			RESTORE_VALUE( configNode_, IdLeft_, pLeft );
-			int pTop { BoundsRect.Top };
-			RESTORE_VALUE( configNode_, IdTop_, pTop );
-			if ( HaveToSaveOrRestoreSize( storeOptions_ ) ) {
-				int pRight { BoundsRect.Right };
-				RESTORE_VALUE( configNode_, IdRight_, pRight );
-				int pBottom {BoundsRect.Bottom };
-				RESTORE_VALUE( configNode_, IdBottom_, pBottom );
-				BoundsRect = TRect( pLeft, pTop, pRight, pBottom );
-			}
-			else {
-				Left = pLeft;
-				Top = pTop;
-			}
-		}
-		else if ( HaveToSaveOrRestoreSize( storeOptions_ ) ) {
-			int pLeft { BoundsRect.Left };
-			RESTORE_VALUE( configNode_, IdLeft_, pLeft );
-			int pRight { BoundsRect.Right };
-			RESTORE_VALUE( configNode_, IdRight_, pRight );
-			int pTop { BoundsRect.Top };
-			RESTORE_VALUE( configNode_, IdTop_, pTop );
-			int pBottom { BoundsRect.Bottom };
-			RESTORE_VALUE( configNode_, IdBottom_, pBottom );
-			Width = pRight - pLeft;
-			Height = pBottom - pTop;
-		}
+            RESTORE_VALUE( configNode_, IdLeft_, pLeft );
+            int pTop { BoundsRect.Top };
+            RESTORE_VALUE( configNode_, IdTop_, pTop );
+            if ( HaveToSaveOrRestoreSize( storeOptions_ ) ) {
+                int pRight { BoundsRect.Right };
+                RESTORE_VALUE( configNode_, IdRight_, pRight );
+                int pBottom {BoundsRect.Bottom };
+                RESTORE_VALUE( configNode_, IdBottom_, pBottom );
+                BoundsRect = TRect( pLeft, pTop, pRight, pBottom );
+            }
+            else {
+                Left = pLeft;
+                Top = pTop;
+            }
+        }
+        else if ( HaveToSaveOrRestoreSize( storeOptions_ ) ) {
+            int pLeft { BoundsRect.Left };
+            RESTORE_VALUE( configNode_, IdLeft_, pLeft );
+            int pRight { BoundsRect.Right };
+            RESTORE_VALUE( configNode_, IdRight_, pRight );
+            int pTop { BoundsRect.Top };
+            RESTORE_VALUE( configNode_, IdTop_, pTop );
+            int pBottom { BoundsRect.Bottom };
+            RESTORE_VALUE( configNode_, IdBottom_, pBottom );
+            Width = pRight - pLeft;
+            Height = pBottom - pTop;
+        }
 
-		if ( HaveToSaveOrRestoreState( storeOptions_ ) ) {
-			RESTORE_VALUE( configNode_, IdState_, WindowState );
-		}
+        if ( HaveToSaveOrRestoreState( storeOptions_ ) ) {
+            RESTORE_VALUE( configNode_, IdState_, WindowState );
+        }
     }
 }
 

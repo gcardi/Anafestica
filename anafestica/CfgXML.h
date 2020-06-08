@@ -13,58 +13,58 @@ namespace XML {
 
 class TConfig : public Anafestica::TConfig {
 public:
-	TConfig( String FileName, bool ReadOnly = false,
-			 bool FlushAllItems = false )
-		: Anafestica::TConfig( ReadOnly, FlushAllItems )
-		, fileName_( FileName )
-	{
-		GetRootNode().Read( *this, String() );
-	}
+    TConfig( String FileName, bool ReadOnly = false,
+             bool FlushAllItems = false )
+        : Anafestica::TConfig( ReadOnly, FlushAllItems )
+        , fileName_( FileName )
+    {
+        GetRootNode().Read( *this, String() );
+    }
 
-	~TConfig() {
-		try {
-			if ( !GetReadOnlyFlag() ) {
-				DoFlush();
-			}
-		}
-		catch ( ... ) {
-		}
-	}
+    ~TConfig() {
+        try {
+            if ( !GetReadOnlyFlag() ) {
+                DoFlush();
+            }
+        }
+        catch ( ... ) {
+        }
+    }
 
-	TConfig( TConfig const & ) = delete;
-	TConfig& operator=( TConfig const & ) = delete;
+    TConfig( TConfig const & ) = delete;
+    TConfig& operator=( TConfig const & ) = delete;
 private:
 protected:
-	virtual TConfigNode::ValueContType DoCreateValueList( String KeyName ) override {
-		TConfigNode::ValueContType Values;
-		return Values;
-	}
+    virtual TConfigNode::ValueContType DoCreateValueList( String KeyName ) override {
+        TConfigNode::ValueContType Values;
+        return Values;
+    }
 
-	virtual TConfigNode::NodeContType DoCreateNodeList( String KeyName ) override {
-		TConfigNode::NodeContType Nodes;
-		return Nodes;
-	}
+    virtual TConfigNode::NodeContType DoCreateNodeList( String KeyName ) override {
+        TConfigNode::NodeContType Nodes;
+        return Nodes;
+    }
 
-	virtual void DoSaveValueList( String KeyName, TConfigNode::ValueContType const & Values ) override {
-		if ( !Values.empty() ) {
+    virtual void DoSaveValueList( String KeyName, TConfigNode::ValueContType const & Values ) override {
+        if ( !Values.empty() ) {
 
-		}
-	}
+        }
+    }
 
-	virtual void DoSaveNodeList( String KeyName, TConfigNode::NodeContType const & Nodes ) override {
-	}
+    virtual void DoSaveNodeList( String KeyName, TConfigNode::NodeContType const & Nodes ) override {
+    }
 
-	virtual void DoDeleteNode( String KeyName ) override {
-	}
+    virtual void DoDeleteNode( String KeyName ) override {
+    }
 
-	virtual void DoFlush() override {
-	}
+    virtual void DoFlush() override {
+    }
 
-	virtual bool DoGetForcedWritesFlag() const {
-		return false;
-	}
+    virtual bool DoGetForcedWritesFlag() const {
+        return false;
+    }
 private:
-	String fileName_;
+    String fileName_;
 };
 
 //---------------------------------------------------------------------------

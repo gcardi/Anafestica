@@ -21,57 +21,57 @@ namespace JSON {
 
 class TConfigSingleton {
 public:
-	Anafestica::TConfig& GetConfig() {
-		static auto Cfg =
-			std::make_unique<TConfig>(
-				GetFileName()
-				/*
-				HKEY_CURRENT_USER,
-				Format(
-					_T( "Software\\%s" ),
-					ARRAYOFCONST(( GetProductPath() ))
-				)
-				*/
-			);
+    Anafestica::TConfig& GetConfig() {
+        static auto Cfg =
+            std::make_unique<TConfig>(
+                GetFileName()
+                /*
+                HKEY_CURRENT_USER,
+                Format(
+                    _T( "Software\\%s" ),
+                    ARRAYOFCONST(( GetProductPath() ))
+                )
+                */
+            );
 
-		return *Cfg;
-	}
+        return *Cfg;
+    }
 private:
-	static String GetFileName()
-	{
-		TFileVersionInfo const Info( ParamStr( {} ) );
-		return
-			TPath::ChangeExtension(
-				TPath::Combine(
-					TPath::Combine(
-						TPath::Combine(
-							TPath::Combine(
-								TPath::GetHomePath(),
-								Info.CompanyName
-							),
-							Info.ProductName
-						),
-						Info.ProductVersion
-					),
-					ExtractFileName( ParamStr( {} ) )
-				),
-				_T( ".json" )
-			);
-	}
+    static String GetFileName()
+    {
+        TFileVersionInfo const Info( ParamStr( {} ) );
+        return
+            TPath::ChangeExtension(
+                TPath::Combine(
+                    TPath::Combine(
+                        TPath::Combine(
+                            TPath::Combine(
+                                TPath::GetHomePath(),
+                                Info.CompanyName
+                            ),
+                            Info.ProductName
+                        ),
+                        Info.ProductVersion
+                    ),
+                    ExtractFileName( ParamStr( {} ) )
+                ),
+                _T( ".json" )
+            );
+    }
 
 /*
-	static String GetProductPath() {
-		TFileVersionInfo const Info( ParamStr( 0 ) );
+    static String GetProductPath() {
+        TFileVersionInfo const Info( ParamStr( 0 ) );
 
-		return Format(
-			_T( "%s\\%s\\%s" ),
-			ARRAYOFCONST( (
-				Info.CompanyName,
-				Info.ProductName,
-				Info.ProductVersion
-			) )
-		);
-	}
+        return Format(
+            _T( "%s\\%s\\%s" ),
+            ARRAYOFCONST( (
+                Info.CompanyName,
+                Info.ProductName,
+                Info.ProductVersion
+            ) )
+        );
+    }
 */
 };
 

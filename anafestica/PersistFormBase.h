@@ -17,8 +17,8 @@ public:
         OnlyState, StateAndSize, StateAndPos, All
     };
 
-	template<typename...A>
-	__fastcall TPersistBaseForm( A...Args )
+    template<typename...A>
+    __fastcall TPersistBaseForm( A...Args )
       : B( std::forward<A...>( Args )... ) {}
 private:
     StoreOpts storeOptions_;

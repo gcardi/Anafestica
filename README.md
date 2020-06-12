@@ -3,7 +3,7 @@ An header-only library for the persistence of application settings in the Window
 
 ## Rationale
 
-This library allows to easily give persistence to FMX and VCL applications with very few changes to the existing codebase. Saving the position, the size, and the state of the forms, along with other custom attributes, is very simple: just add a few lines of code.
+This library easily allows settings' persistence to applications (FMX, VCL, and more) with very few changes to the pre-existing codebase. For example, it's possible to save the position, the size, and the state of the GUI forms, along with other custom attributes, in a very simple fashion, i.e. just adding very few lines of code.
 
 The idea behind the library is to have a hierarchical heterogeneous container that resembles the Windows registry but lying in application memory. Suppose to have a Registry Key as a base key: this is intended as the "root image" of the polymorphic container. When the application starts, the in-memory container trying to load the content of the Windows Registry base key's data. If the Registry key exists, the content (the key and subkeys) is loaded in memory. If the Registry key doesn't exist, the in-memory container is built with the attributes default values. When the application runs, it can read or write these keys (and related values), but all the changes remain confined to the application's memory. When the application ends, the container's content is written back in the storage medium and with its intended format. If the application crashes before writing data back,  the data in the storage medium remain unchanged. Note the container can also use different medium storage than the Windows Registry, e.g. it can use the filesystem or the network then use formats like JSON or XML.
 
@@ -29,11 +29,14 @@ Note that only _clang-based_ compilers are supported by this library.
 
 ### Installing
 
-Clone the repository to $(BDSCOMMONDIR) which, normally, is %public%\Documents\Embarcadero\Studio\XX.X, where XX.X corresponds to the version of RAD Studio of interest. For example, for RAD Studio 10.3.3, $(BDSCOMMONDIR) corresponds to %public%\Documents\Embarcadero\Studio\XX.X which, in turn, is usually C:\Users\Public\Documents\Embarcadero\Studio\20.0.
+Installation is not really necessary. Simply add the header files that make up the library to your project. But if you embed the same files multiple times for each new project, there will be unwanted proliferation which can be confusing if you use different revisions over time. So it is often preferable to "install" the library and refer to it with the environment variables of the development system.
+
+To install the library, clone the repository to $(BDSCOMMONDIR) which, normally, is %public%\Documents\Embarcadero\Studio\XX.X, where XX.X corresponds to the version of RAD Studio of interest. For example, for RAD Studio 10.3.3, $(BDSCOMMONDIR) corresponds to %public%\Documents\Embarcadero\Studio\XX.X which, in turn, is usually C:\Users\Public\Documents\Embarcadero\Studio\20.0.
 
 ```
 C:\Users\Public\Documents\Embarcadero\Studio\21.0>git clone https://github.com/gcardi/Anafestica.git
 ```
+
 To complete the installation, the last important step is to add the references to this library in the include path(s) of the development system. Using the IDE menu _Tool -> Options_, add the $(BDSCOMMONDIR)\Anafestica path to both bcc32c and bcc64 settings:
 
 <img src="https://i.ibb.co/RBQxLGt/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-6.png" alt="BCC64">

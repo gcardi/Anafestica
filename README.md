@@ -31,7 +31,7 @@ Note that only _clang-based_ compilers are supported by this library.
 
 Installation is not really necessary. Simply add the header files that make up the library to your project. But if you embed the same files multiple times for each new project, there will be unwanted proliferation which can be confusing if you use different revisions over time. So it is often preferable to "install" the library and refer to it with the environment variables of the development system.
 
-To install the library, clone the repository to $(BDSCOMMONDIR) which, normally, is %public%\Documents\Embarcadero\Studio\XX.X, where XX.X corresponds to the version of RAD Studio of interest. For example, for RAD Studio 10.3.3, $(BDSCOMMONDIR) corresponds to %public%\Documents\Embarcadero\Studio\XX.X which, in turn, is usually C:\Users\Public\Documents\Embarcadero\Studio\20.0.
+To install the library, clone the repository to $(BDSCOMMONDIR) which, normally, is %public%\Documents\Embarcadero\Studio\XX.X, where XX.X corresponds to the version of RAD Studio of interest. For example, for RAD Studio 10.4, $(BDSCOMMONDIR) corresponds to %public%\Documents\Embarcadero\Studio\XX.X which, in turn, is usually C:\Users\Public\Documents\Embarcadero\Studio\21.0.
 
 ```
 C:\Users\Public\Documents\Embarcadero\Studio\21.0>git clone https://github.com/gcardi/Anafestica.git

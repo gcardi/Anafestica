@@ -27,12 +27,11 @@ using TConfigNodeValueType =
       , long long
       , unsigned long long
       , bool
-      , System::UnicodeString
+      , System::String
       , System::TDateTime
       , float
       , double
       , System::Currency
-//      , std::shared_ptr<TStrings>
       , std::vector<String>
       , TBytes
       , std::vector<Byte>

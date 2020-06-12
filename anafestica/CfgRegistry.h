@@ -469,6 +469,10 @@ private:
       using std_string = std::wstring;
     #endif
 protected:
+    virtual String DoGetNodePathSeparator() const override {
+        return _T( "\\" );
+    }
+
     virtual TConfigNode::ValueContType DoCreateValueList( String KeyName ) override {
         regex_type re(
             _T( "" )
@@ -477,7 +481,8 @@ protected:
                 "(c)|"  "(uc)|"  "(s)|"   "(us)|"
                 "(ll)|" "(ull)|" "(b)|"   "(sz)|"
                 "(dt)|" "(flt)|" "(dbl)|" "(cur)|"
-                "(sl)|" "(sv)|"  "(dab)|" "(vb)"
+//                "(sl)|" "(sv)|"  "(dab)|" "(vb)"
+                "(sv)|"  "(dab)|" "(vb)"
             "))\\))\?$"
         );
 
@@ -491,7 +496,10 @@ protected:
                 )
             >;
 
-        static std::array<ValueBuilder,20> Builders {
+        static constexpr size_t x = TConfigNodeValueType::types::size();
+
+        static std::array<ValueBuilder,TConfigNodeValueType::types::size::value> Builders {
+        //static std::array<ValueBuilder,19> Builders {
             // CLASS  TAG      REG_TYPE      API
             // -----  -------  ------------  ----------------
 
@@ -591,7 +599,7 @@ protected:
             // sv     (sv)     REG_MULTI_SZ  ReadStringsTo
             []( RegObjType& Reg, String KeyName ) {
                 std::vector<String> Strings;
-                Reg.ReadStringsTo( KeyName, back_inserter( Strings ) );
+                Reg.ReadStringsTo( KeyName, std::back_inserter( Strings ) );
                 return std::move( Strings );
             },
 
@@ -613,7 +621,7 @@ protected:
                     );
                 }
                 auto Bytes = std::vector<Byte>( Size );
-                Reg.ReadBinaryDataTo( KeyName, back_inserter( Bytes ) );
+                Reg.ReadBinaryDataTo( KeyName, std::back_inserter( Bytes ) );
                 return std::move( Bytes );
             },
         };
@@ -672,6 +680,9 @@ protected:
                                     registry_->ReadStrings( ValueName, *StringList );
                                     PutItem{}( Values, Name, StringList );
 */
+                                    std::vector<String> Strings;
+                                    registry_->ReadStringsTo( ValueName, std::back_inserter( Strings ) );
+                                    PutItem{}( Values, Name, Strings );
                                 }
                                 break;
                             case TExRegDataType::Qword:
@@ -954,9 +965,12 @@ private:
         */
 
         void operator()( std::vector<String> const &Val ) const { // sv     (sv)   REG_MULTI_SZ  WriteStrings
+            /*
             reg_.WriteStrings(
                 Format( _T( "%s:(sv)" ), ARRAYOFCONST(( name_ )) ), Val
             );
+            */
+            reg_.WriteStrings( name_, Val );
         }
 
         void operator()( TBytes Val ) const {                     // dab           REG_BINARY    WriteBinaryData

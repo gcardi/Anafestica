@@ -40,6 +40,9 @@ public:
 
     bool GetReadOnlyFlag() const noexcept { return readOnly_; }
     bool GetAlwaysFlushNodeFlag() const noexcept { return flushAllItems_; }
+    String GetNodePathSeparator() const {
+        return DoGetNodePathSeparator();
+    }
 protected:
     virtual TConfigNode::ValueContType DoCreateValueList( String KeyName ) = 0;
     virtual TConfigNode::NodeContType DoCreateNodeList( String KeyName ) = 0;
@@ -48,6 +51,7 @@ protected:
     virtual TConfigNode& DoGetRootNode() { return *root_; }
     virtual void DoDeleteNode( String KeyName ) = 0;
     virtual void DoFlush() = 0;
+    virtual String DoGetNodePathSeparator() const = 0;
 private:
     using TConfigNodePtr = std::unique_ptr<TConfigNode>;
 

@@ -24,7 +24,7 @@ public:
     Anafestica::TConfig& GetConfig() {
         static auto Cfg =
             std::make_unique<TConfig>(
-                GetFileName()
+                GetFileName(), false
                 /*
                 HKEY_CURRENT_USER,
                 Format(

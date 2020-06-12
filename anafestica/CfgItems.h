@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <map>
 #include <type_traits>
+#include <iterator>
 
 #include <anafestica/CfgNodevalueType.h>
 
@@ -106,11 +107,12 @@ public:
 
     bool PutItem( String Id, TStringList* const Val, Operation Op = Operation::Write )
     {
-    /*
-        std::shared_ptr<TStringList> SL( new TStringList{} );
-        SL->Assign( Val );
-        return PutItem( Id, SL, Op );
-    */
+        std::vector<String> SL;
+        SL.reserve( Val->Count );
+        for ( auto Str : Val ) {
+            SL.push_back( Str );
+        }
+        return PutItem( Id, std::move( SL ), Op );
     }
 
     bool PutItem( String Id, TStringList const & Val, Operation Op = Operation::Write )
@@ -338,8 +340,15 @@ void TConfigNode::Read( R& Reader, String Id )
 {
     valueItems_ = Reader.CreateValueList( Id );
     nodeItems_ = Reader.CreateNodeList( Id );
+//::OutputDebugString( Format( _T( "nodeItems_.Count=%u" ), nodeItems_.size() ).c_str() );
     for ( auto& n : nodeItems_ ) {
-        n.second->Read( Reader, Id + '\\' + n.first );
+//        n.second->Read( Reader, Id + _T( '\\' ) + n.first );
+        auto S = Format( _T( "%s%s%s" ), Id ,Reader.GetNodePathSeparator(), n.first );
+        n.second->Read(
+            Reader,
+            Format( _T( "%s%s%s" ), Id ,Reader.GetNodePathSeparator(), n.first )
+        );
+
     }
 }
 //---------------------------------------------------------------------------

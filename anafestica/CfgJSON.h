@@ -7,16 +7,21 @@
 #include <System.IOUtils.hpp>
 #include <System.JSON.Writers.hpp>
 #include <System.DateUtils.hpp>
+#include <System.NetEncoding.hpp>
+#include <System.SysUtils.hpp>
 
 #include <memory>
 #include <string_view>
 #include <vector>
+#include <array>
+#include <functional>
+#include <iterator>
+#include <string>
 
 #include <anafestica/Cfg.h>
 
 template<typename T>
 class TD;
-
 
 //---------------------------------------------------------------------------
 namespace Anafestica {
@@ -25,11 +30,14 @@ namespace JSON {
 //---------------------------------------------------------------------------
 
 class TConfig : public Anafestica::TConfig {
+private:
+    static constexpr LPTSTR ValuesNodeName = _T( "values" );
+    static constexpr LPTSTR NodesNodeName = _T( "nodes" );
 public:
-    TConfig( String FileName, bool ReadOnly = false,
+    TConfig( String FileName, bool Compact = true, bool ReadOnly = false,
              bool FlushAllItems = false )
         : Anafestica::TConfig( ReadOnly, FlushAllItems )
-        , fileName_( FileName )
+        , fileName_{ FileName }, compact_{ Compact }
     {
         if ( TFile::Exists( fileName_ ) ) {
             JSONObjRAII JSON{ *this };
@@ -64,21 +72,23 @@ private:
 
     std::unique_ptr<TJSONValue> document_;
     String fileName_;
+    bool compact_;
 
     void CreateJSONObject() {
-        document_.reset( TJSONObject::ParseJSONValue( TFile::ReadAllText( fileName_ ) ) );
-        if ( !document_ ) {
-            throw Exception(
-                _T( "Invalid file format for \'%s\'" ),
-                ARRAYOFCONST(( fileName_ ))
-            );
+        if ( FileExists( fileName_ ) ) {
+            document_.reset( TJSONObject::ParseJSONValue( TFile::ReadAllText( fileName_ ) ) );
+            if ( document_ ) {
+                return;
+            }
         }
+        document_.reset( new TJSONObject{} );
     }
 
     void DestroyAndCloseJSONObject() {
         document_.reset();
     }
 
+    // https://www.bfilipek.com/2018/07/string-view-perf-followup.html
     #if defined( _UNICODE )
     auto SplitStringView( std::wstring_view StrView, std::wstring_view Delimiters )
     #else
@@ -118,7 +128,7 @@ private:
     #endif
     }
 
-    TJSONObject& OpenKey( String Path, bool Create ) {
+    TJSONObject* OpenPath( String Path, bool Create = false ) {
         auto Node = dynamic_cast<TJSONObject*>( document_.get() );
         if ( Node ) {
             for ( auto const & Item : SplitString( Path, _T( "\\" ) ) ) {
@@ -140,37 +150,26 @@ private:
                     Node = InnerObj.release();
                 }
                 else {
+/*
                     throw Exception(
-                        _T( "\'%s' not exists in path \'%s\'" ),
+                        _T( "\'%s' doesn't exists in path \'%s\'" ),
                         ARRAYOFCONST(( NodeName, Path ))
                     );
+*/
+                    return nullptr;
                 }
             }
-            return *Node;
+            return Node;
         }
         else {
             throw Exception(
-                _T( "Can't open node \'%s\'" ),
+                _T( "Can't open JSON node \'%s\'" ),
                 ARRAYOFCONST(( Path ))
             );
         }
     }
 
-/*
-        }
-        else if ( Create ) {
-            auto SL = std::make_unique<TStringList>
-            OpenValue(
-        }
-        else {
-            throw Exception(
-                _T( "Node \'%s' doesn't exists" ),
-                ARRAYOFCONST(( Path ))
-            );
-        }
-*/
-
-//rimuovere i valori top, left,right e bottom pria di riscriverli?
+//rimuovere i valori top, left, right e bottom prima di riscriverli?
 
     class SaveVisitor : public boost::static_visitor<void> {
     public:
@@ -200,16 +199,7 @@ private:
                 std::make_unique<TJSONNumber>( static_cast<C>( Val ) )
             );
         }
-
-        // REG_BINARY    - Binary data in any form.
-        // REG_DWORD     - 32-bit number.
-        // REG_QWORD     - 64-bit number.
-        // REG_EXPAND_SZ - Null-terminated string that contains unexpanded references to environment variables
-        // REG_MULTI_SZ  - Array of null-terminated strings that are terminated by two null characters.
-        // REG_SZ        - Null-terminated string.
-                                                                  // CLASS  TAG
                                                                   // -----  -----
-
         void operator()( int Val ) const {                        // i32    (i)
             WriteNumber<int>( _T( "i" ), name_, Val );
         }
@@ -247,7 +237,16 @@ private:
         }
 
         void operator()( unsigned long long Val ) const {         // u64    (ull)
-            WriteNumber<__int64>( _T( "ull" ), name_, Val );   // <- da testare
+            Write(
+                _T( "ull" ), name_,
+                std::make_unique<TJSONString>(
+#if defined( _UNICODE )
+                    std::to_wstring( Val ).c_str()
+#else
+                    std::to_string( Val ).c_str()
+#endif
+                )
+            );
         }
 
         void operator()( bool Val ) const {                       // u8     (b)
@@ -274,20 +273,23 @@ private:
         }
 
         void operator()( System::Currency Val ) const {           // b8     (cur)
+            TFormatSettings FS;
+            FS.DecimalSeparator = _T( '.' );
             Write(
                 _T( "cur" ), name_,
-                std::make_unique<TJSONString>( CurrToStr( Val ) )
+                std::make_unique<TJSONString>(
+                    CurrToStr( Val, FS )
+                )
             );
         }
 
-        /*
-        void operator()( std::shared_ptr<TStrings> Val ) const {  // sl
+        void operator()( std::vector<String> const &Val ) const { // sv     (sv)
             auto Array = std::make_unique<TJSONArray>();
-            for ( auto Item : Val.get() ) {
+            for ( auto Item : Val ) {
                 Array->Add( Item );
             }
             auto ValueObj = std::make_unique<TJSONObject>();
-            ValueObj->AddPair( _T( "sl" ), Array.get() );
+            ValueObj->AddPair( _T( "sv" ), Array.get() );
             Array.release();
             if ( auto Pair = obj_.Get( name_ ) ) {
                 Pair->JsonValue = ValueObj.get();
@@ -297,15 +299,30 @@ private:
             }
             ValueObj.release();
         }
-        */
-
-        void operator()( std::vector<String> const &Val ) const { // sv     (sv)
-        }
 
         void operator()( TBytes Val ) const {                     // dab
+            Write(
+                _T( "dab" ), name_,
+                std::make_unique<TJSONString>(
+                    TNetEncoding::Base64->EncodeBytesToString(
+                        &Val[0], Val.High
+                    )
+                )
+            );
         }
 
         void operator()( std::vector<Byte> const & Val ) const {  // vb     (vb)
+            Write(
+                _T( "vb" ), name_,
+                std::make_unique<TJSONString>(
+                    Val.empty() ?
+                      String()
+                    :
+                      TNetEncoding::Base64->EncodeBytesToString(
+                          Val.data(), Val.size() - 1
+                      )
+                )
+            );
         }
 
     private:
@@ -324,27 +341,220 @@ private:
     }
 
 protected:
+    virtual String DoGetNodePathSeparator() const override {
+        return Format( _T( "\\%s\\" ), String( NodesNodeName ) );
+    }
+
     virtual TConfigNode::ValueContType DoCreateValueList( String KeyName ) override {
+        using ValueBuilderType =
+            std::function<
+                TConfigNodeValueType (
+                    String        // Key Name
+                  , TJSONValue &
+                )
+            >;
+
+        static constexpr std::array<LPCTSTR,TConfigNodeValueType::types::size::value> TypeIds {
+            _T( "b" ),
+            _T( "c" ),
+            _T( "cur" ),
+            _T( "dab" ),
+            _T( "dbl" ),
+            _T( "dt" ),
+            _T( "flt" ),
+            _T( "i" ),
+            _T( "l" ),
+            _T( "ll" ),
+            _T( "s" ),
+            _T( "sv" ),
+            _T( "sz" ),
+            _T( "u" ),
+            _T( "uc" ),
+            _T( "ul" ),
+            _T( "ull" ),
+            _T( "us" ),
+            _T( "vb" ),
+        };
+
+        using Fn = std::function<TConfigNodeValueType(TJSONValue&)>;
+
+        static std::array<Fn,TConfigNodeValueType::types::size::value> Builders {
+            // "b"
+            []( TJSONValue& Value ) -> TConfigNodeValueType {
+                return Value.GetValue<bool>();
+            },
+
+            // "c"
+            []( TJSONValue& Value ) -> TConfigNodeValueType {
+                return static_cast<char>( Value.GetValue<int>() );
+            },
+
+            // "cur"
+            []( TJSONValue& Value ) -> TConfigNodeValueType {
+                TFormatSettings FS;
+                FS.DecimalSeparator = _T( '.' );
+                return StrToCurr( Value.GetValue<String>(), FS );
+            },
+
+            // "dab"
+            []( TJSONValue& Value ) -> TConfigNodeValueType {
+                return
+                    TNetEncoding::Base64->DecodeStringToBytes(
+                        Value.GetValue<String>()
+                    );
+            },
+
+            // "dbl"
+            []( TJSONValue& Value ) -> TConfigNodeValueType {
+                return Value.GetValue<double>();
+            },
+
+            // "dt"
+            []( TJSONValue& Value ) -> TConfigNodeValueType {
+                return ISO8601ToDate( Value.GetValue<String>(), false );
+            },
+
+            // "flt"
+            []( TJSONValue& Value ) -> TConfigNodeValueType {
+                return Value.GetValue<float>();
+            },
+
+            // "i"
+            []( TJSONValue& Value ) -> TConfigNodeValueType {
+                return Value.GetValue<int>();
+            },
+
+            // "l"
+            []( TJSONValue& Value ) -> TConfigNodeValueType {
+                return static_cast<long>( Value.GetValue<__int64>() );
+            },
+
+            // "ll"
+            []( TJSONValue& Value ) -> TConfigNodeValueType {
+                return Value.GetValue<__int64>();
+            },
+
+            // "s"
+            []( TJSONValue& Value ) -> TConfigNodeValueType {
+                return Value.GetValue<short>();
+            },
+
+            // "sv"
+            []( TJSONValue& Value ) -> TConfigNodeValueType { return {}; },
+
+            // "sz"
+            []( TJSONValue& Value ) -> TConfigNodeValueType {
+                return Value.GetValue<String>();
+            },
+
+            // "u"
+            []( TJSONValue& Value ) -> TConfigNodeValueType {
+                return Value.GetValue<unsigned>();
+            },
+
+            // "uc"
+            []( TJSONValue& Value ) -> TConfigNodeValueType {
+                return Value.GetValue<unsigned char>();
+            },
+
+            // "ul"
+            []( TJSONValue& Value ) -> TConfigNodeValueType {
+                return static_cast<unsigned long>( Value.GetValue<__int64>() );
+            },
+
+            // "ull"
+            []( TJSONValue& Value ) -> TConfigNodeValueType {
+                return std::stoull( Value.GetValue<String>().c_str() );
+            },
+
+            // "us"
+            []( TJSONValue& Value ) -> TConfigNodeValueType {
+                return Value.GetValue<unsigned short>();
+            },
+
+            // "vb"
+            []( TJSONValue& Value ) -> TConfigNodeValueType {
+                auto Bytes = TNetEncoding::Base64->DecodeStringToBytes(
+                    Value.GetValue<String>()
+                );
+                std::vector<Byte> VBytes;
+                VBytes.reserve( Bytes.Length );
+                std::copy(
+                    System::begin( &Bytes ), System::end( &Bytes ),
+                    std::back_inserter( VBytes )
+                );
+                return VBytes;
+            },
+        };
+
         TConfigNode::ValueContType Values;
 
+        if ( auto Key = OpenPath( Format( _T( "%s\\%s" ), KeyName, ValuesNodeName ) ) ) {
+            for ( int Idx = 0 ; Idx < Key->Count ; ++Idx ) {
+                auto const & Pair = Key->Pairs[Idx];
+                if ( dynamic_cast<TJSONObject*>( Pair->JsonValue ) ) {
+                    auto Name = Pair->JsonString->Value();
+
+                    if ( auto InnerObj = dynamic_cast<TJSONObject*>( Pair->JsonValue ) ) {
+                        if ( InnerObj->Count == 1 ) {
+                            auto const & InnerPair = InnerObj->Pairs[0];
+                            auto TypeName = InnerPair->JsonString->Value();
+                            auto TypeIdIt =
+                                std::lower_bound(
+                                    std::begin( TypeIds ),
+                                    std::end( TypeIds ),
+                                    TypeName,
+                                    []( auto Lhs, auto Rhs ) {
+                                        return String( Lhs ) < Rhs;
+                                    }
+                                );
+                            if ( String( *TypeIdIt ) == TypeName ) {
+                                auto const BuilderIdx =
+                                    std::distance( std::begin( TypeIds ), TypeIdIt );
+                                    auto Val = Builders[BuilderIdx]( *InnerPair->JsonValue );
+                                    TConfigNode::PutItemTo(
+                                        Values, Name,
+                                        TConfigNode::ValuePairType{
+                                            Val, TConfigNode::Operation::None
+                                        }
+                                    );
+                            }
+                            else {
+                            }
+                        }
+                    }
+                }
+            }
+        }
         return Values;
     }
 
     virtual TConfigNode::NodeContType DoCreateNodeList( String KeyName ) override {
         TConfigNode::NodeContType Nodes;
+
+        if ( auto Key = OpenPath( Format( _T( "%s\\%s" ), KeyName, NodesNodeName ) ) ) {
+            for ( int Idx = 0 ; Idx < Key->Count ; ++Idx ) {
+                auto const & Pair = Key->Pairs[Idx];
+                if ( dynamic_cast<TJSONObject*>( Pair->JsonValue ) ) {
+                    auto NodeName = Pair->JsonString->Value();
+                    Nodes[NodeName] = std::move( std::make_unique<TConfigNode>() );
+                }
+            }
+        }
         return Nodes;
     }
 
     virtual void DoSaveValueList( String KeyName, TConfigNode::ValueContType const & Values ) override {
         if ( !Values.empty() ) {
-            auto& Key = OpenKey( KeyName, true );
-            for ( auto& v : Values ) {
-                auto const ValueState = v.second.second;
-                if ( GetAlwaysFlushNodeFlag() || ValueState == TConfigNode::Operation::Write ) {
-                    SaveValue( Key, v );
-                }
-                else if ( v.second.second == TConfigNode::Operation::Erase ) {
-                    DeleteValue( Key, v );
+            if ( auto Key = OpenPath( Format( _T( "%s\\%s" ), KeyName, ValuesNodeName ), true ) ) {
+                for ( auto& v : Values ) {
+                    auto const ValueState = v.second.second;
+                    if ( GetAlwaysFlushNodeFlag() || ValueState == TConfigNode::Operation::Write ) {
+                        SaveValue( *Key, v );
+                    }
+                    else if ( v.second.second == TConfigNode::Operation::Erase ) {
+                        DeleteValue( *Key, v );
+                    }
                 }
             }
         }
@@ -356,7 +566,7 @@ protected:
                 n.second->Write(
                     *this,
                     Format(
-                        _T( "%s\\%s" ), ARRAYOFCONST(( KeyName, n.first ))
+                        _T( "%s\\%s\\%s" ), KeyName, NodesNodeName, n.first
                     )
                 );
             }
@@ -376,8 +586,10 @@ protected:
                 TDirectory::CreateDirectory( Path );
             }
         }
-        TFile::WriteAllText( fileName_, document_->Format( 2 ) );
-        //TFile::WriteAllText( fileName_, document_->ToJSON() );
+        TFile::WriteAllText(
+            fileName_,
+            compact_ ? document_->ToJSON() : document_->Format( 2 )
+        );
     }
 
     virtual bool DoGetForcedWritesFlag() const {

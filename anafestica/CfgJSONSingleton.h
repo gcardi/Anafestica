@@ -1,20 +1,22 @@
 //---------------------------------------------------------------------------
 
-#ifndef CfgRegistrySingletonH
-#define CfgRegistrySingletonH
+#ifndef CfgJSONSingletonH
+#define CfgJSONSingletonH
 
 #include <System.hpp>
-#include <System.SysUtils.hpp>
+//#include <System.SysUtils.hpp>
+#include <System.IOUtils.hpp>
 
 #include <memory>
 
 #include <anafestica/FileVersionInfo.h>
-#include <anafestica/CfgRegistry.h>
+#include <anafestica/CfgJSON.h>
+
 
 //---------------------------------------------------------------------------
 namespace Anafestica {
 //---------------------------------------------------------------------------
-namespace Registry {
+namespace JSON {
 //---------------------------------------------------------------------------
 
 class TConfigSingleton {
@@ -22,16 +24,42 @@ public:
     Anafestica::TConfig& GetConfig() {
         static auto Cfg =
             std::make_unique<TConfig>(
+                GetFileName(), false
+                /*
                 HKEY_CURRENT_USER,
                 Format(
                     _T( "Software\\%s" ),
                     ARRAYOFCONST(( GetProductPath() ))
                 )
+                */
             );
 
         return *Cfg;
     }
 private:
+    static String GetFileName()
+    {
+        TFileVersionInfo const Info( ParamStr( {} ) );
+        return
+            TPath::ChangeExtension(
+                TPath::Combine(
+                    TPath::Combine(
+                        TPath::Combine(
+                            TPath::Combine(
+                                TPath::GetHomePath(),
+                                Info.CompanyName
+                            ),
+                            Info.ProductName
+                        ),
+                        Info.ProductVersion
+                    ),
+                    ExtractFileName( ParamStr( {} ) )
+                ),
+                _T( ".json" )
+            );
+    }
+
+/*
     static String GetProductPath() {
         TFileVersionInfo const Info( ParamStr( 0 ) );
 
@@ -44,13 +72,14 @@ private:
             ) )
         );
     }
+*/
 };
 
 //---------------------------------------------------------------------------
-} // End of namespace Registry
+} // End of namespace JSON
 //---------------------------------------------------------------------------
 
-using TConfigRegistrySingleton = Registry::TConfigSingleton;
+using TConfigJSONSingleton = JSON::TConfigSingleton;
 
 //---------------------------------------------------------------------------
 } // End of namespace Anafestica

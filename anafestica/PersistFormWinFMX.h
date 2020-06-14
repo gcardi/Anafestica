@@ -62,8 +62,8 @@ __fastcall TPersistFormWinFMX<CfgSingleton>::TPersistFormWinFMX(
     , storeOptions_( StoreOptions )
     , configNode_( GetOrCreateConfigNode( RootNode ) )
 {
-	try {
-    	ReadValues();
+    try {
+        ReadValues();
     }
     catch ( ... ) {
     }
@@ -80,8 +80,8 @@ __fastcall TPersistFormWinFMX<CfgSingleton>::TPersistFormWinFMX(
     , storeOptions_( StoreOptions )
     , configNode_( GetOrCreateConfigNode( RootNode ) )
 {
-	try {
-    	ReadValues();
+    try {
+        ReadValues();
     }
     catch ( ... ) {
     }
@@ -240,7 +240,7 @@ bool TPersistFormWinFMX<CfgSingleton>::HaveToSaveOrRestorePos( StoreOpts Val ) n
 #define RESTORE_LOCAL_PROPERTY( PROPERTY ) \
 {\
     std::remove_reference_t< decltype( PROPERTY )> Tmp{ PROPERTY }; \
-    GetConfigNode().GetItemAs( #PROPERTY, Tmp ); \
+    GetConfigNode().GetItem( #PROPERTY, Tmp ); \
     PROPERTY = Tmp; \
 }
 

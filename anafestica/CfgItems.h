@@ -9,8 +9,10 @@
 #include <memory>
 #include <algorithm>
 #include <map>
+#include <type_traits>
+#include <iterator>
 
-#include <anafestica/CfgNodevalueType.h>
+#include <anafestica/CfgConts.h>
 
 //---------------------------------------------------------------------------
 namespace Anafestica {
@@ -18,22 +20,33 @@ namespace Anafestica {
 
 class TConfigNode
 {
+private:
+    enum class tag_type { other_tg, enum_tg };
+
+    template<tag_type> struct enum_tag {};
+
+    using is_other_tag = enum_tag<tag_type::other_tg>;
+    using is_enum_tag = enum_tag<tag_type::enum_tg>;
+
+    template<typename T>
+    struct type_to_enum {
+        //using U =
+        //    std::remove_cv_t<std::remove_reference_t<T>>;
+        static constexpr tag_type value =
+        //    std::is_enum_v<U> ?
+            std::is_enum_v<std::remove_cv_t<std::remove_reference_t<T>>> ?
+              tag_type::enum_tg
+            :
+              tag_type::other_tg;
+    };
+
+    template<typename T>
+    inline static constexpr auto type_to_enum_v = type_to_enum<T>::value;
+
 public:
     TConfigNode() = default;
     TConfigNode( TConfigNode const & ) = delete;
     TConfigNode& operator=( TConfigNode const & ) = delete;
-
-    enum class Operation { None, Write, Erase };
-
-    using KeyType = String;
-
-    using ValueType = TConfigNodeValueType;
-
-    using ValuePairType = std::pair<ValueType,Operation>;
-    using TConfigNodePtr = std::unique_ptr<TConfigNode>;
-
-    using ValueContType = std::map<KeyType,ValuePairType>;
-    using NodeContType = std::map<KeyType,TConfigNodePtr>;
 
     TConfigNode& GetSubNode( String Id ) {
         auto p =
@@ -50,48 +63,56 @@ public:
     template<typename W>
     void Write( W& Writer, String Id ) const;
 
-    static ValueType GetItemFrom( ValueContType& Values, String Id,
-                                  ValueType DefVal, Operation Op )
-    {
-        auto r =
-            Values.insert(
-                std::make_pair( Id, std::make_pair( DefVal, Op ) )
-            );
-        return r.second ? DefVal : r.first->second.first;
-    }
-
     template<typename T>
-    ValueType GetItem( String Id, T&& DefVal, Operation Op = Operation::None ) {
-        return GetItemFrom( valueItems_, Id, std::forward<T>( DefVal ), Op );
-    }
-
-    template<typename T>
-    void GetItemAs( String Id, T& Val, Operation Op = Operation::None ) {
+    void GetItem( String Id, T& Val, Operation Op = Operation::None ) {
         GetItemAs(
-            enum_tag<std::is_enum_v<std::remove_reference_t<decltype( Val )>>>{},
+            enum_tag<type_to_enum_v<std::remove_reference_t<decltype( Val )>>>{},
             Id, Val, Op
         );
     }
 
+    void GetItem( String Id, TStrings& Val, Operation Op = Operation::None ) {
+        StringCont Strs;
+        std::copy(
+            System::begin( &Val ), System::end( &Val ),
+            std::back_inserter( Strs )
+        );
+        auto NewStrs =
+            boost::get<StringCont>(
+                GetItemFrom( valueItems_, Id, Strs, Op )
+            );
+        Val.Clear();
+        std::copy(
+            std::begin( NewStrs ), std::end( NewStrs ),
+            System::back_inserter( &Val )
+        );
+    }
+
+    void GetItem( String Id, TStrings* const Val, Operation Op = Operation::None ) {
+        GetItem( Id, *Val, Op );
+    }
+
     template<typename T>
-    bool PutItem( String Id, T const & Val, Operation Op = Operation::Write ) {
+    bool PutItem( String Id, T&& Val, Operation Op = Operation::Write ) {
         return PutItem(
-            Id, Val,
-            enum_tag<std::is_enum_v<std::remove_reference_t<decltype( Val )>>>{},
+            Id, std::forward<T>( Val ),
+            enum_tag<type_to_enum_v<std::remove_reference_t<decltype( Val )>>>{},
             Op
         );
     }
 
-    static bool PutItemTo( ValueContType& Values, String Id,
-                           ValuePairType const & Val ) noexcept
-    {
-        auto r = Values.insert( make_pair( Id, Val ) );
-        if ( !r.second ) {
-            if ( r.first->second.first != Val.first ) {
-                r.first->second = ValuePairType( Val.first, Operation::Write );
-            }
-        }
-        return r.second;
+    bool PutItem( String Id, TStrings& Val, Operation Op = Operation::Write ) {
+        StringCont Strs;
+        Strs.reserve( Val.Count );
+        std::copy(
+            System::begin( &Val ), System::end( &Val ),
+            std::back_inserter( Strs )
+        );
+        return PutItem( Id, Strs, Op );
+    }
+
+    bool PutItem( String Id, TStrings* const Val, Operation Op = Operation::Write ) {
+        return PutItem( Id, *Val, Op );
     }
 
     size_t GetNodeCount() const noexcept { return nodeItems_.size(); }
@@ -126,7 +147,6 @@ public:
 
     void DeleteSubNode( String Id ) {
         auto i = nodeItems_.find( Id );
-//        if ( i != std::end( nodeItems_ ) ) { MarkNodeDeleted( *i ); }
         if ( i != std::end( nodeItems_ ) ) { i->second->Clear(); }
     }
 
@@ -139,7 +159,6 @@ public:
     void Clear() {
         deleted_ = true;
         valueItems_.clear();
-//        for ( auto& v : nodeItems_ ) { MarkNodeDeleted( v ); }
         for ( auto& v : nodeItems_ ) { v.second->Clear(); }
     }
 
@@ -184,45 +203,29 @@ private:
         return Val.second.second == Operation::Erase;
     }
 
-    template<bool> struct enum_tag {};
-
-    using is_not_enum_tag = enum_tag<false>;
-    using is_enum_tag = enum_tag<true>;
-
     template<typename T>
-    void GetItemAs( is_not_enum_tag, String Id, T& Val, Operation Op ) {
-        Val = boost::get<std::remove_reference_t<T>>( GetItem( Id, Val, Op ) );
+    void GetItemAs( is_other_tag, String Id, T& Val, Operation Op ) {
+        Val =
+            boost::get<std::remove_reference_t<T>>(
+                GetItemFrom( valueItems_, Id, Val, Op )
+            );
     }
 
     template<typename T>
     void GetItemAs( is_enum_tag, String Id, T& Val, Operation Op );
 
     template<typename T>
-    bool PutItem( String Id, T&& Val, is_not_enum_tag, Operation Op = Operation::Write ) noexcept {
-        return PutItemTo( valueItems_, Id, make_pair( ValueType{ std::forward<T>( Val ) }, Op ) );
+    bool PutItem( String Id, T&& Val, is_other_tag, Operation Op = Operation::Write ) noexcept {
+        return
+            PutItemTo(
+                valueItems_, Id,
+                std::make_pair( ValueType{ std::forward<T>( Val ) }, Op )
+            );
     }
 
     template<typename T>
-    bool PutItem( String Id, T Val, is_enum_tag, Operation Op = Operation::Write ) noexcept
-    {
-        if ( auto Info = __delphirtti( decltype( Val ) ) ) {
-            // save as text
-            return PutItemTo(
-                valueItems_, Id,
-                std::make_pair(
-                    ValueType{ GetEnumName( Info, static_cast<int>( Val ) ) },
-                    Op
-                )
-            );
-        }
-        else {
-            // save as integer
-            return PutItemTo(
-                valueItems_, Id,
-                std::make_pair( ValueType{ static_cast<int>( Val ) }, Op )
-            );
-        }
-    }
+    bool PutItem( String Id, T Val, is_enum_tag, Operation Op = Operation::Write ) noexcept;
+
 };
 //---------------------------------------------------------------------------
 
@@ -235,7 +238,8 @@ void TConfigNode::GetItemAs( is_enum_tag, String Id, T& Val, Operation Op )
                 GetEnumValue(
                     Info,
                     boost::get<String>(
-                        GetItem(
+                        GetItemFrom(
+                            valueItems_,
                             Id,
                             GetEnumName( Info, static_cast<int>( Val ) ),
                             Op
@@ -247,8 +251,40 @@ void TConfigNode::GetItemAs( is_enum_tag, String Id, T& Val, Operation Op )
     else {
         Val =
             static_cast<T>(
-                boost::get<int>( GetItem( Id, static_cast<int>( Val ), Op ) )
+                boost::get<int>(
+                    GetItemFrom(
+                        valueItems_,
+                        Id,
+                        static_cast<int>( Val ),
+                        Op
+                    )
+                )
             );
+    }
+}
+//---------------------------------------------------------------------------
+
+template<typename T>
+bool TConfigNode::PutItem( String Id, T Val, is_enum_tag, Operation Op ) noexcept
+{
+    if ( auto Info = __delphirtti( decltype( Val ) ) ) {
+        // save enum as text
+
+::OutputDebugString( GetEnumName( Info, static_cast<int>( Val ) ).c_str() );
+        return PutItemTo(
+            valueItems_, Id,
+            std::make_pair(
+                ValueType{ GetEnumName( Info, static_cast<int>( Val ) ) },
+                Op
+            )
+        );
+    }
+    else {
+        // save enum as integer
+        return PutItemTo(
+            valueItems_, Id,
+            std::make_pair( ValueType{ static_cast<int>( Val ) }, Op )
+        );
     }
 }
 //---------------------------------------------------------------------------
@@ -295,7 +331,10 @@ void TConfigNode::Read( R& Reader, String Id )
     valueItems_ = Reader.CreateValueList( Id );
     nodeItems_ = Reader.CreateNodeList( Id );
     for ( auto& n : nodeItems_ ) {
-        n.second->Read( Reader, Id + '\\' + n.first );
+        n.second->Read(
+            Reader,
+            Format( _T( "%s%s%s" ), Id ,Reader.GetNodePathSeparator(), n.first )
+        );
     }
 }
 //---------------------------------------------------------------------------
@@ -319,7 +358,7 @@ void TConfigNode::Write( W& Writer, String Id ) const
 #define RESTORE_PROPERTY( NODE, PROPERTY ) \
 {\
     std::remove_reference_t< decltype( PROPERTY )> Tmp{ PROPERTY }; \
-    ( NODE ).GetItemAs( #PROPERTY, Tmp ); \
+    ( NODE ).GetItem( #PROPERTY, Tmp ); \
     PROPERTY = Tmp; \
 }
 
@@ -330,9 +369,9 @@ void TConfigNode::Write( W& Writer, String Id ) const
 
 #define RESTORE_VALUE( NODE, KEY_NAME, VALUE ) \
 {\
-	std::remove_reference_t< decltype( VALUE )> Tmp{ VALUE }; \
-	( NODE ).GetItemAs( ( KEY_NAME ), Tmp ); \
-	VALUE = Tmp; \
+    std::remove_reference_t< decltype( VALUE )> Tmp{ VALUE }; \
+    ( NODE ).GetItem( ( KEY_NAME ), Tmp ); \
+    VALUE = Tmp; \
 }
 
 #define SAVE_VALUE( NODE, KEY_NAME, VALUE ) \

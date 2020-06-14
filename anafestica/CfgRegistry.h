@@ -345,7 +345,7 @@ size_t TRegistry::ReadStringsTo( String Name, OutIt It )
         throw ERegistryException( &_SInvalidRegType, ARRAYOFCONST(( Name )) );
     }
 
-	// deduces the return type from the function itself
+    // deduces the return type from the function itself
     decltype( ReadStringsTo( Name, It ) ) Cnt {};
 
     auto Start = std::begin( Data );
@@ -435,7 +435,20 @@ void TRegistry::WriteStrings( String Name, InIt Begin, InIt End )
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 
+
 class TConfig : public Anafestica::TConfig {
+private:
+    class RegObjRAII {
+    public:
+        RegObjRAII( TConfig& Cfg ) : cfg_{ Cfg } { Cfg.CreateRegistryObject(); }
+        ~RegObjRAII() noexcept {
+            try { cfg_.DestroyAndCloseRegistryObject(); } catch ( ... ) {}
+        }
+        RegObjRAII( RegObjRAII const & ) = delete;
+        RegObjRAII& operator=( RegObjRAII const & ) = delete;
+    private:
+        TConfig& cfg_;
+    };
 public:
     TConfig( HKEY HKey, String RootPath, bool ReadOnly = false,
              bool FlushAllItems = false )
@@ -468,8 +481,25 @@ private:
       using cmatch_type = std::wcmatch;
       using std_string = std::wstring;
     #endif
+
+    template<typename PairType>
+    void DeleteValue( PairType const & v ) { registry_->DeleteValue( v.first ); }
+
+    void DeleteKey( String Path ) {
+        auto const Key = ExcludeTrailingBackslash( rootPath_ + Path );
+        if ( !registry_->CurrentPath.IsEmpty() ) {
+            if ( registry_->CurrentPath == Key ) {
+                registry_->CloseKey();
+            }
+        }
+        registry_->DeleteKey( Key );
+    }
 protected:
-    virtual TConfigNode::ValueContType DoCreateValueList( String KeyName ) override {
+    virtual String DoGetNodePathSeparator() const override {
+        return _T( "\\" );
+    }
+
+    virtual ValueContType DoCreateValueList( String KeyName ) override {
         regex_type re(
             _T( "" )
             "^(.*\?)(\?::(\\((\?:"
@@ -477,33 +507,34 @@ protected:
                 "(c)|"  "(uc)|"  "(s)|"   "(us)|"
                 "(ll)|" "(ull)|" "(b)|"   "(sz)|"
                 "(dt)|" "(flt)|" "(dbl)|" "(cur)|"
-                "(sl)|" "(sv)|"  "(dab)|" "(vb)"
-			"))\\))\?$"
-		);
+                "(sv)|" "(dab)|" "(vb)"
+            "))\\))\?$"
+        );
 
-		using RegObjType = std::remove_reference_t<decltype( *registry_ )>;
+        using RegObjType = std::remove_reference_t<decltype( *registry_ )>;
 
-		using ValueBuilder =
-			std::function<
-				TConfigNodeValueType (
-					RegObjType &, // Registry Object
-					String        // Key Name
-				)
-			>;
+        using ValueBuilder =
+            std::function<
+                TConfigNodeValueType (
+                    RegObjType &, // Registry Object
+                    String        // Key Name
+                )
+            >;
 
-		static std::array<ValueBuilder,20> Builders {
-			// CLASS  TAG      REG_TYPE      API
-			// -----  -------  ------------  ----------------
+        static std::array<ValueBuilder,TConfigNodeValueType::types::size::value> Builders {
 
-			// i32    (i)      REG_DWORD     ReadInteger
-			[]( RegObjType& Reg, String KeyName ) {
-				return Reg.ReadInteger( KeyName );
-			},
+            // CLASS  TAG      REG_TYPE      API
+            // -----  -------  ------------  ----------------
 
-			// u32    (u)      REG_DWORD     ReadInteger
-			[]( RegObjType& Reg, String KeyName ) {
-				return static_cast<unsigned>( Reg.ReadInteger( KeyName ) );
-			},
+            // i32    (i)      REG_DWORD     ReadInteger
+            []( RegObjType& Reg, String KeyName ) {
+                return Reg.ReadInteger( KeyName );
+            },
+
+            // u32    (u)      REG_DWORD     ReadInteger
+            []( RegObjType& Reg, String KeyName ) {
+                return static_cast<unsigned>( Reg.ReadInteger( KeyName ) );
+            },
 
             // i32    (l)      REG_DWORD     ReadInteger
             []( RegObjType& Reg, String KeyName ) {
@@ -548,9 +579,9 @@ protected:
             // u8     (b)      REG_DWORD     ReadInteger
             []( RegObjType& Reg, String KeyName ) {
                 return static_cast<bool>( Reg.ReadInteger( KeyName ) );
-			},
+            },
 
-			// sz     (sz)     REG_SZ        ReadString
+            // sz     (sz)     REG_SZ        ReadString
             []( RegObjType& Reg, String KeyName ) {
                 return Reg.ReadString( KeyName );
             },
@@ -575,20 +606,10 @@ protected:
                 return Reg.ReadCurrency( KeyName );
             },
 
-            // sl     (sl)     REG_MULTI_SZ  ReadStrings
-            []( RegObjType& Reg, String KeyName ) {
-                // si dovrebbe usare make_shared, ma da un AV al primo accesso
-                //auto StringList = std::make_shared<TStringList>();
-                auto StringList =
-                    std::shared_ptr<TStringList>( new TStringList{} );
-                Reg.ReadStrings( KeyName, *StringList );
-                return StringList;
-            },
-
             // sv     (sv)     REG_MULTI_SZ  ReadStringsTo
             []( RegObjType& Reg, String KeyName ) {
-                std::vector<String> Strings;
-                Reg.ReadStringsTo( KeyName, back_inserter( Strings ) );
+                StringCont Strings;
+                Reg.ReadStringsTo( KeyName, std::back_inserter( Strings ) );
                 return std::move( Strings );
             },
 
@@ -599,9 +620,9 @@ protected:
 
             // vb     (vb)     REG_BINARY    ReadBinaryDataTo
             []( RegObjType& Reg, String KeyName ) {
-				auto Size = Reg.GetDataSize( KeyName );
+                auto Size = Reg.GetDataSize( KeyName );
                 if ( Size < 0 ) {
-					throw Exception(
+                    throw Exception(
                         _T( "Registry Key %s\\%s has invalid data size" ),
                         ARRAYOFCONST((
                             Reg.CurrentPath,
@@ -610,100 +631,108 @@ protected:
                     );
                 }
                 auto Bytes = std::vector<Byte>( Size );
-                Reg.ReadBinaryDataTo( KeyName, back_inserter( Bytes ) );
+                Reg.ReadBinaryDataTo( KeyName, std::back_inserter( Bytes ) );
                 return std::move( Bytes );
             },
         };
 
-		struct PutItem {
-			void operator()(
-				TConfigNode::ValueContType& Values,
-				String Name,
-				TConfigNode::ValueType const & Value
-			) const {
-				TConfigNode::PutItemTo(
-					Values, Name,
-					TConfigNode::ValuePairType{
-						Value, TConfigNode::Operation::None
-					}
-				);
-			}
-		};
+        struct PutItem {
+            void operator()(
+                ValueContType& Values,
+                String Name,
+                ValueType const & Value
+            ) const {
+                PutItemTo(
+                    Values, Name, { Value, Operation::None }
+                );
+            }
+        };
 
-		TConfigNode::ValueContType Values;
-		if ( OpenKeyReadOnly( KeyName ) ) {
-			auto RegValues = std::make_unique<TStringList>();
-			registry_->GetValueNames( RegValues.get() );
-			cmatch_type ms;
-			for ( auto ValueName : RegValues.get() ) {
-				if ( regex_match( ValueName.c_str(), ms, re ) ) {
-					auto It = std::begin( ms );
-					std::advance( It, 1 );
-					String const Name = It->str().c_str();
-					std::advance( It, 2 );
-					It =
-						find_if(
-							It, std::end( ms ),
-							[]( auto const & m ) { return m.matched; }
-						);
-					if ( It != std::end( ms ) ) {
-						auto const Idx = distance( std::begin( ms ), It ) - 3;
-						auto Val = Builders[Idx]( *registry_, ValueName );
-						PutItem{}( Values, Name, Val );
-					}
-					else {
-						auto [Type,Size] = registry_->GetExDataType( ValueName );
-						switch ( Type ) {
-							case TExRegDataType::Binary:
-								PutItem{}( Values, Name, registry_->ReadBinaryData( ValueName ) );
-								break;
-							case TExRegDataType::Dword:
-								PutItem{}( Values, Name, registry_->ReadInteger( ValueName ) );
-								break;
-							case TExRegDataType::MultiSz: {
-									// It should use make_shared, but generates an AV on first access
-									// See: https://quality.embarcadero.com/browse/RSP-27633
-									//auto StringList = std::make_shared<TStringList>();
-									auto StringList = std::shared_ptr<TStringList>( new TStringList() );
-									registry_->ReadStrings( ValueName, *StringList );
-									PutItem{}( Values, Name, StringList );
-								}
-								break;
-							case TExRegDataType::Qword:
-								PutItem{}(
-									Values, Name,
-									registry_->ReadQWORD<long long>( ValueName )
-								);
-								break;
-							case TExRegDataType::Sz:
-								PutItem{}( Values, Name, registry_->ReadString( ValueName ) );
-								break;
-							case TExRegDataType::ExpandSz:
-								PutItem{}( Values, Name, registry_->ReadExpandString( ValueName ) );
-								break;
-							default:
-								throw Exception(
-									_T( "Registry Key %s\\%s has an invalid data type" ),
-									ARRAYOFCONST((
-										registry_->CurrentPath,
-										ValueName
-									))
-								);
-						}
-					}
-				}
-			}
-		}
+        ValueContType Values;
+        if ( OpenKeyReadOnly( KeyName ) ) {
+            auto RegValues = std::make_unique<TStringList>();
+            registry_->GetValueNames( RegValues.get() );
+            cmatch_type ms;
+            for ( auto ValueName : RegValues.get() ) {
+                if ( regex_match( ValueName.c_str(), ms, re ) ) {
+                    auto It = std::begin( ms );
+                    std::advance( It, 1 );
+                    String const Name = It->str().c_str();
+                    std::advance( It, 2 );
+                    It =
+                        find_if(
+                            It, std::end( ms ),
+                            []( auto const & m ) { return m.matched; }
+                        );
+                    if ( It != std::end( ms ) ) {
+                        auto const Idx = distance( std::begin( ms ), It ) - 3;
+                        auto Val = Builders[Idx]( *registry_, ValueName );
+                        PutItem{}( Values, Name, Val );
+                    }
+                    else {
+                        auto [Type,Size] = registry_->GetExDataType( ValueName );
+                        switch ( Type ) {
+                            case TExRegDataType::Binary:
+                                PutItem{}(
+                                    Values, Name,
+                                    registry_->ReadBinaryData( ValueName )
+                                );
+                                break;
+                            case TExRegDataType::Dword:
+                                PutItem{}(
+                                    Values, Name,
+                                    registry_->ReadInteger( ValueName )
+                                );
+                                break;
+                            case TExRegDataType::MultiSz: {
+                                    StringCont Strings;
+                                    registry_->ReadStringsTo(
+                                        ValueName,
+                                        std::back_inserter( Strings )
+                                    );
+                                    PutItem{}( Values, Name, Strings );
+                                }
+                                break;
+                            case TExRegDataType::Qword:
+                                PutItem{}(
+                                    Values, Name,
+                                    registry_->ReadQWORD<long long>( ValueName )
+                                );
+                                break;
+                            case TExRegDataType::Sz:
+                                PutItem{}(
+                                    Values, Name,
+                                    registry_->ReadString( ValueName )
+                                );
+                                break;
+                            case TExRegDataType::ExpandSz:
+                                PutItem{}(
+                                    Values, Name,
+                                    registry_->ReadExpandString( ValueName )
+                                );
+                                break;
+                            default:
+                                throw Exception(
+                                    _T( "Registry Key %s\\%s has an invalid data type" ),
+                                    ARRAYOFCONST((
+                                        registry_->CurrentPath,
+                                        ValueName
+                                    ))
+                                );
+                        }
+                    }
+                }
+            }
+        }
+        return Values;
+    }
 
-		return Values;
-	}
+    virtual NodeContType DoCreateNodeList( String KeyName ) override {
+        NodeContType Nodes;
 
-	virtual TConfigNode::NodeContType DoCreateNodeList( String KeyName ) override {
-		TConfigNode::NodeContType Nodes;
-
-		if ( OpenKeyReadOnly( KeyName ) ) {
-			auto RegKeys = std::make_unique<TStringList>();
-			registry_->GetKeyNames( RegKeys.get() );
+        if ( OpenKeyReadOnly( KeyName ) ) {
+            auto RegKeys = std::make_unique<TStringList>();
+            registry_->GetKeyNames( RegKeys.get() );
             for ( auto const & Key : RegKeys.get() ) {
                 Nodes[Key] = std::move( std::make_unique<TConfigNode>() );
             }
@@ -711,15 +740,15 @@ protected:
         return Nodes;
     }
 
-    virtual void DoSaveValueList( String KeyName, TConfigNode::ValueContType const & Values ) override {
+    virtual void DoSaveValueList( String KeyName, ValueContType const & Values ) override {
         if ( !Values.empty() ) {
             if ( OpenKey( KeyName, true ) ) {
                 for ( auto& v : Values ) {
                     auto const ValueState = v.second.second;
-                    if ( GetAlwaysFlushNodeFlag() || ValueState == TConfigNode::Operation::Write ) {
-                        SaveValue( v );
+                    if ( GetAlwaysFlushNodeFlag() || ValueState == Operation::Write ) {
+                        SaveValue( *registry_, v );
                     }
-                    else if ( v.second.second == TConfigNode::Operation::Erase ) {
+                    else if ( v.second.second == Operation::Erase ) {
                         DeleteValue( v );
                     }
                 }
@@ -732,7 +761,7 @@ protected:
         }
     }
 
-    virtual void DoSaveNodeList( String KeyName, TConfigNode::NodeContType const & Nodes ) override {
+    virtual void DoSaveNodeList( String KeyName, NodeContType const & Nodes ) override {
         for ( auto const & n : Nodes ) {
             if ( GetAlwaysFlushNodeFlag() || n.second->IsModified() ) {
                 n.second->Write(
@@ -793,15 +822,153 @@ private:
         return true;
     }
 
-    void SaveValue( TConfigNode::ValueContType::value_type const & v ) {
+    // https://www.bfilipek.com/2019/02/2lines3featuresoverload.html
+    template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
+    template<class... Ts> overload( Ts... ) -> overload<Ts...>;
+
+    void SaveValue( TRegistry& Reg, ValueContType::value_type const & v ) {
         boost::apply_visitor(
-            SaveVisitor{ *registry_, v.first }, v.second.first
+            overload {
+                // REG_BINARY    - Binary data in any form.
+                // REG_DWORD     - 32-bit number.
+                // REG_QWORD     - 64-bit number.
+                // REG_EXPAND_SZ - Null-terminated string that contains
+                //                 unexpanded references to environment
+                //                 variables
+                // REG_MULTI_SZ  - Array of null-terminated strings that
+                //                 are terminated by two null characters.
+                // REG_SZ        - Null-terminated string.
+
+                // CLASS  TAG    REG_TYPE      API
+                // -----  -----  ------------  ----------------
+                // i32           REG_DWORD     WriteInteger
+                [&Reg, &v]( int Val ) {
+                    Reg.WriteInteger( v.first, Val );
+                },
+
+                // u32    (u)    REG_DWORD     WriteInteger
+                [&Reg, &v]( unsigned int Val ) {
+                    Reg.WriteInteger(
+                        Format( _T( "%s:(u)" ), ARRAYOFCONST(( v.first )) ), Val
+                    );
+                },
+
+                // i32    (l)    REG_DWORD     WriteInteger
+                [&Reg, &v]( long Val ) {
+                    Reg.WriteInteger(
+                        Format( _T( "%s:(l)" ), ARRAYOFCONST(( v.first )) ), Val
+                    );
+                },
+
+                // u32    (ul)   REG_DWORD     WriteInteger
+                [&Reg, &v]( unsigned long Val ) {
+                    Reg.WriteInteger(
+                        Format( _T( "%s:(ul)" ), ARRAYOFCONST(( v.first )) ), Val
+                    );
+                },
+
+                // i8     (c)    REG_DWORD     WriteInteger
+                [&Reg, &v]( char Val ) {
+                    Reg.WriteInteger(
+                        Format( _T( "%s:(c)" ), ARRAYOFCONST(( v.first )) ), Val
+                    );
+                },
+
+                // u8     (uc)   REG_DWORD     WriteInteger
+                [&Reg, &v]( unsigned char Val ) {
+                    Reg.WriteInteger(
+                        Format( _T( "%s:(uc)" ), ARRAYOFCONST(( v.first )) ), Val
+                    );
+                },
+
+                // i16    (s)    REG_DWORD     WriteInteger
+                [&Reg, &v]( short Val ) {
+                    Reg.WriteInteger(
+                        Format( _T( "%s:(s)" ), ARRAYOFCONST(( v.first )) ), Val
+                    );
+                },
+
+                // u16    (us)   REG_DWORD     WriteInteger
+                [&Reg, &v]( unsigned short Val ) {
+                    Reg.WriteInteger(
+                        Format( _T( "%s:(us)" ), ARRAYOFCONST(( v.first )) ), Val
+                    );
+                },
+
+                // i64           REG_QWORD     WriteQWORD
+                [&Reg, &v]( long long Val ) {
+                    Reg.WriteQWORD( v.first, Val );
+                },
+
+                // u64    (ull)  REG_QWORD     WriteQWORD
+                [&Reg, &v]( unsigned long long Val ) {
+                    Reg.WriteQWORD(
+                        Format( _T( "%s:(ull)" ), ARRAYOFCONST(( v.first )) ), Val
+                    );
+                },
+
+                // u8     (b)    REG_DWORD     WriteInteger
+                [&Reg, &v]( bool Val ) {
+                    Reg.WriteInteger(
+                        Format( _T( "%s:(b)" ), ARRAYOFCONST(( v.first )) ), Val
+                    );
+                },
+
+                // sz            REG_SZ        WriteString
+                [&Reg, &v]( System::UnicodeString Val ) {
+                    Reg.WriteString( v.first, Val );
+                },
+
+                // b8     (dt)   REG_BINARY    WriteDateTime
+                [&Reg, &v]( System::TDateTime Val ) {
+                    Reg.WriteDateTime(
+                        Format( _T( "%s:(dt)" ), ARRAYOFCONST(( v.first )) ), Val
+                    );
+                },
+
+                // b8     (flt)  REG_BINARY    WriteFloat
+                [&Reg, &v]( float Val ) {
+                    Reg.WriteFloat(
+                        Format( _T( "%s:(flt)" ), ARRAYOFCONST(( v.first )) ), Val
+                    );
+                },
+
+                // b8     (dbl)  REG_BINARY    WriteFloat
+                [&Reg, &v]( double Val ) {
+                    Reg.WriteFloat(
+                        Format( _T( "%s:(dbl)" ), ARRAYOFCONST(( v.first )) ), Val
+                    );
+                },
+
+                // b8     (cur)  REG_BINARY    WriteCurrency
+                [&Reg, &v]( System::Currency Val ) {
+                    Reg.WriteCurrency(
+                        Format( _T( "%s:(cur)" ), ARRAYOFCONST(( v.first )) ), Val
+                    );
+                },
+
+                // sv     (sv)   REG_MULTI_SZ  WriteStrings
+                [&Reg, &v]( StringCont const & Val ) {
+                    Reg.WriteStrings( v.first, Val );
+                },
+
+                // dab           REG_BINARY    WriteBinaryData
+                [&Reg, &v]( TBytes Val ) {
+                    Reg.WriteBinaryData( v.first, Val );
+                },
+
+                // vb     (vb)   REG_BINARY    WriteBinaryData
+                [&Reg, &v]( std::vector<Byte> const & Val ) {
+                    Reg.WriteBinaryData(
+                        Format( _T( "%s:(vb)" ), ARRAYOFCONST(( v.first )) ), Val
+                    );
+                }
+            },
+            v.second.first
         );
     }
 
-    template<typename PairType>
-    void DeleteValue( PairType const & v ) { registry_->DeleteValue( v.first ); }
-
+    /*
     void DeleteKey( String Path ) {
         auto const Key = ExcludeTrailingBackslash( rootPath_ + Path );
         if ( !registry_->CurrentPath.IsEmpty() ) {
@@ -812,28 +979,12 @@ private:
         registry_->DeleteKey( Key );
     }
 
-    class RegObjRAII {
-    public:
-        RegObjRAII( TConfig& Cfg ) : cfg_{ Cfg } { Cfg.CreateRegistryObject(); }
-        ~RegObjRAII() noexcept {
-            try { cfg_.DestroyAndCloseRegistryObject(); } catch ( ... ) {}
-        }
-        RegObjRAII( RegObjRAII const & ) = delete;
-        RegObjRAII& operator=( RegObjRAII const & ) = delete;
-        //RegObjRAII( RegObjRAII&& ) = delete;
-        //RegObjRAII& operator=( RegObjRAII&& ) = delete;
-    private:
-        TConfig& cfg_;
-    };
-
     class SaveVisitor : public boost::static_visitor<void> {
     public:
         SaveVisitor( TRegistry& Reg, String Name )
             : reg_{ Reg }, name_{ Name } {}
         SaveVisitor( SaveVisitor const & ) = delete;
         SaveVisitor& operator=( SaveVisitor const & ) = delete;
-        //SaveVisitor( SaveVisitor&& ) = delete;
-        //SaveVisitor& operator=( SaveVisitor&& ) = delete;
 
         // REG_BINARY    - Binary data in any form.
         // REG_DWORD     - 32-bit number.
@@ -943,17 +1094,18 @@ private:
             );
         }
 
-        void operator()( std::shared_ptr<TStrings> Val ) const {  // sl            REG_MULTI_SZ  WriteStrings
-            //reg_.WriteStrings(
-            //    Format( _T( "%s:(sl)" ), ARRAYOFCONST(( name_ )) ), *Val
-            //);
-            reg_.WriteStrings( name_, *Val );
-        }
+//        void operator()( std::shared_ptr<TStrings> Val ) const {  // sl            REG_MULTI_SZ  WriteStrings
+//           //reg_.WriteStrings(
+//           //    Format( _T( "%s:(sl)" ), ARRAYOFCONST(( name_ )) ), *Val
+//           //);
+//           reg_.WriteStrings( name_, *Val );
+//       }
 
-        void operator()( std::vector<String> const &Val ) const { // sv     (sv)   REG_MULTI_SZ  WriteStrings
-            reg_.WriteStrings(
-                Format( _T( "%s:(sv)" ), ARRAYOFCONST(( name_ )) ), Val
-            );
+        void operator()( StringCont const &Val ) const { // sv     (sv)   REG_MULTI_SZ  WriteStrings
+            //reg_.WriteStrings(
+            //    Format( _T( "%s:(sv)" ), ARRAYOFCONST(( name_ )) ), Val
+            //);
+            reg_.WriteStrings( name_, Val );
         }
 
         void operator()( TBytes Val ) const {                     // dab           REG_BINARY    WriteBinaryData
@@ -973,6 +1125,7 @@ private:
         Anafestica::Registry::TRegistry& reg_;
         String name_;
     };
+    */
 
 };
 

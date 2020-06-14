@@ -8,6 +8,8 @@
 
 #include <anafestica/Cfg.h>
 
+//rimuovere i valori top, left, right e bottom prima di riscriverli?
+
 //---------------------------------------------------------------------------
 namespace Anafestica {
 //---------------------------------------------------------------------------
@@ -274,7 +276,7 @@ bool TPersistFormVCL<CfgSingleton>::HaveToSaveOrRestorePos( StoreOpts Val ) noex
 #define RESTORE_LOCAL_PROPERTY( PROPERTY ) \
 {\
     std::remove_reference_t< decltype( PROPERTY )> Tmp{ PROPERTY }; \
-    GetConfigNode().GetItemAs( #PROPERTY, Tmp ); \
+    GetConfigNode().GetItem( #PROPERTY, Tmp ); \
     PROPERTY = Tmp; \
 }
 

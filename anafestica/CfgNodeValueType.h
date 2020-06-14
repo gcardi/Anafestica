@@ -14,6 +14,9 @@
 namespace Anafestica {
 //---------------------------------------------------------------------------
 
+using StringCont = std::vector<String>;
+using BytesCont = std::vector<Byte>;
+
 using TConfigNodeValueType =
     boost::variant<
         int
@@ -32,9 +35,9 @@ using TConfigNodeValueType =
       , float
       , double
       , System::Currency
-      , std::vector<String>
+      , StringCont
       , TBytes
-      , std::vector<Byte>
+      , BytesCont
     >;
 
 //---------------------------------------------------------------------------

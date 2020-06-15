@@ -19,13 +19,13 @@ The library itself is made only by header files and therefore it is easy to use 
 
 ### Prerequisites / Dependecies
 
-It is necessary to install the boost libraries first. Anafestica uses "boost::variant" instead of "std::variant" due to an unresolved bug in the standard C++Builder's library, which prevents direct assignment of values to std::variant (See (https://quality.embarcadero.com/browse/RSP-27418) on Embarcadero Quality Portal).
+Anafestica uses "boost::variant" instead of "std::variant" due to an unresolved bug in the standard C++Builder's library, which prevents direct assignment of values to std::variant (See (https://quality.embarcadero.com/browse/RSP-27418) on Embarcadero Quality Portal).
 
 The "boost::variant" class is contained in one of the boost project libraries. So it's necessary to obtain "boost libraries" first. Luckily, it's possible to use the IDE's GetIt tool to install seamlessly the boost libraries (e.g. 1.68.0 for Rad Studio 10.3 or 1.70.0 for Rad Studio 10.4).
 
 <img src="https://i.ibb.co/FmPznnX/3-611-D020-B-2-C12-4839-8567-A7-E8-A650940-E.png" alt="Figure 3">
 
-Note that only _clang-based_ compilers are supported by this library.
+Please, note that only _clang-based_ compilers are supported by this library (i.e bcc32c and bcc64).
 
 ### Installing
 

@@ -19,6 +19,12 @@ public:
         , fileName_( FileName )
     {
         GetRootNode().Read( *this, String() );
+        if ( FileExists( fileName_ ) ) {
+            XMLDoc_ = LoadXMLDocument( fileName_ );
+            TRrid<TConfigXml,&TConfigXml::ReleaseXMLDoc> const XMLDocMngr( *this );
+            CheckEncodingAndVersion( XMLDoc_ );
+            GetRootNode().Read( *this, GetMainNodeName() );
+        }
     }
 
     ~TConfig() {

@@ -30,10 +30,7 @@ private:
 
     template<typename T>
     struct type_to_enum {
-        //using U =
-        //    std::remove_cv_t<std::remove_reference_t<T>>;
         static constexpr tag_type value =
-        //    std::is_enum_v<U> ?
             std::is_enum_v<std::remove_cv_t<std::remove_reference_t<T>>> ?
               tag_type::enum_tg
             :

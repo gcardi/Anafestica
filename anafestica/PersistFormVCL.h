@@ -8,8 +8,6 @@
 
 #include <anafestica/Cfg.h>
 
-//rimuovere i valori top, left, right e bottom prima di riscriverli?
-
 //---------------------------------------------------------------------------
 namespace Anafestica {
 //---------------------------------------------------------------------------

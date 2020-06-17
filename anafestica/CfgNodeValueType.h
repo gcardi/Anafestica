@@ -36,7 +36,7 @@ using TConfigNodeValueType =
       , double
       , System::Currency
       , StringCont
-      , TBytes
+      , System::TBytes
       , BytesCont
     >;
 

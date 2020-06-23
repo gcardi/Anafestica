@@ -43,6 +43,7 @@ private:
 protected:
     virtual TConfigNode::ValueContType DoCreateValueList( String KeyName ) override {
         TConfigNode::ValueContType Values;
+
         return Values;
     }
 

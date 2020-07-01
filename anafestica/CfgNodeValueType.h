@@ -4,6 +4,7 @@
 #define CfgNodeValueTypeH
 
 #include <System.Classes.hpp>
+#include <System.SysUtils.hpp>
 
 #include <memory>
 #include <vector>
@@ -36,7 +37,7 @@ using TConfigNodeValueType =
       , double
       , System::Currency
       , StringCont
-      , System::TBytes
+      , System::Sysutils::TBytes
       , BytesCont
     >;
 

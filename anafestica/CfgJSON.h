@@ -11,12 +11,10 @@
 #include <System.SysUtils.hpp>
 
 #include <memory>
-#include <string_view>
 #include <vector>
 #include <array>
 #include <functional>
 #include <iterator>
-#include <string>
 
 #include <anafestica/Cfg.h>
 
@@ -38,7 +36,7 @@ public:
     {
         if ( TFile::Exists( fileName_ ) ) {
             JSONObjRAII JSON{ *this };
-            GetRootNode().Read( *this, String() );
+            GetRootNode().Read( *this, TConfigPath{} );
         }
     }
 
@@ -71,9 +69,21 @@ private:
     String fileName_;
     bool compact_;
 
+    static String GetText( TConfigPath const & Path, String Prefix = String{} ) {
+        auto SB = std::make_unique<TStringBuilder>( Prefix );
+        for ( auto const & Item : Path ) {
+            SB->AppendFormat(
+                _T( "\\%s\\%s" ), ARRAYOFCONST(( NodesNodeName, Item ))
+            );
+        }
+        return SB->ToString();
+    }
+
     void CreateJSONObject() {
-        if ( FileExists( fileName_ ) ) {
-            document_.reset( TJSONObject::ParseJSONValue( TFile::ReadAllText( fileName_ ) ) );
+        if ( TFile::Exists( fileName_ ) ) {
+            document_.reset(
+                TJSONObject::ParseJSONValue( TFile::ReadAllText( fileName_ ) )
+            );
             if ( document_ ) {
                 return;
             }
@@ -85,79 +95,93 @@ private:
         document_.reset();
     }
 
-    // https://www.bfilipek.com/2018/07/string-view-perf-followup.html
-    #if defined( _UNICODE )
-    auto SplitStringView( std::wstring_view StrView, std::wstring_view Delimiters )
-    #else
-    auto SplitStringView( std::string_view StrView, std::string_view Delimiters )
-    #endif
-    {
-        using SVType = decltype( StrView );
-        std::vector<SVType> Result;
-
-        for ( size_t First {} ; First < StrView.size() ; ) {
-            const auto Second = StrView.find_first_of( Delimiters, First );
-
-            if ( First != Second ) {
-                Result.emplace_back( StrView.substr( First, Second - First ) );
+    TJSONObject* OpenPath( TConfigPath const & Path ) {
+        if ( auto Node = dynamic_cast<TJSONObject*>( document_.get() ) ) {
+            for ( auto const & NodeName : Path ) {
+                if ( auto NodesInner = Node->FindValue( NodesNodeName ) ) {
+                    if ( auto Inner = NodesInner->FindValue( NodeName ) ) {
+                        if ( auto NodeObj = dynamic_cast<TJSONObject*>( Inner ) ) {
+                            Node = NodeObj;
+                            continue;
+                        }
+                    }
+                }
+                return nullptr;
             }
-
-            if ( Second == SVType::npos ) {
-                break;
-            }
-
-            First = Second + 1;
+            return Node;
         }
-        return Result;
+        return nullptr;
     }
 
-    auto SplitString( String Text, String Delimiters ) {
-    #if defined( _UNICODE )
-        return SplitStringView(
-            std::wstring_view( Text.c_str(), Text.Length() ),
-            std::wstring_view( Delimiters.c_str(), Delimiters.Length() )
-        );
-    #else
-        return SplitStringView(
-            std::string_view( Text.c_str(), Text.Length() ),
-            std::string_view( Delimiters.c_str(), Delimiters.Length() )
-        );
-    #endif
+    TJSONObject* OpenNodes( TConfigPath const & Path ) {
+        if ( auto Node = OpenPath( Path ) ) {
+            if ( auto Inner = Node->FindValue( NodesNodeName ) ) {
+                return dynamic_cast<TJSONObject*>( Inner );
+            }
+        }
+        return nullptr;
     }
 
-    TJSONObject* OpenPath( String Path, bool Create = false ) {
-        auto Node = dynamic_cast<TJSONObject*>( document_.get() );
-        if ( Node ) {
-            for ( auto const & Item : SplitString( Path, _T( "\\" ) ) ) {
-                auto const NodeName = String( Item.data(), Item.size() );
+    TJSONObject* OpenValues( TConfigPath const & Path ) {
+        if ( auto Node = OpenPath( Path ) ) {
+            if ( auto Inner = Node->FindValue( ValuesNodeName ) ) {
+                return dynamic_cast<TJSONObject*>( Inner );
+            }
+        }
+        return nullptr;
+    }
+
+    TJSONObject* ForcePath( TConfigPath const & Path ) {
+        if ( auto Node = dynamic_cast<TJSONObject*>( document_.get() ) ) {
+            TConfigPath FPath;
+            FPath.reserve( Path.size() );
+            for ( auto const & NodeName : Path ) {
+                FPath.push_back( NodesNodeName );
+                FPath.push_back( NodeName );
+            }
+            for ( auto const & NodeName : FPath ) {
                 if ( auto Inner = Node->FindValue( NodeName ) ) {
                     if ( auto ANode = dynamic_cast<TJSONObject*>( Inner ) ) {
                         Node = ANode;
                     }
-                    else {
-                        throw Exception(
-                            _T( "\'%s' is not a JSON object for path \'%s\'" ),
-                            ARRAYOFCONST(( NodeName, Path ))
-                        );
-                    }
                 }
-                else if ( Create ) {
+                else {
                     auto InnerObj = std::make_unique<TJSONObject>();
                     Node->AddPair( NodeName, InnerObj.get() );
                     Node = InnerObj.release();
                 }
-                else {
-                    return nullptr;
-                }
             }
             return Node;
         }
-        else {
-            throw Exception(
-                _T( "Can't open JSON node \'%s\'" ),
-                ARRAYOFCONST(( Path ))
-            );
+        return nullptr;
+    }
+
+    TJSONObject* ForceNodes( TConfigPath const & Path ) {
+        if ( auto Node = ForcePath( Path ) ) {
+            if ( auto Inner = Node->FindValue( NodesNodeName ) ) {
+                return dynamic_cast<TJSONObject*>( Inner );
+            }
+            else {
+                auto InnerObj = std::make_unique<TJSONObject>();
+                Node->AddPair( NodesNodeName, InnerObj.get() );
+                return InnerObj.release();
+            }
         }
+        return nullptr;
+    }
+
+    TJSONObject* ForceValues( TConfigPath const & Path ) {
+        if ( auto Node = ForcePath( Path ) ) {
+            if ( auto Inner = Node->FindValue( ValuesNodeName ) ) {
+                return dynamic_cast<TJSONObject*>( Inner );
+            }
+            else {
+                auto InnerObj = std::make_unique<TJSONObject>();
+                Node->AddPair( ValuesNodeName, InnerObj.get() );
+                return InnerObj.release();
+            }
+        }
+        return nullptr;
     }
 
     template<typename J, typename T>
@@ -329,16 +353,8 @@ private:
         );
     }
 
-    void DeleteValue( TJSONObject& Obj, ValueContType::value_type const & v ) {
-        Obj.RemovePair( v.first );
-    }
-
 protected:
-    virtual String DoGetNodePathSeparator() const override {
-        return Format( _T( "\\%s\\" ), String( NodesNodeName ) );
-    }
-
-    virtual ValueContType DoCreateValueList( String KeyName ) override {
+    virtual ValueContType DoCreateValueList( TConfigPath Path ) override {
         using ValueBuilderType =
             std::function<
                 TConfigNodeValueType (
@@ -481,7 +497,7 @@ protected:
 
         ValueContType Values;
 
-        if ( auto Key = OpenPath( Format( _T( "%s\\%s" ), KeyName, ValuesNodeName ) ) ) {
+        if ( auto Key = OpenValues( Path ) ) {
             for ( int Idx = 0 ; Idx < Key->Count ; ++Idx ) {
                 auto const & Pair = Key->Pairs[Idx];
                 if ( dynamic_cast<TJSONObject*>( Pair->JsonValue ) ) {
@@ -516,12 +532,12 @@ protected:
         return Values;
     }
 
-    virtual NodeContType DoCreateNodeList( String KeyName ) override {
+    virtual NodeContType DoCreateNodeList( TConfigPath Path ) override {
         NodeContType Nodes;
 
-        if ( auto Key = OpenPath( Format( _T( "%s\\%s" ), KeyName, NodesNodeName ) ) ) {
-            for ( int Idx = 0 ; Idx < Key->Count ; ++Idx ) {
-                auto const & Pair = Key->Pairs[Idx];
+        if ( auto Node = OpenNodes( Path ) ) {
+            for ( int Idx = 0 ; Idx < Node->Count ; ++Idx ) {
+                auto const & Pair = Node->Pairs[Idx];
                 if ( dynamic_cast<TJSONObject*>( Pair->JsonValue ) ) {
                     auto NodeName = Pair->JsonString->Value();
                     Nodes[NodeName] = std::move( std::make_unique<TConfigNode>() );
@@ -531,41 +547,33 @@ protected:
         return Nodes;
     }
 
-    virtual void DoSaveValueList( String KeyName, ValueContType const & Values ) override {
+    virtual void DoSaveValueList( TConfigPath Path, ValueContType const & Values ) override {
         if ( !Values.empty() ) {
-            if ( auto Key = OpenPath( Format( _T( "%s\\%s" ), KeyName, ValuesNodeName ), true ) ) {
+            if ( auto Node = ForceValues( Path ) ) {
                 for ( auto& v : Values ) {
                     auto const ValueState = v.second.second;
                     if ( GetAlwaysFlushNodeFlag() || ValueState == Operation::Write ) {
-                        SaveValue( *Key, v );
+                        SaveValue( *Node, v );
                     }
                     else if ( v.second.second == Operation::Erase ) {
-                        DeleteValue( *Key, v );
+                        Node->RemovePair( v.first );
                     }
                 }
             }
         }
     }
 
-    virtual void DoSaveNodeList( String KeyName, NodeContType const & Nodes ) override {
-        for ( auto const & n : Nodes ) {
-            if ( GetAlwaysFlushNodeFlag() || n.second->IsModified() ) {
-                n.second->Write(
-                    *this,
-                    Format(
-                        _T( "%s\\%s\\%s" ), KeyName, NodesNodeName, n.first
-                    )
-                );
-            }
+    virtual void DoDeleteNode( TConfigPath Path ) override {
+        auto NodeName = Path.back();
+        Path.pop_back();
+        if ( auto Node = OpenNodes( Path ) ) {
+            Node->RemovePair( NodeName );
         }
-    }
-
-    virtual void DoDeleteNode( String KeyName ) override {
     }
 
     virtual void DoFlush() override {
         JSONObjRAII JSON{ *this };
-        GetRootNode().Write( *this, String() );
+        GetRootNode().Write( *this, TConfigPath{} );
 
         if ( !TFile::Exists( fileName_ ) ) {
             auto Path = TPath::GetFullPath( TPath::GetDirectoryName( fileName_ ) );

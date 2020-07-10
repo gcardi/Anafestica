@@ -5,12 +5,12 @@
 
 #include <Xml.XMLIntf.hpp>
 #include <Xml.XMLDoc.hpp>
-//#include <System.Win.ComObj.hpp>
 #include <Clipbrd.hpp>
 #include <System.DateUtils.hpp>
 #include <System.NetEncoding.hpp>
 
 #include <utility>
+#include <string>
 
 #include <anafestica/Cfg.h>
 
@@ -231,52 +231,62 @@ private:
             boost::apply_visitor(
                 overload {
                     [this, &ValueNode]( int Val ) {
-                        ValueNode->Attributes[TypeAttrName] = String( _T( "i" ) );
+                        ValueNode->Attributes[TypeAttrName] =
+                            String( cnv_xstr( TT_I ) );
                         ValueNode->Text = Val;
                     },
 
                     [this, &ValueNode]( unsigned int Val ) {
-                        ValueNode->Attributes[TypeAttrName] = String( _T( "u" ) );
+                        ValueNode->Attributes[TypeAttrName] =
+                            String( cnv_xstr( TT_U ) );
                         ValueNode->Text = static_cast<__int64>( Val );
                     },
 
                     [this, &ValueNode]( long Val ) {
-                        ValueNode->Attributes[TypeAttrName] = String( _T( "l" ) );
+                        ValueNode->Attributes[TypeAttrName] =
+                            String( cnv_xstr( TT_L ) );
                         ValueNode->Text = Val;
                     },
 
                     [this, &ValueNode]( unsigned long Val ) {
-                        ValueNode->Attributes[TypeAttrName] = String( _T( "ul" ) );
+                        ValueNode->Attributes[TypeAttrName] =
+                            String( cnv_xstr( TT_UL ) );
                         ValueNode->Text = static_cast<__int64>( Val );
                     },
 
                     [this, &ValueNode]( char Val ) {
-                        ValueNode->Attributes[TypeAttrName] = String( _T( "c" ) );
+                        ValueNode->Attributes[TypeAttrName] =
+                            String( cnv_xstr( TT_C ) );
                         ValueNode->Text = static_cast<int>( Val );
                     },
 
                     [this, &ValueNode]( unsigned char Val ) {
-                        ValueNode->Attributes[TypeAttrName] = String( _T( "uc" ) );
+                        ValueNode->Attributes[TypeAttrName] =
+                            String( cnv_xstr( TT_UC ) );
                         ValueNode->Text = static_cast<int>( Val );
                     },
 
                     [this, &ValueNode]( short Val ) {
-                        ValueNode->Attributes[TypeAttrName] = String( _T( "s" ) );
+                        ValueNode->Attributes[TypeAttrName] =
+                            String( cnv_xstr( TT_S ) );
                         ValueNode->Text = static_cast<int>( Val );
                     },
 
                     [this, &ValueNode]( unsigned short Val ) {
-                        ValueNode->Attributes[TypeAttrName] = String( _T( "us" ) );
+                        ValueNode->Attributes[TypeAttrName] =
+                            String( cnv_xstr( TT_US ) );
                         ValueNode->Text = static_cast<int>( Val );
                     },
 
                     [this, &ValueNode]( long long Val ) {
-                        ValueNode->Attributes[TypeAttrName] = String( _T( "ll" ) );
+                        ValueNode->Attributes[TypeAttrName] =
+                            String( cnv_xstr( TT_LL ) );
                         ValueNode->Text = static_cast<__int64>( Val );
                     },
 
                     [this, &ValueNode]( unsigned long long Val ) {
-                        ValueNode->Attributes[TypeAttrName] = String( _T( "ull" ) );
+                        ValueNode->Attributes[TypeAttrName] =
+                            String( cnv_xstr( TT_ULL ) );
                         ValueNode->Text =
 #if defined( _UNICODE )
                             std::to_wstring( Val ).c_str();
@@ -286,39 +296,46 @@ private:
                     },
 
                     [this, &ValueNode]( bool Val ) {
-                        ValueNode->Attributes[TypeAttrName] = String( _T( "b" ) );
+                        ValueNode->Attributes[TypeAttrName] =
+                            String( cnv_xstr( TT_B ) );
                         ValueNode->Text = BoolToStr( Val, true );
                     },
 
                     [this, &ValueNode]( System::UnicodeString Val ) {
-                        ValueNode->Attributes[TypeAttrName] = String( _T( "sz" ) );
+                        ValueNode->Attributes[TypeAttrName] =
+                            String( cnv_xstr( TT_SZ ) );
                         ValueNode->Text = Val;
                     },
 
                     [this, &ValueNode]( System::TDateTime Val ) {
-                        ValueNode->Attributes[TypeAttrName] = String( _T( "dt" ) );
+                        ValueNode->Attributes[TypeAttrName] =
+                            String( cnv_xstr( TT_DT ) );
                         ValueNode->Text = DateToISO8601( Val, false );
                     },
 
                     [this, &ValueNode]( float Val ) {
-                        ValueNode->Attributes[TypeAttrName] = String( _T( "flt" ) );
+                        ValueNode->Attributes[TypeAttrName] =
+                            String( cnv_xstr( TT_FLT ) );
                         ValueNode->Text = Val;
                     },
 
                     [this, &ValueNode]( double Val ) {
-                        ValueNode->Attributes[TypeAttrName] = String( _T( "dbl" ) );
+                        ValueNode->Attributes[TypeAttrName] =
+                            String( cnv_xstr( TT_DBL ) );
                         ValueNode->Text = Val;
                     },
 
                     [this, &ValueNode]( System::Currency Val ) {
-                        ValueNode->Attributes[TypeAttrName] = String( _T( "cur" ) );
+                        ValueNode->Attributes[TypeAttrName] =
+                            String( cnv_xstr( TT_CUR ) );
                         TFormatSettings FS;
                         FS.DecimalSeparator = _T( '.' );
                         ValueNode->Text = CurrToStr( Val, FS );
                     },
 
                     [this, &ValueNode]( StringCont const & Val ) {
-                        ValueNode->Attributes[TypeAttrName] = String( _T( "sv" ) );
+                        ValueNode->Attributes[TypeAttrName] =
+                            String( cnv_xstr( TT_SV ) );
                         auto SB = std::make_unique<TStringBuilder>();
                         for ( auto const & Item : Val ) {
                             SB->AppendLine( Item );
@@ -327,7 +344,8 @@ private:
                     },
 
                     [this, &ValueNode]( TBytes Val ) {
-                        ValueNode->Attributes[TypeAttrName] = String( _T( "dab" ) );
+                        ValueNode->Attributes[TypeAttrName] =
+                            String( cnv_xstr( TT_DAB ) );
                         ValueNode->Text =
                             TNetEncoding::Base64->EncodeBytesToString(
                                 &Val[0], Val.High
@@ -335,7 +353,8 @@ private:
                     },
 
                     [this, &ValueNode]( std::vector<Byte> const & Val ) {
-                        ValueNode->Attributes[TypeAttrName] = String( _T( "vb" ) );
+                        ValueNode->Attributes[TypeAttrName] =
+                            String( cnv_xstr( TT_VB ) );
                         ValueNode->Text =
                             Val.empty() ?
                               String()
@@ -352,12 +371,156 @@ private:
 
 protected:
     virtual ValueContType DoCreateValueList( TConfigPath const & Path ) override {
+        using Fn = std::function<TConfigNodeValueType(String)>;
+
+        static std::array<Fn,TConfigNodeValueType::types::size::value> Builders {
+            // TT_I
+            []( String Value ) {
+                return std::stoi( Value.c_str() );
+            },
+
+            // TT_U
+            []( String Value ) {
+                return static_cast<unsigned>( std::stoul( Value.c_str() ) );
+            },
+
+            // TT_L
+            []( String Value ) {
+                return std::stol( Value.c_str() );
+            },
+
+            // TT_UL
+            []( String Value ) {
+                return std::stoul( Value.c_str() );
+            },
+
+            // TT_C
+            []( String Value ) {
+                return static_cast<char>( std::stoi( Value.c_str() ) );
+            },
+
+            // TT_UC
+            []( String Value ) {
+                return static_cast<unsigned char>( std::stoul( Value.c_str() ) );
+            },
+
+            // TT_S
+            []( String Value ) {
+                return static_cast<short>( std::stoi( Value.c_str() ) );
+            },
+
+            // TT_US
+            []( String Value ) {
+                return static_cast<unsigned short>( std::stoul( Value.c_str() ) );
+            },
+
+            // TT_LL
+            []( String Value ) {
+                return std::stoll( Value.c_str() );
+            },
+
+            // TT_ULL
+            []( String Value ) {
+                return std::stoull( Value.c_str() );
+            },
+
+            // TT_B
+            []( String Value ) {
+                return StrToBool( Value.c_str() );
+            },
+
+            // TT_SZ
+            []( String Value ) {
+                return Value;
+            },
+
+            // TT_DT
+            []( String Value ) {
+                return ISO8601ToDate( Value, false );
+            },
+
+            // TT_FLT
+            []( String Value ) {
+                return std::stof( Value.c_str() );
+            },
+
+            // TT_DBL
+            []( String Value ) {
+                return std::stod( Value.c_str() );
+            },
+
+            // TT_CUR
+            []( String Value ) {
+                TFormatSettings FS;
+                FS.DecimalSeparator = _T( '.' );
+                return StrToCurr( Value, FS );
+            },
+
+            // TT_SV
+            [this]( String Value ) {
+                auto SL = std::make_unique<TStringList>();
+                SL->Text = Value;
+                StringCont Strings;
+                Strings.reserve( SL->Count );
+                for ( auto const & Line : SL.get() ) {
+                    Strings.push_back( Line );
+                }
+                /*
+                if ( auto JSONArr = dynamic_cast<TJSONArray*>( &Value ) ) {
+                    Strings.reserve( JSONArr->Count );
+                    std::transform(
+                        System::begin( JSONArr ), System::end( JSONArr ),
+                        std::back_inserter( Strings ),
+                        []( auto Val ){ return Val->template GetValue<String>(); }
+                    );
+                }
+                */
+                return Strings;
+            },
+
+            // TT_DAB
+            []( String Value ) {
+                return TNetEncoding::Base64->DecodeStringToBytes( Value );
+            },
+
+            // TT_VB
+            []( String Value ) {
+                auto Bytes = TNetEncoding::Base64->DecodeStringToBytes( Value );
+                std::vector<Byte> VBytes;
+                VBytes.reserve( Bytes.Length );
+                std::copy(
+                    System::begin( &Bytes ), System::end( &Bytes ),
+                    std::back_inserter( VBytes )
+                );
+                return VBytes;
+            },
+        };
+
         ValueContType Values;
 
         if ( auto Node = OpenValues( Path ) ) {
-::OutputDebugString( ToString( Path ).c_str() );
-Clipboard()->AsText = Node->XML;
-Clipboard()->AsText = Node->XML;
+            auto Childs = Node->ChildNodes;
+            for ( int Idx = 0 ; Idx < Childs->Count ; ++Idx  ) {
+                auto ValueNode = Childs->Get( Idx );
+                if ( ValueNode->NodeName == ValueNodeName ) {
+                    auto Attributes = ValueNode->AttributeNodes;
+                    if ( auto NameNode = Attributes->FindNode( NameAttrName ) ) {
+                        if ( auto TypeNode = Attributes->FindNode( TypeAttrName ) ) {
+                            if ( auto Result = GetTypeTag( TypeNode->Text ) ) {
+                                PutItemTo(
+                                    Values, NameNode->Text,
+                                    {
+                                        Builders[static_cast<size_t>( Result.value() )](
+                                            ValueNode->Text
+                                        ),
+                                        Operation::None
+                                    }
+                                );
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         return Values;

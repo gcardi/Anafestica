@@ -28,6 +28,7 @@ using NodeContType = std::map<KeyType,TConfigNodePtr>;
 
 //---------------------------------------------------------------------------
 
+inline
 bool PutItemTo( ValueContType& Values, String Id,
                 ValuePairType const & Val ) noexcept
 {
@@ -41,6 +42,7 @@ bool PutItemTo( ValueContType& Values, String Id,
 }
 //---------------------------------------------------------------------------
 
+inline
 ValueType GetItemFrom( ValueContType& Values, String Id, ValueType DefVal,
                        Operation Op )
 {

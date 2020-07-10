@@ -18,6 +18,9 @@
 
 #include <anafestica/Cfg.h>
 
+template<typename T>
+class TD;
+
 //---------------------------------------------------------------------------
 namespace Anafestica {
 //---------------------------------------------------------------------------
@@ -208,44 +211,44 @@ private:
         boost::apply_visitor(
             overload {
                 [&Obj, &v]( int Val ) {
-                    WriteNumber<int>( Obj, _T( "i" ), v.first, Val );
+                    WriteNumber<int>( Obj, cnv_xstr( TT_I ), v.first, Val );
                 },
 
                 [&Obj, &v]( unsigned int Val ) {
-                    WriteNumber<__int64>( Obj, _T( "u" ), v.first, Val );
+                    WriteNumber<__int64>( Obj, cnv_xstr( TT_U ), v.first, Val );
                 },
 
                 [&Obj, &v]( long Val ) {
-                    WriteNumber<__int64>( Obj, _T( "l" ), v.first, Val );
+                    WriteNumber<__int64>( Obj, cnv_xstr( TT_L ), v.first, Val );
                 },
 
                 [&Obj, &v]( unsigned long Val ) {
-                    WriteNumber<__int64>( Obj, _T( "ul" ), v.first, Val );
+                    WriteNumber<__int64>( Obj, cnv_xstr( TT_UL ), v.first, Val );
                 },
 
                 [&Obj, &v]( char Val ) {
-                    WriteNumber<int>( Obj, _T( "c" ), v.first, Val );
+                    WriteNumber<int>( Obj, cnv_xstr( TT_C ), v.first, Val );
                 },
 
                 [&Obj, &v]( unsigned char Val ) {
-                    WriteNumber<int>( Obj, _T( "uc" ), v.first, Val );
+                    WriteNumber<int>( Obj, cnv_xstr( TT_UC ), v.first, Val );
                 },
 
                 [&Obj, &v]( short Val ) {
-                    WriteNumber<int>( Obj, _T( "s" ), v.first, Val );
+                    WriteNumber<int>( Obj, cnv_xstr( TT_S ), v.first, Val );
                 },
 
                 [&Obj, &v]( unsigned short Val ) {
-                    WriteNumber<int>( Obj, _T( "us" ), v.first, Val );
+                    WriteNumber<int>( Obj, cnv_xstr( TT_US ), v.first, Val );
                 },
 
                 [&Obj, &v]( long long Val ) {
-                    WriteNumber<__int64>( Obj, _T( "ll" ), v.first, Val );
+                    WriteNumber<__int64>( Obj, cnv_xstr( TT_LL ), v.first, Val );
                 },
 
                 [&Obj, &v]( unsigned long long Val ) {
                     Write(
-                        Obj, _T( "ull" ), v.first,
+                        Obj, cnv_xstr( TT_ULL ), v.first,
                         std::make_unique<TJSONString>(
 #if defined( _UNICODE )
                             std::to_wstring( Val ).c_str()
@@ -258,21 +261,21 @@ private:
 
                 [&Obj, &v]( bool Val ) {
                     Write(
-                        Obj, _T( "b" ), v.first,
+                        Obj, cnv_xstr( TT_B ), v.first,
                         std::make_unique<TJSONBool>( Val )
                     );
                 },
 
                 [&Obj, &v]( System::UnicodeString Val ) {
                     Write(
-                        Obj, _T( "sz" ), v.first,
+                        Obj, cnv_xstr( TT_SZ ), v.first,
                         std::make_unique<TJSONString>( Val )
                     );
                 },
 
                 [&Obj, &v]( System::TDateTime Val ) {
                     Write(
-                        Obj, _T( "dt" ), v.first,
+                        Obj, cnv_xstr( TT_DT ), v.first,
                         std::make_unique<TJSONString>(
                             DateToISO8601( Val, false )
                         )
@@ -280,29 +283,29 @@ private:
                 },
 
                 [&Obj, &v]( float Val ) {
-                    WriteNumber<double>( Obj, _T( "flt" ), v.first, Val );
+                    WriteNumber<double>( Obj, cnv_xstr( TT_FLT ), v.first, Val );
                 },
 
                 [&Obj, &v]( double Val ) {
-                    WriteNumber<double>( Obj, _T( "dbl" ), v.first, Val );
+                    WriteNumber<double>( Obj, cnv_xstr( TT_DBL ), v.first, Val );
                 },
 
                 [&Obj, &v]( System::Currency Val ) {
                     TFormatSettings FS;
                     FS.DecimalSeparator = _T( '.' );
                     Write(
-                        Obj, _T( "cur" ), v.first,
+                        Obj, cnv_xstr( TT_CUR ), v.first,
                         std::make_unique<TJSONString>( CurrToStr( Val, FS ) )
                     );
                 },
 
                 [&Obj, &v]( StringCont const & Val ) {
-                    WriteStrings( Obj, _T( "sv" ), v.first, Val );
+                    WriteStrings( Obj, cnv_xstr( TT_SV ), v.first, Val );
                 },
 
                 [&Obj, &v]( TBytes Val ) {
                     Write(
-                        Obj, _T( "dab" ), v.first,
+                        Obj, cnv_xstr( TT_DAB ), v.first,
                         std::make_unique<TJSONString>(
                             TNetEncoding::Base64->EncodeBytesToString(
                                 &Val[0], Val.High
@@ -313,7 +316,7 @@ private:
 
                 [&Obj, &v]( std::vector<Byte> const & Val ) {
                     Write(
-                        Obj, _T( "vb" ), v.first,
+                        Obj, cnv_xstr( TT_VB ), v.first,
                         std::make_unique<TJSONString>(
                             Val.empty() ?
                               String()
@@ -331,88 +334,93 @@ private:
 
 protected:
     virtual ValueContType DoCreateValueList( TConfigPath const & Path ) override {
-        using ValueBuilderType =
-            std::function<
-                TConfigNodeValueType (
-                    String        // Key Name
-                  , TJSONValue &
-                )
-            >;
-
-        // Must be sorted because will be used with std::lower_bound
-        static constexpr std::array<LPCTSTR,TConfigNodeValueType::types::size::value> TypeIds {
-            _T( "b" ),   _T( "c" ),  _T( "cur" ), _T( "dab" ),
-            _T( "dbl" ), _T( "dt" ), _T( "flt" ), _T( "i" ),
-            _T( "l" ),   _T( "ll" ), _T( "s" ),   _T( "sv" ),
-            _T( "sz" ),  _T( "u" ),  _T( "uc" ),  _T( "ul" ),
-            _T( "ull" ), _T( "us" ), _T( "vb" ),
-        };
 
         using Fn = std::function<TConfigNodeValueType(TJSONValue&)>;
 
-        // positions must be in sync with 'TypeIds'
         static std::array<Fn,TConfigNodeValueType::types::size::value> Builders {
-            // "b"
+            // TT_I
             []( TJSONValue& Value ) {
-                return Value.GetValue<bool>();
+                return Value.GetValue<int>();
             },
 
-            // "c"
+            // TT_U
+            []( TJSONValue& Value ) {
+                return Value.GetValue<unsigned>();
+            },
+
+            // TT_L
+            []( TJSONValue& Value ) {
+                return static_cast<long>( Value.GetValue<__int64>() );
+            },
+
+            // TT_UL
+            []( TJSONValue& Value ) {
+                return static_cast<unsigned long>( Value.GetValue<__int64>() );
+            },
+
+            // TT_C
             []( TJSONValue& Value ) {
                 return static_cast<char>( Value.GetValue<int>() );
             },
 
-            // "cur"
+            // TT_UC
+            []( TJSONValue& Value ) {
+                return Value.GetValue<unsigned char>();
+            },
+
+            // TT_S
+            []( TJSONValue& Value ) {
+                return Value.GetValue<short>();
+            },
+
+            // TT_US
+            []( TJSONValue& Value ) {
+                return Value.GetValue<unsigned short>();
+            },
+
+            // TT_LL
+            []( TJSONValue& Value ) {
+                return Value.GetValue<__int64>();
+            },
+
+            // TT_ULL
+            []( TJSONValue& Value ) {
+                return std::stoull( Value.GetValue<String>().c_str() );
+            },
+
+            // TT_B
+            []( TJSONValue& Value ) {
+                return Value.GetValue<bool>();
+            },
+
+            // TT_SZ
+            []( TJSONValue& Value ) {
+                return Value.GetValue<String>();
+            },
+
+            // TT_DT
+            []( TJSONValue& Value ) {
+                return ISO8601ToDate( Value.GetValue<String>(), false );
+            },
+
+            // TT_FLT
+            []( TJSONValue& Value ) {
+                return Value.GetValue<float>();
+            },
+
+            // TT_DBL
+            []( TJSONValue& Value ) {
+                return Value.GetValue<double>();
+            },
+
+            // TT_CUR
             []( TJSONValue& Value ) {
                 TFormatSettings FS;
                 FS.DecimalSeparator = _T( '.' );
                 return StrToCurr( Value.GetValue<String>(), FS );
             },
 
-            // "dab"
-            []( TJSONValue& Value ) {
-                return
-                    TNetEncoding::Base64->DecodeStringToBytes(
-                        Value.GetValue<String>()
-                    );
-            },
-
-            // "dbl"
-            []( TJSONValue& Value ) {
-                return Value.GetValue<double>();
-            },
-
-            // "dt"
-            []( TJSONValue& Value ) {
-                return ISO8601ToDate( Value.GetValue<String>(), false );
-            },
-
-            // "flt"
-            []( TJSONValue& Value ) {
-                return Value.GetValue<float>();
-            },
-
-            // "i"
-            []( TJSONValue& Value ) {
-                return Value.GetValue<int>();
-            },
-
-            // "l"
-            []( TJSONValue& Value ) {
-                return static_cast<long>( Value.GetValue<__int64>() );
-            },
-
-            // "ll"
-            []( TJSONValue& Value ) {
-                return Value.GetValue<__int64>();
-            },
-
-            // "s"
-            []( TJSONValue& Value ) {
-                return Value.GetValue<short>();
-            },
-
-            // "sv"
+            // TT_SV
             []( TJSONValue& Value ) {
                 StringCont Strings;
                 if ( auto JSONArr = dynamic_cast<TJSONArray*>( &Value ) ) {
@@ -426,37 +434,15 @@ protected:
                 return Strings;
             },
 
-            // "sz"
+            // TT_DAB
             []( TJSONValue& Value ) {
-                return Value.GetValue<String>();
+                return
+                    TNetEncoding::Base64->DecodeStringToBytes(
+                        Value.GetValue<String>()
+                    );
             },
 
-            // "u"
-            []( TJSONValue& Value ) {
-                return Value.GetValue<unsigned>();
-            },
-
-            // "uc"
-            []( TJSONValue& Value ) {
-                return Value.GetValue<unsigned char>();
-            },
-
-            // "ul"
-            []( TJSONValue& Value ) {
-                return static_cast<unsigned long>( Value.GetValue<__int64>() );
-            },
-
-            // "ull"
-            []( TJSONValue& Value ) {
-                return std::stoull( Value.GetValue<String>().c_str() );
-            },
-
-            // "us"
-            []( TJSONValue& Value ) {
-                return Value.GetValue<unsigned short>();
-            },
-
-            // "vb"
+            // TT_VB
             []( TJSONValue& Value ) {
                 auto Bytes = TNetEncoding::Base64->DecodeStringToBytes(
                     Value.GetValue<String>()
@@ -481,24 +467,16 @@ protected:
                         if ( InnerObj->Count == 1 ) {
                             auto const & InnerPair = InnerObj->Pairs[0];
                             auto TypeName = InnerPair->JsonString->Value();
-                            auto TypeIdIt =
-                                std::lower_bound(
-                                    std::begin( TypeIds ), std::end( TypeIds ),
-                                    TypeName,
-                                    []( auto Lhs, auto Rhs ) {
-                                        return String( Lhs ) < Rhs;
+                            if ( auto Result = GetTypeTag( TypeName ) ) {
+                                PutItemTo(
+                                    Values, Pair->JsonString->Value(),
+                                    {
+                                        Builders[static_cast<size_t>( Result.value() )](
+                                            *InnerPair->JsonValue
+                                        ),
+                                        Operation::None
                                     }
                                 );
-                            if ( String( *TypeIdIt ) == TypeName ) {
-                                auto const BuilderIdx =
-                                    std::distance( std::begin( TypeIds ), TypeIdIt );
-                                    auto Val = Builders[BuilderIdx]( *InnerPair->JsonValue );
-                                    PutItemTo(
-                                        Values, Pair->JsonString->Value(),
-                                        { Val, Operation::None }
-                                    );
-                            }
-                            else {
                             }
                         }
                     }

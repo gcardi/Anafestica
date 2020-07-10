@@ -12,6 +12,7 @@
 #include <type_traits>
 #include <array>
 #include <tuple>
+#include <utility>
 
 #include <System.Classes.hpp>
 #include <System.SysUtils.hpp>
@@ -474,7 +475,7 @@ private:
     template<typename PairType>
     void DeleteValue( PairType const & v ) { registry_->DeleteValue( v.first ); }
 
-    void DeleteKey( TConfigPath Path ) {
+    void DeleteKey( TConfigPath const & Path ) {
         auto const Key = GetKeyName( Path, rootPath_ );
         if ( !registry_->CurrentPath.IsEmpty() ) {
             if ( registry_->CurrentPath == Key ) {
@@ -484,7 +485,7 @@ private:
         registry_->DeleteKey( Key );
     }
 protected:
-    virtual ValueContType DoCreateValueList( TConfigPath Path ) override {
+    virtual ValueContType DoCreateValueList( TConfigPath const & Path ) override {
         regex_type re(
             _T( "" )
             "^(.*\?)(\?::(\\((\?:"
@@ -712,7 +713,7 @@ protected:
         return Values;
     }
 
-    virtual NodeContType DoCreateNodeList( TConfigPath Path ) override {
+    virtual NodeContType DoCreateNodeList( TConfigPath const & Path ) override {
         NodeContType Nodes;
 
         if ( OpenKeyReadOnly( GetKeyName( Path ) ) ) {
@@ -725,7 +726,7 @@ protected:
         return Nodes;
     }
 
-    virtual void DoSaveValueList( TConfigPath Path, ValueContType const & Values ) override {
+    virtual void DoSaveValueList( TConfigPath const & Path, ValueContType const & Values ) override {
         if ( !Values.empty() ) {
             if ( OpenKey( GetKeyName( Path ), true ) ) {
                 for ( auto& v : Values ) {
@@ -746,7 +747,9 @@ protected:
         }
     }
 
-    virtual void DoDeleteNode( TConfigPath Path ) override { DeleteKey( Path ); }
+    virtual void DoDeleteNode( TConfigPath const & Path ) override {
+        DeleteKey( std::move( Path ) );
+    }
 
     virtual void DoFlush() override {
         RegObjRAII Reg{ *this };
@@ -771,7 +774,7 @@ private:
     HKEY hKey_;
     std::unique_ptr<TRegistry> registry_;
 
-    static String GetText( TConfigPath const & Path, String Prefix = String{} ) {
+    static String GetKeyName( TConfigPath const & Path, String Prefix = String{} ) {
         auto SB = std::make_unique<TStringBuilder>( Prefix );
         for ( auto const & Item : Path ) {
             SB->AppendFormat( _T( "\\%s" ), ARRAYOFCONST(( Item )) );

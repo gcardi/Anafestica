@@ -58,10 +58,10 @@ public:
     }
 
     template<typename R>
-    void Read( R& Reader, TConfigPath Path );
+    void Read( R& Reader, TConfigPath const & Path );
 
     template<typename W>
-    void Write( W& Writer, TConfigPath Path ) const;
+    void Write( W& Writer, TConfigPath const & Path ) const;
 
     template<typename T>
     void GetItem( String Id, T& Val, Operation Op = Operation::None ) {
@@ -326,20 +326,23 @@ void TConfigNode::EnumerateValues( OutputIterator Out ) const
 //---------------------------------------------------------------------------
 
 template<typename R>
-void TConfigNode::Read( R& Reader, TConfigPath Path )
+void TConfigNode::Read( R& Reader, TConfigPath const & Path )
 {
     valueItems_ = Reader.CreateValueList( Path );
     nodeItems_ = Reader.CreateNodeList( Path );
-    Path.push_back({});
+    TConfigPath TmpPath;
+    TmpPath.reserve( Path.size() + 1 );
+    TmpPath = Path;
+    TmpPath.push_back({});
     for ( auto& n : nodeItems_ ) {
-        Path.back() = n.first;
-        n.second->Read( Reader, Path );
+        TmpPath.back() = n.first;
+        n.second->Read( Reader, TmpPath );
     }
 }
 //---------------------------------------------------------------------------
 
 template<typename W>
-void TConfigNode::Write( W& Writer, TConfigPath Path ) const
+void TConfigNode::Write( W& Writer, TConfigPath const & Path ) const
 {
     if ( IsDeleted() ) {
         Writer.DeleteNode( Path );
@@ -347,11 +350,14 @@ void TConfigNode::Write( W& Writer, TConfigPath Path ) const
     if ( Writer.GetAlwaysFlushNodeFlag() || ValueListModified() ) {
         Writer.SaveValueList( Path, valueItems_ );
     }
-    Path.push_back({});
+    TConfigPath TmpPath;
+    TmpPath.reserve( Path.size() + 1 );
+    TmpPath = Path;
+    TmpPath.push_back({});
     for ( auto const & n : nodeItems_ ) {
-        Path.back() = n.first;
+        TmpPath.back() = n.first;
         if ( Writer.GetAlwaysFlushNodeFlag() || n.second->IsModified() ) {
-            n.second->Write( Writer, Path );
+            n.second->Write( Writer, TmpPath );
         }
     }
 }

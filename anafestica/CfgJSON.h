@@ -69,16 +69,6 @@ private:
     String fileName_;
     bool compact_;
 
-    static String GetText( TConfigPath const & Path, String Prefix = String{} ) {
-        auto SB = std::make_unique<TStringBuilder>( Prefix );
-        for ( auto const & Item : Path ) {
-            SB->AppendFormat(
-                _T( "\\%s\\%s" ), ARRAYOFCONST(( NodesNodeName, Item ))
-            );
-        }
-        return SB->ToString();
-    }
-
     void CreateJSONObject() {
         if ( TFile::Exists( fileName_ ) ) {
             document_.reset(
@@ -134,7 +124,7 @@ private:
     TJSONObject* ForcePath( TConfigPath const & Path ) {
         if ( auto Node = dynamic_cast<TJSONObject*>( document_.get() ) ) {
             TConfigPath FPath;
-            FPath.reserve( Path.size() );
+            FPath.reserve( Path.size() * 2 );
             for ( auto const & NodeName : Path ) {
                 FPath.push_back( NodesNodeName );
                 FPath.push_back( NodeName );
@@ -152,20 +142,6 @@ private:
                 }
             }
             return Node;
-        }
-        return nullptr;
-    }
-
-    TJSONObject* ForceNodes( TConfigPath const & Path ) {
-        if ( auto Node = ForcePath( Path ) ) {
-            if ( auto Inner = Node->FindValue( NodesNodeName ) ) {
-                return dynamic_cast<TJSONObject*>( Inner );
-            }
-            else {
-                auto InnerObj = std::make_unique<TJSONObject>();
-                Node->AddPair( NodesNodeName, InnerObj.get() );
-                return InnerObj.release();
-            }
         }
         return nullptr;
     }
@@ -354,7 +330,7 @@ private:
     }
 
 protected:
-    virtual ValueContType DoCreateValueList( TConfigPath Path ) override {
+    virtual ValueContType DoCreateValueList( TConfigPath const & Path ) override {
         using ValueBuilderType =
             std::function<
                 TConfigNodeValueType (
@@ -532,7 +508,7 @@ protected:
         return Values;
     }
 
-    virtual NodeContType DoCreateNodeList( TConfigPath Path ) override {
+    virtual NodeContType DoCreateNodeList( TConfigPath const & Path ) override {
         NodeContType Nodes;
 
         if ( auto Node = OpenNodes( Path ) ) {
@@ -547,7 +523,7 @@ protected:
         return Nodes;
     }
 
-    virtual void DoSaveValueList( TConfigPath Path, ValueContType const & Values ) override {
+    virtual void DoSaveValueList( TConfigPath const & Path, ValueContType const & Values ) override {
         if ( !Values.empty() ) {
             if ( auto Node = ForceValues( Path ) ) {
                 for ( auto& v : Values ) {
@@ -563,11 +539,14 @@ protected:
         }
     }
 
-    virtual void DoDeleteNode( TConfigPath Path ) override {
-        auto NodeName = Path.back();
-        Path.pop_back();
-        if ( auto Node = OpenNodes( Path ) ) {
-            Node->RemovePair( NodeName );
+    virtual void DoDeleteNode( TConfigPath const & Path ) override {
+        if ( !Path.empty() ) {
+            auto Last = std::end( Path );
+            std::advance( Last, -1 );
+            TConfigPath TmpPath( std::begin( Path ), Last );
+            if ( auto Node = OpenNodes( TmpPath ) ) {
+                Node->RemovePair( Path.back() );
+            }
         }
     }
 

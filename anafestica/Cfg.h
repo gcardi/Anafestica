@@ -20,29 +20,29 @@ public:
     {}
     TConfigNode& GetRootNode() { return DoGetRootNode(); }
     void Flush() { DoFlush(); }
-    ValueContType CreateValueList( TConfigPath Path ) {
+    ValueContType CreateValueList( TConfigPath const & Path ) {
         return DoCreateValueList( Path );
     }
 
-    NodeContType CreateNodeList( TConfigPath Path ) {
+    NodeContType CreateNodeList( TConfigPath const & Path ) {
         return DoCreateNodeList( Path );
     }
 
-    void SaveValueList( TConfigPath Path, ValueContType const & Values ) {
+    void SaveValueList( TConfigPath const & Path, ValueContType const & Values ) {
         DoSaveValueList( Path, Values );
     }
 
-    void DeleteNode( TConfigPath Path ) { DoDeleteNode( Path ); }
+    void DeleteNode( TConfigPath const & Path ) { DoDeleteNode( Path ); }
 
     bool GetReadOnlyFlag() const noexcept { return readOnly_; }
     bool GetAlwaysFlushNodeFlag() const noexcept { return flushAllItems_; }
 
 protected:
-    virtual ValueContType DoCreateValueList( TConfigPath Path ) = 0;
-    virtual NodeContType DoCreateNodeList( TConfigPath Path ) = 0;
-    virtual void DoSaveValueList( TConfigPath Path, ValueContType const & Values ) = 0;
+    virtual ValueContType DoCreateValueList( TConfigPath const & Path ) = 0;
+    virtual NodeContType DoCreateNodeList( TConfigPath const & Path ) = 0;
+    virtual void DoSaveValueList( TConfigPath const & Path, ValueContType const & Values ) = 0;
     virtual TConfigNode& DoGetRootNode() { return *root_; }
-    virtual void DoDeleteNode( TConfigPath Path ) = 0;
+    virtual void DoDeleteNode( TConfigPath const & Path ) = 0;
     virtual void DoFlush() = 0;
 private:
     using TConfigNodePtr = std::unique_ptr<TConfigNode>;

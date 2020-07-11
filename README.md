@@ -11,7 +11,7 @@ The library is mainly made by two parts: a container part (which is generalized)
 
 Windows application's persistent data are usually stored in the Registry, respecting the conventions regarding the nature of the application itself (nature intended as a normal application or, e.g., a service application or other application type). Changing the serialization part via a template parameter (i.e it's a Policy), it's possible to specify both the data format and the storage medium. It is also possible to have several storage mediums and formats in the same application. Each serialization format is associated with a specific container, by the mean that each container is bounded to a serializer that can have, in turn, a specific format and storage medium.
 
-The current library version includes serializers for Windows Registry and JSON files. In future versions will be possible to store data in XML files too. 
+The current library version includes serializers for Windows Registry, JSON and XML files.
 
 ## Getting Started
 

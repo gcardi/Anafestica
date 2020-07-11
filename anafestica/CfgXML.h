@@ -5,7 +5,6 @@
 
 #include <Xml.XMLIntf.hpp>
 #include <Xml.XMLDoc.hpp>
-#include <Clipbrd.hpp>
 #include <System.DateUtils.hpp>
 #include <System.NetEncoding.hpp>
 
@@ -35,9 +34,6 @@ static constexpr LPCTSTR ValueNodeName = _T( "value" );
 
 static constexpr LPCTSTR NameAttrName = _T( "name" );
 static constexpr LPCTSTR TypeAttrName = _T( "type" );
-
-template<typename T>
-class TD;
 
 class TConfig : public Anafestica::TConfig {
 public:
@@ -465,16 +461,6 @@ protected:
                 for ( auto const & Line : SL.get() ) {
                     Strings.push_back( Line );
                 }
-                /*
-                if ( auto JSONArr = dynamic_cast<TJSONArray*>( &Value ) ) {
-                    Strings.reserve( JSONArr->Count );
-                    std::transform(
-                        System::begin( JSONArr ), System::end( JSONArr ),
-                        std::back_inserter( Strings ),
-                        []( auto Val ){ return Val->template GetValue<String>(); }
-                    );
-                }
-                */
                 return Strings;
             },
 

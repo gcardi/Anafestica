@@ -61,36 +61,36 @@ struct BuildString {
 };
 
 enum class TExRegDataType {
-    Binary,                 // REG_BINARY
-                            // Binary data in any form.
+    Binary,     // REG_BINARY
+                // Binary data in any form.
 
-    Dword,                  // REG_DWORD
-                            // A 32-bit number. (LE on x86-x64)
+    Dword,      // REG_DWORD
+                // A 32-bit number. (LE on x86-x64)
 
-    ExpandSz,               // REG_EXPAND_SZ
-                            // A null-terminated string that contains unexpanded
-                            // references to environment variables (for example,
-                            // "%PATH%"). To expand the environment variable
-                            // references, use the ExpandEnvironmentStrings function.
+    ExpandSz,   // REG_EXPAND_SZ
+                // A null-terminated string that contains unexpanded
+                // references to environment variables (for example,
+                // "%PATH%"). To expand the environment variable
+                // references, use the ExpandEnvironmentStrings function.
 
-    Link,                   // REG_LINK
-                            // A null-terminated Unicode string that contains
-                            // the target path of a symbolic link that was
-                            // created by calling the RegCreateKeyEx function
-                            // with REG_OPTION_CREATE_LINK.
+    Link,       // REG_LINK
+                // A null-terminated Unicode string that contains
+                // the target path of a symbolic link that was
+                // created by calling the RegCreateKeyEx function
+                // with REG_OPTION_CREATE_LINK.
 
-    MultiSz,                // REG_MULTI_SZ
-                            // A sequence of null-terminated strings, terminated
-                            // by an empty string (\0).
+    MultiSz,    // REG_MULTI_SZ
+                // A sequence of null-terminated strings, terminated
+                // by an empty string (\0).
 
-    None,                   // REG_NONE
-                            // No defined value type.
+    None,       // REG_NONE
+                // No defined value type.
 
-    Qword,                  // REG_QWORD
-                            // A 64-bit number.
+    Qword,      // REG_QWORD
+                // A 64-bit number.
 
-    Sz                      // REG_SZ
-                            // A null-terminated string.
+    Sz          // REG_SZ
+                // A null-terminated string.
 };
 
 class TRegistry : public System::Win::Registry::TRegistry {

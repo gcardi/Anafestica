@@ -45,25 +45,27 @@ using TConfigNodeValueType =
       , BytesCont
     >;
 
-#define TT_I   i
-#define TT_U   u
-#define TT_L   l
-#define TT_UL  ul
-#define TT_C   c
-#define TT_UC  uc
-#define TT_S   s
-#define TT_US  us
-#define TT_LL  ll
-#define TT_ULL ull
-#define TT_B   b
-#define TT_SZ  sz
-#define TT_DT  dt
-#define TT_FLT flt
-#define TT_DBL dbl
-#define TT_CUR cur
-#define TT_SV  sv
-#define TT_DAB dab
-#define TT_VB  vb
+// Type identifiers
+
+#define TT_I   i        // int
+#define TT_U   u        // unsigned int
+#define TT_L   l        // long
+#define TT_UL  ul       // unsigned long
+#define TT_C   c        // char
+#define TT_UC  uc       // unsigned char
+#define TT_S   s        // short
+#define TT_US  us       // unsigned short
+#define TT_LL  ll       // long long
+#define TT_ULL ull      // unsigned long long
+#define TT_B   b        // bool
+#define TT_SZ  sz       // System::String
+#define TT_DT  dt       // System::TDateTime
+#define TT_FLT flt      // float
+#define TT_DBL dbl      // double
+#define TT_CUR cur      // System::Currency
+#define TT_SV  sv       // StringCont aka std::vector<String>
+#define TT_DAB dab      // System::Sysutils::TBytes
+#define TT_VB  vb       // BytesCont aka std::vector<Byte>
 
 enum class TypeTag : size_t {
     TT_I,   // int
@@ -82,9 +84,9 @@ enum class TypeTag : size_t {
     TT_FLT, // float
     TT_DBL, // double
     TT_CUR, // System::Currency
-    TT_SV,  // StringCont
+    TT_SV,  // StringCont aka std::vector<String>
     TT_DAB, // System::Sysutils::TBytes
-    TT_VB   // BytesCont
+    TT_VB   // BytesCont aka std::vector<Byte>
 };
 
 #define cnv_xstr( s ) cnv_str( s )

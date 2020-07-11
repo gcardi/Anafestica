@@ -11,12 +11,15 @@
 #include <map>
 #include <type_traits>
 #include <iterator>
+#include <vector>
 
 #include <anafestica/CfgConts.h>
 
 //---------------------------------------------------------------------------
 namespace Anafestica {
 //---------------------------------------------------------------------------
+
+using TConfigPath = std::vector<String>;
 
 class TConfigNode
 {
@@ -30,10 +33,7 @@ private:
 
     template<typename T>
     struct type_to_enum {
-        //using U =
-        //    std::remove_cv_t<std::remove_reference_t<T>>;
         static constexpr tag_type value =
-        //    std::is_enum_v<U> ?
             std::is_enum_v<std::remove_cv_t<std::remove_reference_t<T>>> ?
               tag_type::enum_tg
             :
@@ -58,10 +58,10 @@ public:
     }
 
     template<typename R>
-    void Read( R& Reader, String Id );
+    void Read( R& Reader, TConfigPath const & Path );
 
     template<typename W>
-    void Write( W& Writer, String Id ) const;
+    void Write( W& Writer, TConfigPath const & Path ) const;
 
     template<typename T>
     void GetItem( String Id, T& Val, Operation Op = Operation::None ) {
@@ -326,29 +326,40 @@ void TConfigNode::EnumerateValues( OutputIterator Out ) const
 //---------------------------------------------------------------------------
 
 template<typename R>
-void TConfigNode::Read( R& Reader, String Id )
+void TConfigNode::Read( R& Reader, TConfigPath const & Path )
 {
-    valueItems_ = Reader.CreateValueList( Id );
-    nodeItems_ = Reader.CreateNodeList( Id );
+    valueItems_ = Reader.CreateValueList( Path );
+    nodeItems_ = Reader.CreateNodeList( Path );
+    TConfigPath TmpPath;
+    TmpPath.reserve( Path.size() + 1 );
+    TmpPath = Path;
+    TmpPath.push_back({});
     for ( auto& n : nodeItems_ ) {
-        n.second->Read(
-            Reader,
-            Format( _T( "%s%s%s" ), Id ,Reader.GetNodePathSeparator(), n.first )
-        );
+        TmpPath.back() = n.first;
+        n.second->Read( Reader, TmpPath );
     }
 }
 //---------------------------------------------------------------------------
 
 template<typename W>
-void TConfigNode::Write( W& Writer, String Id ) const
+void TConfigNode::Write( W& Writer, TConfigPath const & Path ) const
 {
     if ( IsDeleted() ) {
-        Writer.DeleteNode( Id );
+        Writer.DeleteNode( Path );
     }
     if ( Writer.GetAlwaysFlushNodeFlag() || ValueListModified() ) {
-        Writer.SaveValueList( Id, valueItems_ );
+        Writer.SaveValueList( Path, valueItems_ );
     }
-    Writer.SaveNodeList( Id, nodeItems_ );
+    TConfigPath TmpPath;
+    TmpPath.reserve( Path.size() + 1 );
+    TmpPath = Path;
+    TmpPath.push_back({});
+    for ( auto const & n : nodeItems_ ) {
+        TmpPath.back() = n.first;
+        if ( Writer.GetAlwaysFlushNodeFlag() || n.second->IsModified() ) {
+            n.second->Write( Writer, TmpPath );
+        }
+    }
 }
 
 //---------------------------------------------------------------------------

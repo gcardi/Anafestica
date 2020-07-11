@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------
 
-#ifndef CfgJSONSingletonH
-#define CfgJSONSingletonH
+#ifndef CfgXMLSingletonH
+#define CfgXMLSingletonH
 
 #include <System.hpp>
 #include <System.IOUtils.hpp>
@@ -9,13 +9,13 @@
 #include <memory>
 
 #include <anafestica/FileVersionInfo.h>
-#include <anafestica/CfgJSON.h>
+#include <anafestica/CfgXML.h>
 
 
 //---------------------------------------------------------------------------
 namespace Anafestica {
 //---------------------------------------------------------------------------
-namespace JSON {
+namespace XML {
 //---------------------------------------------------------------------------
 
 class TConfigSingleton {
@@ -43,16 +43,16 @@ private:
                     ),
                     ExtractFileName( ParamStr( {} ) )
                 ),
-                _T( ".json" )
+                _T( ".xml" )
             );
     }
 };
 
 //---------------------------------------------------------------------------
-} // End of namespace JSON
+} // End of namespace XML
 //---------------------------------------------------------------------------
 
-using TConfigJSONSingleton = JSON::TConfigSingleton;
+using TConfigXMLSingleton = XML::TConfigSingleton;
 
 //---------------------------------------------------------------------------
 } // End of namespace Anafestica

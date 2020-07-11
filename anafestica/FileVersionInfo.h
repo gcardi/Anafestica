@@ -33,7 +33,6 @@ public:
 private:
     std::vector<char> info_;
     String langCharset_;
-    //static String const StringFileInfo;
 
     DWORD GetInfoSize( String FileName ) const {
         DWORD Handle;

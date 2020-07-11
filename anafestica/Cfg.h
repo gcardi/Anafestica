@@ -20,38 +20,30 @@ public:
     {}
     TConfigNode& GetRootNode() { return DoGetRootNode(); }
     void Flush() { DoFlush(); }
-    ValueContType CreateValueList( String KeyName ) {
-        return DoCreateValueList( KeyName );
+    ValueContType CreateValueList( TConfigPath const & Path ) {
+        return DoCreateValueList( Path );
     }
 
-    NodeContType CreateNodeList( String KeyName ) {
-        return DoCreateNodeList( KeyName );
+    NodeContType CreateNodeList( TConfigPath const & Path ) {
+        return DoCreateNodeList( Path );
     }
 
-    void SaveValueList( String KeyName, ValueContType const & Values ) {
-        DoSaveValueList( KeyName, Values );
+    void SaveValueList( TConfigPath const & Path, ValueContType const & Values ) {
+        DoSaveValueList( Path, Values );
     }
 
-    void SaveNodeList( String KeyName, NodeContType const & Nodes ) {
-        DoSaveNodeList( KeyName, Nodes );
-    }
-
-    void DeleteNode( String KeyName ) { DoDeleteNode( KeyName ); }
+    void DeleteNode( TConfigPath const & Path ) { DoDeleteNode( Path ); }
 
     bool GetReadOnlyFlag() const noexcept { return readOnly_; }
     bool GetAlwaysFlushNodeFlag() const noexcept { return flushAllItems_; }
-    String GetNodePathSeparator() const {
-        return DoGetNodePathSeparator();
-    }
+
 protected:
-    virtual ValueContType DoCreateValueList( String KeyName ) = 0;
-    virtual NodeContType DoCreateNodeList( String KeyName ) = 0;
-    virtual void DoSaveValueList( String KeyName, ValueContType const & Values ) = 0;
-    virtual void DoSaveNodeList( String KeyName, NodeContType const & Nodes ) = 0;
+    virtual ValueContType DoCreateValueList( TConfigPath const & Path ) = 0;
+    virtual NodeContType DoCreateNodeList( TConfigPath const & Path ) = 0;
+    virtual void DoSaveValueList( TConfigPath const & Path, ValueContType const & Values ) = 0;
     virtual TConfigNode& DoGetRootNode() { return *root_; }
-    virtual void DoDeleteNode( String KeyName ) = 0;
+    virtual void DoDeleteNode( TConfigPath const & Path ) = 0;
     virtual void DoFlush() = 0;
-    virtual String DoGetNodePathSeparator() const = 0;
 private:
     using TConfigNodePtr = std::unique_ptr<TConfigNode>;
 

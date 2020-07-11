@@ -12,8 +12,10 @@
 #include <type_traits>
 #include <array>
 #include <tuple>
+#include <utility>
 
 #include <System.Classes.hpp>
+#include <System.SysUtils.hpp>
 #include <System.Win.Registry.hpp>
 #include <System.RTLConsts.hpp>
 
@@ -59,36 +61,36 @@ struct BuildString {
 };
 
 enum class TExRegDataType {
-    Binary,                 // REG_BINARY
-                            // Binary data in any form.
+    Binary,     // REG_BINARY
+                // Binary data in any form.
 
-    Dword,                  // REG_DWORD
-                            // A 32-bit number. (LE on x86-x64)
+    Dword,      // REG_DWORD
+                // A 32-bit number. (LE on x86-x64)
 
-    ExpandSz,               // REG_EXPAND_SZ
-                            // A null-terminated string that contains unexpanded
-                            // references to environment variables (for example,
-                            // "%PATH%"). To expand the environment variable
-                            // references, use the ExpandEnvironmentStrings function.
+    ExpandSz,   // REG_EXPAND_SZ
+                // A null-terminated string that contains unexpanded
+                // references to environment variables (for example,
+                // "%PATH%"). To expand the environment variable
+                // references, use the ExpandEnvironmentStrings function.
 
-    Link,                   // REG_LINK
-                            // A null-terminated Unicode string that contains
-                            // the target path of a symbolic link that was
-                            // created by calling the RegCreateKeyEx function
-                            // with REG_OPTION_CREATE_LINK.
+    Link,       // REG_LINK
+                // A null-terminated Unicode string that contains
+                // the target path of a symbolic link that was
+                // created by calling the RegCreateKeyEx function
+                // with REG_OPTION_CREATE_LINK.
 
-    MultiSz,                // REG_MULTI_SZ
-                            // A sequence of null-terminated strings, terminated
-                            // by an empty string (\0).
+    MultiSz,    // REG_MULTI_SZ
+                // A sequence of null-terminated strings, terminated
+                // by an empty string (\0).
 
-    None,                   // REG_NONE
-                            // No defined value type.
+    None,       // REG_NONE
+                // No defined value type.
 
-    Qword,                  // REG_QWORD
-                            // A 64-bit number.
+    Qword,      // REG_QWORD
+                // A 64-bit number.
 
-    Sz                      // REG_SZ
-                            // A null-terminated string.
+    Sz          // REG_SZ
+                // A null-terminated string.
 };
 
 class TRegistry : public System::Win::Registry::TRegistry {
@@ -437,18 +439,6 @@ void TRegistry::WriteStrings( String Name, InIt Begin, InIt End )
 
 
 class TConfig : public Anafestica::TConfig {
-private:
-    class RegObjRAII {
-    public:
-        RegObjRAII( TConfig& Cfg ) : cfg_{ Cfg } { Cfg.CreateRegistryObject(); }
-        ~RegObjRAII() noexcept {
-            try { cfg_.DestroyAndCloseRegistryObject(); } catch ( ... ) {}
-        }
-        RegObjRAII( RegObjRAII const & ) = delete;
-        RegObjRAII& operator=( RegObjRAII const & ) = delete;
-    private:
-        TConfig& cfg_;
-    };
 public:
     TConfig( HKEY HKey, String RootPath, bool ReadOnly = false,
              bool FlushAllItems = false )
@@ -456,7 +446,7 @@ public:
         , rootPath_( RootPath ) , hKey_( HKey )
     {
         RegObjRAII Reg{ *this };
-        GetRootNode().Read( *this, String() );
+        GetRootNode().Read( *this, TConfigPath{} );
     }
 
     ~TConfig() {
@@ -485,8 +475,8 @@ private:
     template<typename PairType>
     void DeleteValue( PairType const & v ) { registry_->DeleteValue( v.first ); }
 
-    void DeleteKey( String Path ) {
-        auto const Key = ExcludeTrailingBackslash( rootPath_ + Path );
+    void DeleteKey( TConfigPath const & Path ) {
+        auto const Key = GetKeyName( Path, rootPath_ );
         if ( !registry_->CurrentPath.IsEmpty() ) {
             if ( registry_->CurrentPath == Key ) {
                 registry_->CloseKey();
@@ -495,19 +485,20 @@ private:
         registry_->DeleteKey( Key );
     }
 protected:
-    virtual String DoGetNodePathSeparator() const override {
-        return _T( "\\" );
-    }
-
-    virtual ValueContType DoCreateValueList( String KeyName ) override {
+    virtual ValueContType DoCreateValueList( TConfigPath const & Path ) override {
         regex_type re(
             _T( "" )
             "^(.*\?)(\?::(\\((\?:"
-                "(i)|"  "(u)|"   "(l)|"   "(ul)|"
-                "(c)|"  "(uc)|"  "(s)|"   "(us)|"
-                "(ll)|" "(ull)|" "(b)|"   "(sz)|"
-                "(dt)|" "(flt)|" "(dbl)|" "(cur)|"
-                "(sv)|" "(dab)|" "(vb)"
+                "(" cnv_xstr( TT_I )   ")|(" cnv_xstr( TT_U )   ")|"
+                "(" cnv_xstr( TT_L )   ")|(" cnv_xstr( TT_UL )  ")|"
+                "(" cnv_xstr( TT_C )   ")|(" cnv_xstr( TT_UC )  ")|"
+                "(" cnv_xstr( TT_S )   ")|(" cnv_xstr( TT_US )  ")|"
+                "(" cnv_xstr( TT_LL )  ")|(" cnv_xstr( TT_ULL ) ")|"
+                "(" cnv_xstr( TT_B )   ")|(" cnv_xstr( TT_SZ )  ")|"
+                "(" cnv_xstr( TT_DT )  ")|(" cnv_xstr( TT_FLT ) ")|"
+                "(" cnv_xstr( TT_DBL ) ")|(" cnv_xstr( TT_CUR ) ")|"
+                "(" cnv_xstr( TT_SV )  ")|(" cnv_xstr( TT_DAB ) ")|"
+                "(" cnv_xstr( TT_VB )  ")"
             "))\\))\?$"
         );
 
@@ -523,102 +514,102 @@ protected:
 
         static std::array<ValueBuilder,TConfigNodeValueType::types::size::value> Builders {
 
-            // CLASS  TAG      REG_TYPE      API
-            // -----  -------  ------------  ----------------
+            // CLASS  TAG         REG_TYPE      API
+            // -----  -------     ------------  ----------------
 
-            // i32    (i)      REG_DWORD     ReadInteger
+            // i32    (TT_I)      REG_DWORD     ReadInteger
             []( RegObjType& Reg, String KeyName ) {
                 return Reg.ReadInteger( KeyName );
             },
 
-            // u32    (u)      REG_DWORD     ReadInteger
+            // u32    (TT_U)      REG_DWORD     ReadInteger
             []( RegObjType& Reg, String KeyName ) {
                 return static_cast<unsigned>( Reg.ReadInteger( KeyName ) );
             },
 
-            // i32    (l)      REG_DWORD     ReadInteger
+            // i32    (TT_L)      REG_DWORD     ReadInteger
             []( RegObjType& Reg, String KeyName ) {
                 return static_cast<long>( Reg.ReadInteger( KeyName ) );
             },
 
-            // u32    (ul)     REG_DWORD     ReadInteger
+            // u32    (TT_UL)     REG_DWORD     ReadInteger
             []( RegObjType& Reg, String KeyName ) {
                 return static_cast<unsigned long>( Reg.ReadInteger( KeyName ) );
             },
 
-            // i8     (c)      REG_DWORD     ReadInteger
+            // i8     (TT_C)      REG_DWORD     ReadInteger
             []( RegObjType& Reg, String KeyName ) {
                 return static_cast<char>( Reg.ReadInteger( KeyName ) );
             },
 
-            // u8     (uc)     REG_DWORD     ReadInteger
+            // u8     (TT_UC)     REG_DWORD     ReadInteger
             []( RegObjType& Reg, String KeyName ) {
                 return static_cast<unsigned char>( Reg.ReadInteger( KeyName ) );
             },
 
-            // i16    (s)      REG_DWORD     ReadInteger
+            // i16    (TT_S)      REG_DWORD     ReadInteger
             []( RegObjType& Reg, String KeyName ) {
                 return static_cast<short>( Reg.ReadInteger( KeyName ) );
             },
 
-            // u16    (us)     REG_DWORD     ReadInteger
+            // u16    (TT_US)     REG_DWORD     ReadInteger
             []( RegObjType& Reg, String KeyName ) {
                 return static_cast<unsigned short>( Reg.ReadInteger( KeyName ) );
             },
 
-            // i64    (ll)     REG_QWORD     ReadQWORD
+            // i64    (TT_LL)     REG_QWORD     ReadQWORD
             []( RegObjType& Reg, String KeyName ) {
                 return Reg.ReadQWORD<long long>( KeyName );
             },
 
-            // u64    (ull)    REG_QWORD     ReadQWORD
+            // u64    (TT_ULL)    REG_QWORD     ReadQWORD
             []( RegObjType& Reg, String KeyName ) {
                 return Reg.ReadQWORD<unsigned long long>( KeyName );
             },
 
-            // u8     (b)      REG_DWORD     ReadInteger
+            // u8     (TT_B)      REG_DWORD     ReadInteger
             []( RegObjType& Reg, String KeyName ) {
                 return static_cast<bool>( Reg.ReadInteger( KeyName ) );
             },
 
-            // sz     (sz)     REG_SZ        ReadString
+            // sz     (TT_SZ)     REG_SZ        ReadString
             []( RegObjType& Reg, String KeyName ) {
                 return Reg.ReadString( KeyName );
             },
 
-            // b8     (dt)     REG_BINARY    ReadDateTime
+            // b8     (TT_DT)     REG_BINARY    ReadDateTime
             []( RegObjType& Reg, String KeyName ) {
                 return Reg.ReadDateTime( KeyName );
             },
 
-            // b8     (flt)    REG_BINARY    ReadFloat
+            // b8     (TT_FLT)    REG_BINARY    ReadFloat
             []( RegObjType& Reg, String KeyName ) {
                 return static_cast<float>( Reg.ReadFloat( KeyName ) );
             },
 
-            // b8     (dbl)    REG_BINARY    ReadFloat
+            // b8     (TT_DBL)    REG_BINARY    ReadFloat
             []( RegObjType& Reg, String KeyName ) {
                 return Reg.ReadFloat( KeyName );
             },
 
-            // b8     (cur)    REG_BINARY    ReadCurrency
+            // b8     (TT_CUR)    REG_BINARY    ReadCurrency
             []( RegObjType& Reg, String KeyName ) {
                 return Reg.ReadCurrency( KeyName );
             },
 
-            // sv     (sv)     REG_MULTI_SZ  ReadStringsTo
+            // sv     (TT_SV)     REG_MULTI_SZ  ReadStringsTo
             []( RegObjType& Reg, String KeyName ) {
                 StringCont Strings;
                 Reg.ReadStringsTo( KeyName, std::back_inserter( Strings ) );
                 return std::move( Strings );
             },
 
-            // dab    (dab)    REG_BINARY    ReadBinaryData
+            // dab    (TT_DAB)    REG_BINARY    ReadBinaryData
             []( RegObjType& Reg, String KeyName ) {
                 return Reg.ReadBinaryData( KeyName );
             },
 
-            // vb     (vb)     REG_BINARY    ReadBinaryDataTo
+            // vb     (TT_VB)     REG_BINARY    ReadBinaryDataTo
             []( RegObjType& Reg, String KeyName ) {
                 auto Size = Reg.GetDataSize( KeyName );
                 if ( Size < 0 ) {
@@ -649,7 +640,7 @@ protected:
         };
 
         ValueContType Values;
-        if ( OpenKeyReadOnly( KeyName ) ) {
+        if ( OpenKeyReadOnly( GetKeyName( Path ) ) ) {
             auto RegValues = std::make_unique<TStringList>();
             registry_->GetValueNames( RegValues.get() );
             cmatch_type ms;
@@ -727,10 +718,10 @@ protected:
         return Values;
     }
 
-    virtual NodeContType DoCreateNodeList( String KeyName ) override {
+    virtual NodeContType DoCreateNodeList( TConfigPath const & Path ) override {
         NodeContType Nodes;
 
-        if ( OpenKeyReadOnly( KeyName ) ) {
+        if ( OpenKeyReadOnly( GetKeyName( Path ) ) ) {
             auto RegKeys = std::make_unique<TStringList>();
             registry_->GetKeyNames( RegKeys.get() );
             for ( auto const & Key : RegKeys.get() ) {
@@ -740,9 +731,9 @@ protected:
         return Nodes;
     }
 
-    virtual void DoSaveValueList( String KeyName, ValueContType const & Values ) override {
+    virtual void DoSaveValueList( TConfigPath const & Path, ValueContType const & Values ) override {
         if ( !Values.empty() ) {
-            if ( OpenKey( KeyName, true ) ) {
+            if ( OpenKey( GetKeyName( Path ), true ) ) {
                 for ( auto& v : Values ) {
                     auto const ValueState = v.second.second;
                     if ( GetAlwaysFlushNodeFlag() || ValueState == Operation::Write ) {
@@ -761,31 +752,40 @@ protected:
         }
     }
 
-    virtual void DoSaveNodeList( String KeyName, NodeContType const & Nodes ) override {
-        for ( auto const & n : Nodes ) {
-            if ( GetAlwaysFlushNodeFlag() || n.second->IsModified() ) {
-                n.second->Write(
-                    *this,
-                    Format(
-                        _T( "%s\\%s" ), ARRAYOFCONST(( KeyName, n.first ))
-                    )
-                );
-            }
-        }
+    virtual void DoDeleteNode( TConfigPath const & Path ) override {
+        DeleteKey( std::move( Path ) );
     }
-
-    virtual void DoDeleteNode( String KeyName ) override { DeleteKey( KeyName ); }
 
     virtual void DoFlush() override {
         RegObjRAII Reg{ *this };
-        GetRootNode().Write( *this, String() );
+        GetRootNode().Write( *this, TConfigPath{} );
     }
 
     virtual bool DoGetForcedWritesFlag() const { return false; }
 private:
+    class RegObjRAII {
+    public:
+        RegObjRAII( TConfig& Cfg ) : cfg_{ Cfg } { Cfg.CreateRegistryObject(); }
+        ~RegObjRAII() noexcept {
+            try { cfg_.DestroyAndCloseRegistryObject(); } catch ( ... ) {}
+        }
+        RegObjRAII( RegObjRAII const & ) = delete;
+        RegObjRAII& operator=( RegObjRAII const & ) = delete;
+    private:
+        TConfig& cfg_;
+    };
+
     String rootPath_;
     HKEY hKey_;
     std::unique_ptr<TRegistry> registry_;
+
+    static String GetKeyName( TConfigPath const & Path, String Prefix = String{} ) {
+        auto SB = std::make_unique<TStringBuilder>( Prefix );
+        for ( auto const & Item : Path ) {
+            SB->AppendFormat( _T( "\\%s" ), ARRAYOFCONST(( Item )) );
+        }
+        return SB->ToString();
+    }
 
     void CreateRegistryObject() {
         registry_ =
@@ -839,294 +839,189 @@ private:
                 //                 are terminated by two null characters.
                 // REG_SZ        - Null-terminated string.
 
-                // CLASS  TAG    REG_TYPE      API
-                // -----  -----  ------------  ----------------
-                // i32           REG_DWORD     WriteInteger
+                // CLASS  TAG        REG_TYPE      API
+                // -----  ---------  ------------  ----------------
+                // i32               REG_DWORD     WriteInteger
                 [&Reg, &v]( int Val ) {
                     Reg.WriteInteger( v.first, Val );
                 },
 
-                // u32    (u)    REG_DWORD     WriteInteger
+                // u32    (TT_U)     REG_DWORD     WriteInteger
                 [&Reg, &v]( unsigned int Val ) {
                     Reg.WriteInteger(
-                        Format( _T( "%s:(u)" ), ARRAYOFCONST(( v.first )) ), Val
+                        Format(
+                            _T( "%s:(" ) cnv_xstr( TT_U ) ")",
+                            ARRAYOFCONST(( v.first ))
+                        ),
+                        Val
                     );
                 },
 
-                // i32    (l)    REG_DWORD     WriteInteger
+                // i32    (TT_L)     REG_DWORD     WriteInteger
                 [&Reg, &v]( long Val ) {
                     Reg.WriteInteger(
-                        Format( _T( "%s:(l)" ), ARRAYOFCONST(( v.first )) ), Val
+                        Format(
+                            _T( "%s:(" ) cnv_xstr( TT_L ) ")",
+                            ARRAYOFCONST(( v.first ))
+                        ),
+                        Val
                     );
                 },
 
-                // u32    (ul)   REG_DWORD     WriteInteger
+                // u32    (TT_UL)    REG_DWORD     WriteInteger
                 [&Reg, &v]( unsigned long Val ) {
                     Reg.WriteInteger(
-                        Format( _T( "%s:(ul)" ), ARRAYOFCONST(( v.first )) ), Val
+                        Format(
+                            _T( "%s:(" ) cnv_xstr( TT_UL ) ")",
+                            ARRAYOFCONST(( v.first ))
+                        ),
+                        Val
                     );
                 },
 
-                // i8     (c)    REG_DWORD     WriteInteger
+                // i8     (TT_C)     REG_DWORD     WriteInteger
                 [&Reg, &v]( char Val ) {
                     Reg.WriteInteger(
-                        Format( _T( "%s:(c)" ), ARRAYOFCONST(( v.first )) ), Val
+                        Format(
+                            _T( "%s:(" ) cnv_xstr( TT_C ) ")",
+                            ARRAYOFCONST(( v.first ))
+                        ),
+                        Val
                     );
                 },
 
-                // u8     (uc)   REG_DWORD     WriteInteger
+                // u8     (TT_UC)    REG_DWORD     WriteInteger
                 [&Reg, &v]( unsigned char Val ) {
                     Reg.WriteInteger(
-                        Format( _T( "%s:(uc)" ), ARRAYOFCONST(( v.first )) ), Val
+                        Format(
+                            _T( "%s:(" ) cnv_xstr( TT_UC ) ")",
+                            ARRAYOFCONST(( v.first ))
+                        ),
+                        Val
                     );
                 },
 
-                // i16    (s)    REG_DWORD     WriteInteger
+                // i16    (TT_S)     REG_DWORD     WriteInteger
                 [&Reg, &v]( short Val ) {
                     Reg.WriteInteger(
-                        Format( _T( "%s:(s)" ), ARRAYOFCONST(( v.first )) ), Val
+                        Format(
+                            _T( "%s:(" ) cnv_xstr( TT_S ) ")",
+                            ARRAYOFCONST(( v.first ))
+                        ),
+                        Val
                     );
                 },
 
-                // u16    (us)   REG_DWORD     WriteInteger
+                // u16    (TT_US)    REG_DWORD     WriteInteger
                 [&Reg, &v]( unsigned short Val ) {
                     Reg.WriteInteger(
-                        Format( _T( "%s:(us)" ), ARRAYOFCONST(( v.first )) ), Val
+                        Format(
+                            _T( "%s:(" ) cnv_xstr( TT_US ) ")",
+                            ARRAYOFCONST(( v.first ))
+                        ),
+                        Val
                     );
                 },
 
-                // i64           REG_QWORD     WriteQWORD
+                // i64               REG_QWORD     WriteQWORD
                 [&Reg, &v]( long long Val ) {
                     Reg.WriteQWORD( v.first, Val );
                 },
 
-                // u64    (ull)  REG_QWORD     WriteQWORD
+                // u64    (TT_ULL)   REG_QWORD     WriteQWORD
                 [&Reg, &v]( unsigned long long Val ) {
                     Reg.WriteQWORD(
-                        Format( _T( "%s:(ull)" ), ARRAYOFCONST(( v.first )) ), Val
+                        Format(
+                            _T( "%s:(" ) cnv_xstr( TT_ULL ) ")",
+                            ARRAYOFCONST(( v.first ))
+                        ),
+                        Val
                     );
                 },
 
-                // u8     (b)    REG_DWORD     WriteInteger
+                // u8     (TT_B)     REG_DWORD     WriteInteger
                 [&Reg, &v]( bool Val ) {
                     Reg.WriteInteger(
-                        Format( _T( "%s:(b)" ), ARRAYOFCONST(( v.first )) ), Val
+                        Format(
+                            _T( "%s:(" ) cnv_xstr( TT_B ) ")",
+                            ARRAYOFCONST(( v.first ))
+                        ), Val
                     );
                 },
 
-                // sz            REG_SZ        WriteString
+                // sz                REG_SZ        WriteString
                 [&Reg, &v]( System::UnicodeString Val ) {
                     Reg.WriteString( v.first, Val );
                 },
 
-                // b8     (dt)   REG_BINARY    WriteDateTime
+                // b8     (TT_DT)    REG_BINARY    WriteDateTime
                 [&Reg, &v]( System::TDateTime Val ) {
                     Reg.WriteDateTime(
-                        Format( _T( "%s:(dt)" ), ARRAYOFCONST(( v.first )) ), Val
+                        Format(
+                            _T( "%s:(" ) cnv_xstr( TT_DT ) ")",
+                            ARRAYOFCONST(( v.first ))
+                        ),
+                        Val
                     );
                 },
 
-                // b8     (flt)  REG_BINARY    WriteFloat
+                // b8     (TT_FLT)   REG_BINARY    WriteFloat
                 [&Reg, &v]( float Val ) {
                     Reg.WriteFloat(
-                        Format( _T( "%s:(flt)" ), ARRAYOFCONST(( v.first )) ), Val
+                        Format(
+                            _T( "%s:(" ) cnv_xstr( TT_FLT ) ")",
+                            ARRAYOFCONST(( v.first ))
+                        ),
+                        Val
                     );
                 },
 
-                // b8     (dbl)  REG_BINARY    WriteFloat
+                // b8     (TT_DBL)   REG_BINARY    WriteFloat
                 [&Reg, &v]( double Val ) {
                     Reg.WriteFloat(
-                        Format( _T( "%s:(dbl)" ), ARRAYOFCONST(( v.first )) ), Val
+                        Format(
+                            _T( "%s:(" ) cnv_xstr( TT_DBL ) ")",
+                            ARRAYOFCONST(( v.first ))
+                        ),
+                        Val
                     );
                 },
 
-                // b8     (cur)  REG_BINARY    WriteCurrency
+                // b8     (TT_CUR)   REG_BINARY    WriteCurrency
                 [&Reg, &v]( System::Currency Val ) {
                     Reg.WriteCurrency(
-                        Format( _T( "%s:(cur)" ), ARRAYOFCONST(( v.first )) ), Val
+                        Format(
+                            _T( "%s:(" ) cnv_xstr( TT_CUR ) ")",
+                            ARRAYOFCONST(( v.first ))
+                        ),
+                        Val
                     );
                 },
 
-                // sv     (sv)   REG_MULTI_SZ  WriteStrings
+                // sv     (TT_SV)    REG_MULTI_SZ  WriteStrings
                 [&Reg, &v]( StringCont const & Val ) {
                     Reg.WriteStrings( v.first, Val );
                 },
 
-                // dab           REG_BINARY    WriteBinaryData
+                // dab               REG_BINARY    WriteBinaryData
                 [&Reg, &v]( TBytes Val ) {
                     Reg.WriteBinaryData( v.first, Val );
                 },
 
-                // vb     (vb)   REG_BINARY    WriteBinaryData
+                // vb     (TT_VB)    REG_BINARY    WriteBinaryData
                 [&Reg, &v]( std::vector<Byte> const & Val ) {
                     Reg.WriteBinaryData(
-                        Format( _T( "%s:(vb)" ), ARRAYOFCONST(( v.first )) ), Val
+                        Format(
+                            _T( "%s:(" ) cnv_xstr( TT_VB ) ")",
+                            ARRAYOFCONST(( v.first ))
+                        ),
+                        Val
                     );
                 }
             },
             v.second.first
         );
     }
-
-    /*
-    void DeleteKey( String Path ) {
-        auto const Key = ExcludeTrailingBackslash( rootPath_ + Path );
-        if ( !registry_->CurrentPath.IsEmpty() ) {
-            if ( registry_->CurrentPath == Key ) {
-                registry_->CloseKey();
-            }
-        }
-        registry_->DeleteKey( Key );
-    }
-
-    class SaveVisitor : public boost::static_visitor<void> {
-    public:
-        SaveVisitor( TRegistry& Reg, String Name )
-            : reg_{ Reg }, name_{ Name } {}
-        SaveVisitor( SaveVisitor const & ) = delete;
-        SaveVisitor& operator=( SaveVisitor const & ) = delete;
-
-        // REG_BINARY    - Binary data in any form.
-        // REG_DWORD     - 32-bit number.
-        // REG_QWORD     - 64-bit number.
-        // REG_EXPAND_SZ - Null-terminated string that contains unexpanded references to environment variables
-        // REG_MULTI_SZ  - Array of null-terminated strings that are terminated by two null characters.
-        // REG_SZ        - Null-terminated string.
-                                                                  // CLASS  TAG    REG_TYPE      API
-                                                                  // -----  -----  ------------  ----------------
-
-        void operator()( int Val ) const {                        // i32           REG_DWORD     WriteInteger
-            //reg_.WriteInteger(
-            //    Format( _T( "%s:(i)" ), ARRAYOFCONST(( name_ )) ), Val
-            //);
-            reg_.WriteInteger( name_, Val );
-        }
-
-        void operator()( unsigned int Val ) const {               // u32    (u)    REG_DWORD     WriteInteger
-            reg_.WriteInteger(
-                Format( _T( "%s:(u)" ), ARRAYOFCONST(( name_ )) ), Val
-            );
-        }
-
-        void operator()( long Val ) const {                       // i32    (l)    REG_DWORD     WriteInteger
-            reg_.WriteInteger(
-                Format( _T( "%s:(l)" ), ARRAYOFCONST(( name_ )) ), Val
-            );
-        }
-
-        void operator()( unsigned long Val ) const {              // u32    (ul)   REG_DWORD     WriteInteger
-            reg_.WriteInteger(
-                Format( _T( "%s:(ul)" ), ARRAYOFCONST(( name_ )) ), Val
-            );
-        }
-
-        void operator()( char Val ) const {                       // i8     (c)    REG_DWORD     WriteInteger
-            reg_.WriteInteger(
-                Format( _T( "%s:(c)" ), ARRAYOFCONST(( name_ )) ), Val
-            );
-        }
-
-        void operator()( unsigned char Val ) const {              // u8     (uc)   REG_DWORD     WriteInteger
-            reg_.WriteInteger(
-                Format( _T( "%s:(uc)" ), ARRAYOFCONST(( name_ )) ), Val
-            );
-        }
-
-        void operator()( short Val ) const {                      // i16    (s)    REG_DWORD     WriteInteger
-            reg_.WriteInteger(
-                Format( _T( "%s:(s)" ), ARRAYOFCONST(( name_ )) ), Val
-            );
-        }
-
-        void operator()( unsigned short Val ) const {             // u16    (us)   REG_DWORD     WriteInteger
-            reg_.WriteInteger(
-                Format( _T( "%s:(us)" ), ARRAYOFCONST(( name_ )) ), Val
-            );
-        }
-
-        void operator()( long long Val ) const {                  // i64           REG_QWORD     WriteQWORD
-            //reg_.WriteQWORD(
-            //    Format( _T( "%s:(ll)" ), ARRAYOFCONST(( name_ )) ), Val
-            //);
-            reg_.WriteQWORD( name_, Val );
-        }
-
-        void operator()( unsigned long long Val ) const {         // u64    (ull)  REG_QWORD     WriteQWORD
-            reg_.WriteQWORD(
-                Format( _T( "%s:(ull)" ), ARRAYOFCONST(( name_ )) ), Val
-            );
-        }
-
-        void operator()( bool Val ) const {                       // u8     (b)    REG_DWORD     WriteInteger
-            reg_.WriteInteger(
-                Format( _T( "%s:(b)" ), ARRAYOFCONST(( name_ )) ), Val
-            );
-        }
-
-        void operator()( System::UnicodeString Val ) const {      // sz            REG_SZ        WriteString
-            //reg_.WriteString(
-            //  Format( _T( "%s:(sz)" ), ARRAYOFCONST(( name_ )) ), Val
-            //);
-            reg_.WriteString( name_, Val );
-        }
-
-        void operator()( System::TDateTime Val ) const {          // b8     (dt)   REG_BINARY    WriteDateTime
-            reg_.WriteDateTime(
-                Format( _T( "%s:(dt)" ), ARRAYOFCONST(( name_ )) ), Val
-            );
-        }
-
-        void operator()( float Val ) const {                      // b8     (flt)  REG_BINARY    WriteFloat
-            reg_.WriteFloat(
-                Format( _T( "%s:(flt)" ), ARRAYOFCONST(( name_ )) ), Val
-            );
-        }
-
-        void operator()( double Val ) const {                     // b8     (dbl)  REG_BINARY    WriteFloat
-            reg_.WriteFloat(
-                Format( _T( "%s:(dbl)" ), ARRAYOFCONST(( name_ )) ), Val
-            );
-        }
-
-        void operator()( System::Currency Val ) const {           // b8     (cur)  REG_BINARY    WriteCurrency
-            reg_.WriteCurrency(
-                Format( _T( "%s:(cur)" ), ARRAYOFCONST(( name_ )) ), Val
-            );
-        }
-
-//        void operator()( std::shared_ptr<TStrings> Val ) const {  // sl            REG_MULTI_SZ  WriteStrings
-//           //reg_.WriteStrings(
-//           //    Format( _T( "%s:(sl)" ), ARRAYOFCONST(( name_ )) ), *Val
-//           //);
-//           reg_.WriteStrings( name_, *Val );
-//       }
-
-        void operator()( StringCont const &Val ) const { // sv     (sv)   REG_MULTI_SZ  WriteStrings
-            //reg_.WriteStrings(
-            //    Format( _T( "%s:(sv)" ), ARRAYOFCONST(( name_ )) ), Val
-            //);
-            reg_.WriteStrings( name_, Val );
-        }
-
-        void operator()( TBytes Val ) const {                     // dab           REG_BINARY    WriteBinaryData
-            //reg_.WriteBinaryData(
-            //    Format( _T( "%s:(dab)" ), ARRAYOFCONST(( name_ )) ), Val
-            //);
-            reg_.WriteBinaryData( name_, Val );
-        }
-
-        void operator()( std::vector<Byte> const & Val ) const {  // vb     (vb)   REG_BINARY    WriteBinaryData
-            reg_.WriteBinaryData(
-                Format( _T( "%s:(vb)" ), ARRAYOFCONST(( name_ )) ), Val
-            );
-        }
-
-    private:
-        Anafestica::Registry::TRegistry& reg_;
-        String name_;
-    };
-    */
-
 };
 
 //---------------------------------------------------------------------------

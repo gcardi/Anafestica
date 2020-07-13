@@ -21,19 +21,19 @@ namespace Anafestica {
 namespace XML {
 //---------------------------------------------------------------------------
 
-static constexpr LPCTSTR DocumentVersion = _T( "1.0" );
-static constexpr LPCTSTR DocumentEncoding = _T( "UTF-8" );
-static constexpr LPCTSTR DocumentStandAlone = _T( "yes" );
+static constexpr LPCTSTR DocumentVersion = _D( "1.0" );
+static constexpr LPCTSTR DocumentEncoding = _D( "UTF-8" );
+static constexpr LPCTSTR DocumentStandAlone = _D( "yes" );
 
-static constexpr LPCTSTR RootNodeName = _T( "application" );
-static constexpr LPCTSTR ConfigNodeName = _T( "config" );
-static constexpr LPCTSTR NodesNodeName = _T( "nodes" );
-static constexpr LPCTSTR NodeNodeName = _T( "node" );
-static constexpr LPCTSTR ValuesNodeName = _T( "values" );
-static constexpr LPCTSTR ValueNodeName = _T( "value" );
+static constexpr LPCTSTR RootNodeName = _D( "application" );
+static constexpr LPCTSTR ConfigNodeName = _D( "config" );
+static constexpr LPCTSTR NodesNodeName = _D( "nodes" );
+static constexpr LPCTSTR NodeNodeName = _D( "node" );
+static constexpr LPCTSTR ValuesNodeName = _D( "values" );
+static constexpr LPCTSTR ValueNodeName = _D( "value" );
 
-static constexpr LPCTSTR NameAttrName = _T( "name" );
-static constexpr LPCTSTR TypeAttrName = _T( "type" );
+static constexpr LPCTSTR NameAttrName = _D( "name" );
+static constexpr LPCTSTR TypeAttrName = _D( "type" );
 
 class TConfig : public Anafestica::TConfig {
 public:
@@ -100,7 +100,7 @@ private:
         if ( XMLDoc_->Encoding != DocumentEncoding ) {
             throw EXMLDocError(
                 Format(
-                    _T( "The document should be encoded using \'%s\' encoding" ),
+                    _D( "The document should be encoded using \'%s\' encoding" ),
                     ARRAYOFCONST(( DocumentEncoding ))
                 )
             );
@@ -111,7 +111,7 @@ private:
     String ToString( TConfigPath const & Path ) {
         auto SB = std::make_unique<TStringBuilder>();
         for ( auto const & Name : Path ) {
-            SB->AppendFormat( _T( "/%s" ), ARRAYOFCONST(( Name )) );
+            SB->AppendFormat( _D( "/%s" ), ARRAYOFCONST(( Name )) );
         }
         return SB->ToString();
     }
@@ -325,7 +325,7 @@ private:
                         ValueNode->Attributes[TypeAttrName] =
                             String( cnv_xstr( TT_CUR ) );
                         TFormatSettings FS;
-                        FS.DecimalSeparator = _T( '.' );
+                        FS.DecimalSeparator = _D( '.' );
                         ValueNode->Text = CurrToStr( Val, FS );
                     },
 
@@ -448,7 +448,7 @@ protected:
             // TT_CUR
             []( String Value ) {
                 TFormatSettings FS;
-                FS.DecimalSeparator = _T( '.' );
+                FS.DecimalSeparator = _D( '.' );
                 return StrToCurr( Value, FS );
             },
 
@@ -570,6 +570,36 @@ protected:
         return false;
     }
 };
+//---------------------------------------------------------------------------
+
+inline String GetFileName( String FileName )
+{
+    TFileVersionInfo const Info( FileName );
+    return
+        TPath::ChangeExtension(
+            TPath::Combine(
+                TPath::Combine(
+                    TPath::Combine(
+                        TPath::Combine(
+                            TPath::GetHomePath(),
+                            Info.CompanyName
+                        ),
+                        Info.ProductName
+                    ),
+                    Info.ProductVersion
+                ),
+                ExtractFileName( FileName )
+            ),
+            _D( ".xml" )
+        );
+}
+//---------------------------------------------------------------------------
+
+inline Anafestica::TConfig& GetConfigSingleton( String FileName = ParamStr( {} ) )
+{
+    static auto Cfg = TConfig( GetFileName( FileName ), false );
+    return Cfg;
+}
 
 //---------------------------------------------------------------------------
 } // End namespace XML

@@ -40,7 +40,7 @@ private:
 } Restore;
 
 #if !defined( BOOST_TEST_MODULE )
-# define BOOST_TEST_MODULE Test Mneme
+# define BOOST_TEST_MODULE Test Anafestica
 #endif
 
 #include <boost/test/unit_test.hpp>

@@ -26,8 +26,8 @@ namespace JSON {
 
 class TConfig : public Anafestica::TConfig {
 private:
-    static constexpr LPTSTR ValuesNodeName = _T( "values" );
-    static constexpr LPTSTR NodesNodeName = _T( "nodes" );
+    static constexpr LPTSTR ValuesNodeName = _D( "values" );
+    static constexpr LPTSTR NodesNodeName = _D( "nodes" );
 public:
     TConfig( String FileName, bool Compact = true, bool ReadOnly = false,
              bool FlushAllItems = false )
@@ -289,7 +289,7 @@ private:
 
                 [&Obj, &v]( System::Currency Val ) {
                     TFormatSettings FS;
-                    FS.DecimalSeparator = _T( '.' );
+                    FS.DecimalSeparator = _D( '.' );
                     Write(
                         Obj, cnv_xstr( TT_CUR ), v.first,
                         std::make_unique<TJSONString>( CurrToStr( Val, FS ) )
@@ -413,7 +413,7 @@ protected:
             // TT_CUR
             []( TJSONValue& Value ) {
                 TFormatSettings FS;
-                FS.DecimalSeparator = _T( '.' );
+                FS.DecimalSeparator = _D( '.' );
                 return StrToCurr( Value.GetValue<String>(), FS );
             },
 
@@ -545,6 +545,36 @@ protected:
         return false;
     }
 };
+//---------------------------------------------------------------------------
+
+inline String GetFileName( String FileName )
+{
+    TFileVersionInfo const Info( FileName );
+    return
+        TPath::ChangeExtension(
+            TPath::Combine(
+                TPath::Combine(
+                    TPath::Combine(
+                        TPath::Combine(
+                            TPath::GetHomePath(),
+                            Info.CompanyName
+                        ),
+                        Info.ProductName
+                    ),
+                    Info.ProductVersion
+                ),
+                ExtractFileName( FileName )
+            ),
+            _D( ".json" )
+        );
+}
+//---------------------------------------------------------------------------
+
+inline Anafestica::TConfig& GetConfigSingleton( String FileName = ParamStr( {} ) )
+{
+    static auto Cfg = TConfig( GetFileName( FileName ), false );
+    return Cfg;
+}
 
 //---------------------------------------------------------------------------
 } // End namespace JSON

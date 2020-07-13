@@ -20,6 +20,7 @@
 #include <System.RTLConsts.hpp>
 
 #include <anafestica/Cfg.h>
+#include <anafestica/FileVersionInfo.h>
 
 //---------------------------------------------------------------------------
 namespace Anafestica {
@@ -416,14 +417,14 @@ void TRegistry::WriteStrings( String Name, InIt Begin, InIt End )
     auto SB = std::make_unique<TStringBuilder>();
     while ( Begin != End ) {
         SB->Append( *Begin++ );
-        SB->Append( _T( '\0' ) );
+        SB->Append( _D( '\0' ) );
     }
-    SB->Append( _T( '\0' ) );
+    SB->Append( _D( '\0' ) );
     if ( !CheckResult(
            ::RegSetValueEx(
              CurrentKey, Name.c_str(), 0, REG_MULTI_SZ,
              reinterpret_cast<BYTE*>( SB->ToString().c_str() ),
-             SB->Length * sizeof _T( '\0' )
+             SB->Length * sizeof _D( '\0' )
            )
          )
     )
@@ -487,7 +488,7 @@ private:
 protected:
     virtual ValueContType DoCreateValueList( TConfigPath const & Path ) override {
         regex_type re(
-            _T( "" )
+            _D( "" )
             "^(.*\?)(\?::(\\((\?:"
                 "(" cnv_xstr( TT_I )   ")|(" cnv_xstr( TT_U )   ")|"
                 "(" cnv_xstr( TT_L )   ")|(" cnv_xstr( TT_UL )  ")|"
@@ -514,7 +515,7 @@ protected:
 
         static std::array<ValueBuilder,TConfigNodeValueType::types::size::value> Builders {
 
-            // CLASS  TAG         REG_TYPE      API
+            // CLASS  TAG         REG_DYPE      API
             // -----  -------     ------------  ----------------
 
             // i32    (TT_I)      REG_DWORD     ReadInteger
@@ -614,7 +615,7 @@ protected:
                 auto Size = Reg.GetDataSize( KeyName );
                 if ( Size < 0 ) {
                     throw Exception(
-                        _T( "Registry Key %s\\%s has invalid data size" ),
+                        _D( "Registry Key %s\\%s has invalid data size" ),
                         ARRAYOFCONST((
                             Reg.CurrentPath,
                             KeyName
@@ -704,7 +705,7 @@ protected:
                                 break;
                             default:
                                 throw Exception(
-                                    _T( "Registry Key %s\\%s has an invalid data type" ),
+                                    _D( "Registry Key %s\\%s has an invalid data type" ),
                                     ARRAYOFCONST((
                                         registry_->CurrentPath,
                                         ValueName
@@ -746,7 +747,7 @@ protected:
             }
             else {
                 throw ERegistryException(
-                    _T( "Error in TConfigRegistry::DoSaveValueList: can't open key for writing" )
+                    _D( "Error in TConfigRegistry::DoSaveValueList: can't open key for writing" )
                 );
             }
         }
@@ -782,7 +783,7 @@ private:
     static String GetKeyName( TConfigPath const & Path, String Prefix = String{} ) {
         auto SB = std::make_unique<TStringBuilder>( Prefix );
         for ( auto const & Item : Path ) {
-            SB->AppendFormat( _T( "\\%s" ), ARRAYOFCONST(( Item )) );
+            SB->AppendFormat( _D( "\\%s" ), ARRAYOFCONST(( Item )) );
         }
         return SB->ToString();
     }
@@ -839,7 +840,7 @@ private:
                 //                 are terminated by two null characters.
                 // REG_SZ        - Null-terminated string.
 
-                // CLASS  TAG        REG_TYPE      API
+                // CLASS  TAG        REG_DYPE      API
                 // -----  ---------  ------------  ----------------
                 // i32               REG_DWORD     WriteInteger
                 [&Reg, &v]( int Val ) {
@@ -850,7 +851,7 @@ private:
                 [&Reg, &v]( unsigned int Val ) {
                     Reg.WriteInteger(
                         Format(
-                            _T( "%s:(" ) cnv_xstr( TT_U ) ")",
+                            _D( "%s:(" ) cnv_xstr( TT_U ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -861,7 +862,7 @@ private:
                 [&Reg, &v]( long Val ) {
                     Reg.WriteInteger(
                         Format(
-                            _T( "%s:(" ) cnv_xstr( TT_L ) ")",
+                            _D( "%s:(" ) cnv_xstr( TT_L ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -872,7 +873,7 @@ private:
                 [&Reg, &v]( unsigned long Val ) {
                     Reg.WriteInteger(
                         Format(
-                            _T( "%s:(" ) cnv_xstr( TT_UL ) ")",
+                            _D( "%s:(" ) cnv_xstr( TT_UL ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -883,7 +884,7 @@ private:
                 [&Reg, &v]( char Val ) {
                     Reg.WriteInteger(
                         Format(
-                            _T( "%s:(" ) cnv_xstr( TT_C ) ")",
+                            _D( "%s:(" ) cnv_xstr( TT_C ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -894,7 +895,7 @@ private:
                 [&Reg, &v]( unsigned char Val ) {
                     Reg.WriteInteger(
                         Format(
-                            _T( "%s:(" ) cnv_xstr( TT_UC ) ")",
+                            _D( "%s:(" ) cnv_xstr( TT_UC ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -905,7 +906,7 @@ private:
                 [&Reg, &v]( short Val ) {
                     Reg.WriteInteger(
                         Format(
-                            _T( "%s:(" ) cnv_xstr( TT_S ) ")",
+                            _D( "%s:(" ) cnv_xstr( TT_S ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -916,7 +917,7 @@ private:
                 [&Reg, &v]( unsigned short Val ) {
                     Reg.WriteInteger(
                         Format(
-                            _T( "%s:(" ) cnv_xstr( TT_US ) ")",
+                            _D( "%s:(" ) cnv_xstr( TT_US ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -932,7 +933,7 @@ private:
                 [&Reg, &v]( unsigned long long Val ) {
                     Reg.WriteQWORD(
                         Format(
-                            _T( "%s:(" ) cnv_xstr( TT_ULL ) ")",
+                            _D( "%s:(" ) cnv_xstr( TT_ULL ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -943,7 +944,7 @@ private:
                 [&Reg, &v]( bool Val ) {
                     Reg.WriteInteger(
                         Format(
-                            _T( "%s:(" ) cnv_xstr( TT_B ) ")",
+                            _D( "%s:(" ) cnv_xstr( TT_B ) ")",
                             ARRAYOFCONST(( v.first ))
                         ), Val
                     );
@@ -958,7 +959,7 @@ private:
                 [&Reg, &v]( System::TDateTime Val ) {
                     Reg.WriteDateTime(
                         Format(
-                            _T( "%s:(" ) cnv_xstr( TT_DT ) ")",
+                            _D( "%s:(" ) cnv_xstr( TT_DT ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -969,7 +970,7 @@ private:
                 [&Reg, &v]( float Val ) {
                     Reg.WriteFloat(
                         Format(
-                            _T( "%s:(" ) cnv_xstr( TT_FLT ) ")",
+                            _D( "%s:(" ) cnv_xstr( TT_FLT ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -980,7 +981,7 @@ private:
                 [&Reg, &v]( double Val ) {
                     Reg.WriteFloat(
                         Format(
-                            _T( "%s:(" ) cnv_xstr( TT_DBL ) ")",
+                            _D( "%s:(" ) cnv_xstr( TT_DBL ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -991,7 +992,7 @@ private:
                 [&Reg, &v]( System::Currency Val ) {
                     Reg.WriteCurrency(
                         Format(
-                            _T( "%s:(" ) cnv_xstr( TT_CUR ) ")",
+                            _D( "%s:(" ) cnv_xstr( TT_CUR ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -1012,7 +1013,7 @@ private:
                 [&Reg, &v]( std::vector<Byte> const & Val ) {
                     Reg.WriteBinaryData(
                         Format(
-                            _T( "%s:(" ) cnv_xstr( TT_VB ) ")",
+                            _D( "%s:(" ) cnv_xstr( TT_VB ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -1023,6 +1024,34 @@ private:
         );
     }
 };
+//---------------------------------------------------------------------------
+
+inline String GetProductPath( String FileName )
+{
+    TFileVersionInfo const Info( FileName );
+
+    return Format(
+        _D( "%s\\%s\\%s" ),
+        ARRAYOFCONST( (
+            Info.CompanyName,
+            Info.ProductName,
+            Info.ProductVersion
+        ) )
+    );
+}
+//---------------------------------------------------------------------------
+
+inline Anafestica::TConfig& GetConfigSingleton( String FileName = ParamStr( {} ) )
+{
+    static auto Cfg = TConfig(
+        HKEY_CURRENT_USER,
+        Format(
+            _D( "Software\\%s" ),
+            ARRAYOFCONST(( GetProductPath( FileName ) ))
+        )
+    );
+    return Cfg;
+}
 
 //---------------------------------------------------------------------------
 } // End namespace Registry

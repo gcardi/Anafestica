@@ -48,7 +48,7 @@ private:
         LPVOID Ptr;
 
         if ( !VerQueryValue(
-                (LPVOID)&info_[0], _T( "\\VarFileInfo\\Translation" ),
+                (LPVOID)&info_[0], _D( "\\VarFileInfo\\Translation" ),
                 &Ptr, &Len
              )
         ) {
@@ -61,7 +61,7 @@ private:
         auto const TranslationTable = GetTranslationTable();
         if ( !TranslationTable ) {
             throw Exception(
-                _T( "Translation table not found (Version Info)" )
+                _D( "Translation table not found (Version Info)" )
             );
         }
         return IntToHex( TranslationTable[0], 4 ) +
@@ -71,7 +71,7 @@ private:
     String GetValue( String SubBlockId ) const {
         auto SubBlock =
             Format(
-                _T( "\\StringFileInfo\\%s\\%s" ),
+                _D( "\\StringFileInfo\\%s\\%s" ),
                 ARRAYOFCONST(( langCharset_, SubBlockId ))
             );
 
@@ -84,15 +84,15 @@ private:
         return String( static_cast<LPTSTR>( Ptr ), Len - 1 );
     }
 
-    String GetCompanyName() const { return GetValue( _T( "CompanyName" ) ); }
-    String GetProductName() const { return GetValue( _T( "ProductName" ) ); }
-    String GetProductVersion() const { return GetValue( _T( "ProductVersion" ) ); }
-    String GetFileDescription() const { return GetValue( _T( "FileDescription" ) ); }
-    String GetFileVersion() const { return GetValue( _T( "FileVersion" ) ); }
-    String GetInternalName() const { return GetValue( _T( "InternalName" ) ); }
-    String GetLegalCopyright() const { return GetValue( _T( "LegalCopyright" ) ); }
-    String GetOriginalFilename() const { return GetValue( _T( "OriginalFilename" ) ); }
-    String GetComments() const { return GetValue( _T( "Comments" ) ); }
+    String GetCompanyName() const { return GetValue( _D( "CompanyName" ) ); }
+    String GetProductName() const { return GetValue( _D( "ProductName" ) ); }
+    String GetProductVersion() const { return GetValue( _D( "ProductVersion" ) ); }
+    String GetFileDescription() const { return GetValue( _D( "FileDescription" ) ); }
+    String GetFileVersion() const { return GetValue( _D( "FileVersion" ) ); }
+    String GetInternalName() const { return GetValue( _D( "InternalName" ) ); }
+    String GetLegalCopyright() const { return GetValue( _D( "LegalCopyright" ) ); }
+    String GetOriginalFilename() const { return GetValue( _D( "OriginalFilename" ) ); }
+    String GetComments() const { return GetValue( _D( "Comments" ) ); }
 };
 
 //---------------------------------------------------------------------------

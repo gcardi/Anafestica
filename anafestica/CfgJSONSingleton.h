@@ -3,14 +3,8 @@
 #ifndef CfgJSONSingletonH
 #define CfgJSONSingletonH
 
-#include <System.hpp>
-#include <System.IOUtils.hpp>
-
-#include <memory>
-
 #include <anafestica/FileVersionInfo.h>
 #include <anafestica/CfgJSON.h>
-
 
 //---------------------------------------------------------------------------
 namespace Anafestica {
@@ -20,32 +14,10 @@ namespace JSON {
 
 class TConfigSingleton {
 public:
-    Anafestica::TConfig& GetConfig() {
-        static auto Cfg = std::make_unique<TConfig>( GetFileName(), false );
-        return *Cfg;
+    static Anafestica::TConfig& GetConfig() {
+        return Anafestica::JSON::GetConfigSingleton();
     }
 private:
-    static String GetFileName()
-    {
-        TFileVersionInfo const Info( ParamStr( {} ) );
-        return
-            TPath::ChangeExtension(
-                TPath::Combine(
-                    TPath::Combine(
-                        TPath::Combine(
-                            TPath::Combine(
-                                TPath::GetHomePath(),
-                                Info.CompanyName
-                            ),
-                            Info.ProductName
-                        ),
-                        Info.ProductVersion
-                    ),
-                    ExtractFileName( ParamStr( {} ) )
-                ),
-                _T( ".json" )
-            );
-    }
 };
 
 //---------------------------------------------------------------------------

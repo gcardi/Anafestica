@@ -270,7 +270,6 @@ bool TConfigNode::PutItem( String Id, T Val, is_enum_tag, Operation Op ) noexcep
     if ( auto Info = __delphirtti( decltype( Val ) ) ) {
         // save enum as text
 
-::OutputDebugString( GetEnumName( Info, static_cast<int>( Val ) ).c_str() );
         return PutItemTo(
             valueItems_, Id,
             std::make_pair(

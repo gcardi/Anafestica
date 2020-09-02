@@ -31,6 +31,7 @@ protected:
         catch (...) {
         }
     }
+
     virtual void DoRestoreState() = 0;
 private:
 };
@@ -55,7 +56,7 @@ public:
     __fastcall TPersistFormVCL( HWND ParentWindow,
                                 StoreOpts StoreOptions = StoreOpts::All,
                                 TConfigNode* const RootNode = nullptr );
-    void __fastcall BeforeDestruction();
+    virtual void __fastcall BeforeDestruction() override;
     TConfigNode& GetConfigNode() const { return configNode_; }
     static TConfigNode& GetConfigRootNode();
     void ReadValues();

@@ -15,7 +15,7 @@ namespace Anafestica {
 class TFileVersionInfo {
 public:
     explicit TFileVersionInfo( String FileName ) : info_( GetInfoSize( FileName ) ) {
-        if ( !GetFileVersionInfo( FileName.c_str(), 0, info_.size(), &info_[0] ) ) {
+        if ( !::GetFileVersionInfo( FileName.c_str(), 0, info_.size(), &info_[0] ) ) {
             RaiseLastOSError();
         }
         langCharset_ = GetLanguageCharset();
@@ -36,7 +36,8 @@ private:
 
     DWORD GetInfoSize( String FileName ) const {
         DWORD Handle;
-        auto const Size = GetFileVersionInfoSize( FileName.c_str(), &Handle );
+        auto const Size =
+            ::GetFileVersionInfoSize( FileName.c_str(), &Handle );
         if ( !Size ) {
             RaiseLastOSError();
         }
@@ -78,7 +79,7 @@ private:
         UINT Len;
         LPVOID Ptr;
 
-        if ( !VerQueryValue( (LPVOID)&info_[0], SubBlock.c_str(), &Ptr, &Len ) ) {
+        if ( !::VerQueryValue( (LPVOID)&info_[0], SubBlock.c_str(), &Ptr, &Len ) ) {
            RaiseLastOSError();
         }
         return String( static_cast<LPTSTR>( Ptr ), Len - 1 );

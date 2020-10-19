@@ -16,6 +16,7 @@
 #include <functional>
 #include <iterator>
 
+#include <anafestica/FileVersionInfo.h>
 #include <anafestica/Cfg.h>
 
 //---------------------------------------------------------------------------

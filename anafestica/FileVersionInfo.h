@@ -82,7 +82,7 @@ private:
         if ( !::VerQueryValue( (LPVOID)&info_[0], SubBlock.c_str(), &Ptr, &Len ) ) {
            RaiseLastOSError();
         }
-        return String( static_cast<LPTSTR>( Ptr ), Len - 1 );
+        return String( static_cast<LPCTSTR>( Ptr ), Len - 1 );
     }
 
     String GetCompanyName() const { return GetValue( _D( "CompanyName" ) ); }

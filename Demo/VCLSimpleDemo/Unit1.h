@@ -2,25 +2,33 @@
 
 #ifndef Unit1H
 #define Unit1H
-
-//---------------------------------------------------------------------------
-
 #include <System.Classes.hpp>
 #include <Vcl.Controls.hpp>
 #include <Vcl.ExtCtrls.hpp>
 #include <Vcl.StdCtrls.hpp>
 
+#if defined( JSON_SINGLETON )
+# include <anafestica/CfgJSONSingleton.h>
+using SingletonType = Anafestica::TConfigJSONSingleton;
+#elif defined( XML_SINGLETON )
+# include <anafestica/CfgXMLSingleton.h>
+using SingletonType = Anafestica::TConfigXMLSingleton;
+#elif defined( REGISTRY_SINGLETON )
+# include <anafestica/CfgRegistrySingleton.h>
+using SingletonType = Anafestica::TConfigRegistrySingleton;
+#else
+# error "you must specify a SINGLETON type"
+#endif
+
 #include <anafestica/PersistFormVCL.h>
-#include <anafestica/CfgRegistrySingleton.h>
 
 //---------------------------------------------------------------------------
 
-using TConfigRegistryForm =
-    Anafestica::TPersistFormVCL<Anafestica::TConfigRegistrySingleton>;
+using TConfigForm = Anafestica::TPersistFormVCL<SingletonType>;
 
 //---------------------------------------------------------------------------
 
-class TForm1 : public TConfigRegistryForm
+class TForm1 : public TConfigForm
 {
 __published:    // IDE-managed Components
     TComboBox *comboboxFontName;
@@ -54,3 +62,4 @@ public:     // User declarations
 extern PACKAGE TForm1 *Form1;
 //---------------------------------------------------------------------------
 #endif
+

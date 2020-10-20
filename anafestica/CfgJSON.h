@@ -27,8 +27,8 @@ namespace JSON {
 
 class TConfig : public Anafestica::TConfig {
 private:
-    static constexpr LPTSTR ValuesNodeName = _D( "values" );
-    static constexpr LPTSTR NodesNodeName = _D( "nodes" );
+    static constexpr LPCTSTR ValuesNodeName = _D( "values" );
+    static constexpr LPCTSTR NodesNodeName = _D( "nodes" );
 public:
     TConfig( String FileName, bool Compact = true, bool ReadOnly = false,
              bool FlushAllItems = false )
@@ -548,6 +548,7 @@ protected:
 };
 //---------------------------------------------------------------------------
 
+/*
 inline String GetFileName( String FileName )
 {
     TFileVersionInfo const Info( FileName );
@@ -576,6 +577,7 @@ inline Anafestica::TConfig& GetConfigSingleton( String FileName = ParamStr( {} )
     static auto Cfg = TConfig( GetFileName( FileName ), false );
     return Cfg;
 }
+*/
 
 //---------------------------------------------------------------------------
 } // End namespace JSON

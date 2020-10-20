@@ -1026,7 +1026,8 @@ private:
 };
 //---------------------------------------------------------------------------
 
-inline String GetProductPath( String FileName )
+/*
+String GetProductPath( String FileName )
 {
     TFileVersionInfo const Info( FileName );
 
@@ -1041,7 +1042,7 @@ inline String GetProductPath( String FileName )
 }
 //---------------------------------------------------------------------------
 
-inline Anafestica::TConfig& GetConfigSingleton( String FileName = ParamStr( {} ) )
+Anafestica::TConfig& GetConfigSingleton( String FileName = ParamStr( {} ) )
 {
     static auto Cfg = TConfig(
         HKEY_CURRENT_USER,
@@ -1052,6 +1053,7 @@ inline Anafestica::TConfig& GetConfigSingleton( String FileName = ParamStr( {} )
     );
     return Cfg;
 }
+*/
 
 //---------------------------------------------------------------------------
 } // End namespace Registry

@@ -572,6 +572,7 @@ protected:
 };
 //---------------------------------------------------------------------------
 
+/*
 inline String GetFileName( String FileName )
 {
     TFileVersionInfo const Info( FileName );
@@ -600,6 +601,7 @@ inline Anafestica::TConfig& GetConfigSingleton( String FileName = ParamStr( {} )
     static auto Cfg = TConfig( GetFileName( FileName ), false );
     return Cfg;
 }
+*/
 
 //---------------------------------------------------------------------------
 } // End namespace XML

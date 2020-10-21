@@ -25,6 +25,7 @@ __fastcall TForm1::TForm1( TComponent* Owner, StoreOpts StoreOptions,
                            Anafestica::TConfigNode* const RootNode )
     : TConfigForm( Owner, StoreOptions, RootNode )
 {
+    // startup code
     selectedFontName_ = Label1->Font->Name;
     SetupCaption();
     LoadFontListUIControl();

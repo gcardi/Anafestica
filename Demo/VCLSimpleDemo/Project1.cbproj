@@ -82,7 +82,7 @@
         <BCC_UseClassicCompiler>false</BCC_UseClassicCompiler>
         <IncludePath>..\..\anafestica\;$(IncludePath)</IncludePath>
         <ILINK_LibraryPath>..\..\anafestica\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
-        <Defines>JSON_SINGLETON_;XML_SINGLETON_;REGISTRY_SINGLETON;$(Defines)</Defines>
+        <Defines>JSON_SINGLETON;XML_SINGLETON_;REGISTRY_SINGLETON_;$(Defines)</Defines>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <PackageImports>adortl;appanalytics;bcbie;bcbsmp;bindcomp;bindcompdbx;bindcompfmx;bindcompvcl;bindcompvclsmp;bindengine;CloudService;CustomIPTransport;DataSnapClient;DataSnapCommon;DataSnapConnectors;DatasnapConnectorsFreePascal;DataSnapFireDAC;DataSnapIndy10ServerTransport;DataSnapNativeClient;DataSnapProviderClient;DataSnapServer;DataSnapServerMidas;dbexpress;dbrtl;dbxcds;DbxClientDriver;DbxCommonDriver;DBXDb2Driver;DBXFirebirdDriver;DBXInformixDriver;DBXInterBaseDriver;DBXMSSQLDriver;DBXMySQLDriver;DBXOdbcDriver;DBXOracleDriver;DBXSqliteDriver;DBXSybaseASADriver;DBXSybaseASEDriver;dsnap;dsnapcon;dsnapxml;emsclient;emsclientfiredac;emsedge;emshosting;emsserverresource;FireDAC;FireDACADSDriver;FireDACASADriver;FireDACCommon;FireDACCommonDriver;FireDACCommonODBC;FireDACDb2Driver;FireDACDBXDriver;FireDACDSDriver;FireDACIBDriver;FireDACInfxDriver;FireDACMongoDBDriver;FireDACMSAccDriver;FireDACMSSQLDriver;FireDACMySQLDriver;FireDACODBCDriver;FireDACOracleDriver;FireDACPgDriver;FireDACSqliteDriver;FireDACTDataDriver;fmx;fmxase;fmxdae;fmxFireDAC;fmxobj;FMXTee;FmxTeeUI;IndyCore;IndyIPClient;IndyIPCommon;IndyIPServer;IndyProtocols;IndySystem;inet;inetdb;inetdbxpress;RESTBackendComponents;RESTComponents;rtl;soapmidas;soaprtl;soapserver;svn;Tee;TeeDB;TeeUI;tethering;vcl;vclactnband;vcldb;vcldsnap;vcledge;vclFireDAC;vclie;vclimg;VCLRESTComponents;VclSmp;vcltouch;vclwinx;vclx;xmlrtl;$(PackageImports)</PackageImports>
@@ -258,8 +258,13 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile Condition="'$(DynamicRTL)'=='true' And '$(Multithreaded)'!='true'" LocalName="$(BDS)\bin\cc32c270.dll" Class="DependencyModule">
+                <DeployFile Condition="'$(DynamicRTL)'=='true' And '$(Multithreaded)'=='true'" LocalName="$(BDS)\bin\cc32c270mt.dll" Class="DependencyModule">
                     <Platform Name="Win32">
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile Condition="'$(DynamicRTL)'=='true'" LocalName="$(BDS)\Redist\osx32\libcgcrtl.dylib" Class="DependencyModule">
+                    <Platform Name="OSX32">
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
@@ -275,11 +280,6 @@
                 </DeployFile>
                 <DeployFile Condition="'$(UsingDelphiRTL)'=='true'" LocalName="$(BDS)\bin\borlndmm.dll" Class="DependencyModule">
                     <Platform Name="Win32">
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile Condition="'$(DynamicRTL)'=='true'" LocalName="$(BDS)\Redist\osx32\libcgcrtl.dylib" Class="DependencyModule">
-                    <Platform Name="OSX32">
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
@@ -320,7 +320,7 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile Condition="'$(DynamicRTL)'=='true' And '$(Multithreaded)'=='true'" LocalName="$(BDS)\bin\cc32c270mt.dll" Class="DependencyModule">
+                <DeployFile Condition="'$(DynamicRTL)'=='true' And '$(Multithreaded)'!='true'" LocalName="$(BDS)\bin\cc32c270.dll" Class="DependencyModule">
                     <Platform Name="Win32">
                         <Overwrite>true</Overwrite>
                     </Platform>

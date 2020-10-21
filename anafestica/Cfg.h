@@ -16,7 +16,7 @@ public:
     TConfig( bool ReadOnly, bool FlushAllItems )
       : readOnly_{ ReadOnly }
       , flushAllItems_{ FlushAllItems }
-      , root_( new TConfigNode )
+      , root_{ new TConfigNode{} }
     {}
     TConfigNode& GetRootNode() { return DoGetRootNode(); }
     void Flush() { DoFlush(); }

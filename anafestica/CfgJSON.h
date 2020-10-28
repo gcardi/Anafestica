@@ -71,15 +71,15 @@ private:
     bool compact_;
 
     void CreateJSONObject() {
+        document_.reset();
         if ( TFile::Exists( fileName_ ) ) {
             document_.reset(
                 TJSONObject::ParseJSONValue( TFile::ReadAllText( fileName_ ) )
             );
-            if ( document_ ) {
-                return;
-            }
         }
-        document_.reset( new TJSONObject{} );
+        if ( !document_ ) {
+            document_.reset( new TJSONObject{} );
+        }
     }
 
     void DestroyAndCloseJSONObject() {

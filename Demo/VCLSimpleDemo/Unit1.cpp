@@ -100,12 +100,15 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
 void TForm1::RestoreProperties()
 {
     RESTORE_LOCAL_PROPERTY( SelectedFontName );
+    //auto x = GetConfigNode().GetItem<String>( _D( "SelectedFontName" ) );
+    //ShowMessage( x );
 }
 //---------------------------------------------------------------------------
 
 void TForm1::SaveProperties() const
 {
     SAVE_LOCAL_PROPERTY( SelectedFontName );
+    //GetConfigNode()[_D( "Sub" )].PutItem( _D( "Item" ), 100 );
 }
 //---------------------------------------------------------------------------
 

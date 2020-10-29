@@ -57,6 +57,10 @@ public:
         return *p.first->second;
     }
 
+    TConfigNode& operator[]( String Id ) {
+        return GetSubNode( Id );
+    }
+
     template<typename R>
     void Read( R& Reader, TConfigPath const & Path );
 
@@ -69,6 +73,13 @@ public:
             enum_tag<type_to_enum_v<std::remove_reference_t<decltype( Val )>>>{},
             Id, Val, Op
         );
+    }
+
+    template<typename T>
+    T GetItem( String Id, Operation Op = Operation::None ) {
+        T Val;
+        GetItem( Id, Val, Op );
+        return Val;
     }
 
     void GetItem( String Id, TStrings& Val, Operation Op = Operation::None ) {

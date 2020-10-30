@@ -570,38 +570,6 @@ protected:
         return false;
     }
 };
-//---------------------------------------------------------------------------
-
-/*
-inline String GetFileName( String FileName )
-{
-    TFileVersionInfo const Info( FileName );
-    return
-        TPath::ChangeExtension(
-            TPath::Combine(
-                TPath::Combine(
-                    TPath::Combine(
-                        TPath::Combine(
-                            TPath::GetHomePath(),
-                            Info.CompanyName
-                        ),
-                        Info.ProductName
-                    ),
-                    Info.ProductVersion
-                ),
-                ExtractFileName( FileName )
-            ),
-            _D( ".xml" )
-        );
-}
-//---------------------------------------------------------------------------
-
-inline Anafestica::TConfig& GetConfigSingleton( String FileName = ParamStr( {} ) )
-{
-    static auto Cfg = TConfig( GetFileName( FileName ), false );
-    return Cfg;
-}
-*/
 
 //---------------------------------------------------------------------------
 } // End namespace XML

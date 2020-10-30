@@ -31,9 +31,10 @@ private:
     static constexpr LPCTSTR NodesNodeName = _D( "nodes" );
 public:
     TConfig( String FileName, bool Compact = true, bool ReadOnly = false,
-             bool FlushAllItems = false )
+             bool FlushAllItems = false, bool ExplicitTypes = false )
         : Anafestica::TConfig( ReadOnly, FlushAllItems )
         , fileName_{ FileName }, compact_{ Compact }
+        , explicitTypes_{ ExplicitTypes }
     {
         if ( TFile::Exists( fileName_ ) ) {
             JSONObjRAII JSON{ *this };
@@ -69,6 +70,7 @@ private:
     std::unique_ptr<TJSONValue> document_;
     String fileName_;
     bool compact_;
+    bool explicitTypes_;
 
     void CreateJSONObject() {
         document_.reset();
@@ -162,17 +164,26 @@ private:
     }
 
     template<typename J, typename T>
+    static void Write( J& Obj, String Name, std::unique_ptr<T> Val ) {
+        if ( auto Pair = Obj.Get( Name ) ) {
+            Pair->JsonValue = Val.release();
+        }
+        else {
+            Obj.AddPair( Name, Val.release() );
+        }
+    }
+
+    template<typename J, typename T>
     static void Write( J& Obj, String Type, String Name, std::unique_ptr<T> Val ) {
         auto ValueObj = std::make_unique<TJSONObject>();
         ValueObj->AddPair( Type, Val.get() );
         Val.release();
         if ( auto Pair = Obj.Get( Name ) ) {
-            Pair->JsonValue = ValueObj.get();
+            Pair->JsonValue = ValueObj.release();
         }
         else {
-            Obj.AddPair( Name, ValueObj.get() );
+            Obj.AddPair( Name, ValueObj.release() );
         }
-        ValueObj.release();
     }
 
     template<typename C, typename J, typename T>
@@ -193,12 +204,11 @@ private:
         ValueObj->AddPair( Type, Array.get() );
         Array.release();
         if ( auto Pair = Obj.Get( Name ) ) {
-            Pair->JsonValue = ValueObj.get();
+            Pair->JsonValue = ValueObj.release();
         }
         else {
-            Obj.AddPair( Name, ValueObj.get() );
+            Obj.AddPair( Name, ValueObj.release() );
         }
-        ValueObj.release();
     }
 
     // https://www.bfilipek.com/2019/02/2lines3featuresoverload.html
@@ -208,8 +218,16 @@ private:
     void SaveValue( TJSONObject& Obj, ValueContType::value_type const & v ) {
         boost::apply_visitor(
             overload {
-                [&Obj, &v]( int Val ) {
-                    WriteNumber<int>( Obj, cnv_xstr( TT_I ), v.first, Val );
+                [this, &Obj, &v]( int Val ) {
+                    if ( explicitTypes_ ) {
+                        WriteNumber<int>( Obj, cnv_xstr( TT_I ), v.first, Val );
+                    }
+                    else {
+                        Write(
+                            Obj, v.first,
+                            std::make_unique<TJSONNumber>( Val )
+                        );
+                    }
                 },
 
                 [&Obj, &v]( unsigned int Val ) {
@@ -257,18 +275,34 @@ private:
                     );
                 },
 
-                [&Obj, &v]( bool Val ) {
-                    Write(
-                        Obj, cnv_xstr( TT_B ), v.first,
-                        std::make_unique<TJSONBool>( Val )
-                    );
+                [this, &Obj, &v]( bool Val ) {
+                    if ( explicitTypes_ ) {
+                        Write(
+                            Obj, cnv_xstr( TT_B ), v.first,
+                            std::make_unique<TJSONBool>( Val )
+                        );
+                    }
+                    else {
+                        Write(
+                            Obj, v.first,
+                            std::make_unique<TJSONBool>( Val )
+                        );
+                    }
                 },
 
-                [&Obj, &v]( System::UnicodeString Val ) {
-                    Write(
-                        Obj, cnv_xstr( TT_SZ ), v.first,
-                        std::make_unique<TJSONString>( Val )
-                    );
+                [this, &Obj, &v]( System::UnicodeString Val ) {
+                    if ( explicitTypes_ ) {
+                        Write(
+                            Obj, cnv_xstr( TT_SZ ), v.first,
+                            std::make_unique<TJSONString>( Val )
+                        );
+                    }
+                    else {
+                        Write(
+                            Obj, v.first,
+                            std::make_unique<TJSONString>( Val )
+                        );
+                    }
                 },
 
                 [&Obj, &v]( System::TDateTime Val ) {
@@ -466,6 +500,7 @@ protected:
                             auto const & InnerPair = InnerObj->Pairs[0];
                             auto TypeName = InnerPair->JsonString->Value();
                             if ( auto Result = GetTypeTag( TypeName ) ) {
+                                // Handle explicit types
                                 PutItemTo(
                                     Values, Pair->JsonString->Value(),
                                     {
@@ -478,6 +513,34 @@ protected:
                             }
                         }
                     }
+                }
+                // Handle implicit types
+                else if ( auto Ptr = dynamic_cast<TJSONNumber*>( Pair->JsonValue ) ) {
+                    PutItemTo(
+                        Values, Pair->JsonString->Value(),
+                        {
+                            TConfigNodeValueType{ Ptr->AsInt },
+                            Operation::None
+                        }
+                    );
+                }
+                else if ( auto Ptr = dynamic_cast<TJSONString*>( Pair->JsonValue ) ) {
+                    PutItemTo(
+                        Values, Pair->JsonString->Value(),
+                        {
+                            TConfigNodeValueType{ Ptr->Value() },
+                            Operation::None
+                        }
+                    );
+                }
+                else if ( auto Ptr = dynamic_cast<TJSONBool*>( Pair->JsonValue ) ) {
+                    PutItemTo(
+                        Values, Pair->JsonString->Value(),
+                        {
+                            TConfigNodeValueType{ Ptr->AsBoolean },
+                            Operation::None
+                        }
+                    );
                 }
             }
         }
@@ -546,38 +609,6 @@ protected:
         return false;
     }
 };
-//---------------------------------------------------------------------------
-
-/*
-inline String GetFileName( String FileName )
-{
-    TFileVersionInfo const Info( FileName );
-    return
-        TPath::ChangeExtension(
-            TPath::Combine(
-                TPath::Combine(
-                    TPath::Combine(
-                        TPath::Combine(
-                            TPath::GetHomePath(),
-                            Info.CompanyName
-                        ),
-                        Info.ProductName
-                    ),
-                    Info.ProductVersion
-                ),
-                ExtractFileName( FileName )
-            ),
-            _D( ".json" )
-        );
-}
-//---------------------------------------------------------------------------
-
-inline Anafestica::TConfig& GetConfigSingleton( String FileName = ParamStr( {} ) )
-{
-    static auto Cfg = TConfig( GetFileName( FileName ), false );
-    return Cfg;
-}
-*/
 
 //---------------------------------------------------------------------------
 } // End namespace JSON

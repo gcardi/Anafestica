@@ -47,7 +47,7 @@ public:
         OnlyState, StateAndSize, StateAndPos, All
     };
 
-    __fastcall TPersistFormVCL( System::Classes::TComponent* Owner,
+	__fastcall TPersistFormVCL( System::Classes::TComponent* Owner,
                                 StoreOpts StoreOptions = StoreOpts::All,
                                 TConfigNode* const RootNode = nullptr );
     __fastcall TPersistFormVCL( System::Classes::TComponent* AOwner, int Dummy,
@@ -75,7 +75,7 @@ private:
 
     TConfigNode& GetOrCreateConfigNode( TConfigNode * const RootNode );
     static bool HaveToSaveOrRestoreSize( StoreOpts Val ) noexcept;
-    static bool HaveToSaveOrRestoreState( StoreOpts Val ) noexcept;
+	static bool HaveToSaveOrRestoreState( StoreOpts Val ) noexcept;
     static bool HaveToSaveOrRestorePos( StoreOpts Val ) noexcept;
 };
 //---------------------------------------------------------------------------
@@ -146,36 +146,45 @@ void TPersistFormVCL<CfgSingleton>::ReadValues()
     if ( storeOptions_ != StoreOpts::None ) {
         if ( HaveToSaveOrRestorePos( storeOptions_ ) ) {
             int pLeft { BoundsRect.Left };
-            RESTORE_VALUE( configNode_, IdLeft_, pLeft );
+            //RESTORE_VALUE(
+            RestoreValue( configNode_, IdLeft_, pLeft );
             int pTop { BoundsRect.Top };
-            RESTORE_VALUE( configNode_, IdTop_, pTop );
+            //RESTORE_VALUE(
+            RestoreValue( configNode_, IdTop_, pTop );
             if ( HaveToSaveOrRestoreSize( storeOptions_ ) ) {
                 int pRight { BoundsRect.Right };
-                RESTORE_VALUE( configNode_, IdRight_, pRight );
+                //RESTORE_VALUE(
+                RestoreValue( configNode_, IdRight_, pRight );
                 int pBottom {BoundsRect.Bottom };
-                RESTORE_VALUE( configNode_, IdBottom_, pBottom );
+                //RESTORE_VALUE(
+                RestoreValue( configNode_, IdBottom_, pBottom );
                 BoundsRect = TRect( pLeft, pTop, pRight, pBottom );
             }
             else {
                 Left = pLeft;
                 Top = pTop;
-            }
+			}
         }
         else if ( HaveToSaveOrRestoreSize( storeOptions_ ) ) {
             int pLeft { BoundsRect.Left };
-            RESTORE_VALUE( configNode_, IdLeft_, pLeft );
+            //RESTORE_VALUE(
+            RestoreValue( configNode_, IdLeft_, pLeft );
             int pRight { BoundsRect.Right };
-            RESTORE_VALUE( configNode_, IdRight_, pRight );
+            //RESTORE_VALUE(
+            RestoreValue( configNode_, IdRight_, pRight );
             int pTop { BoundsRect.Top };
-            RESTORE_VALUE( configNode_, IdTop_, pTop );
+            //RESTORE_VALUE(
+            RestoreValue( configNode_, IdTop_, pTop );
             int pBottom { BoundsRect.Bottom };
-            RESTORE_VALUE( configNode_, IdBottom_, pBottom );
+            //RESTORE_VALUE(
+            RestoreValue( configNode_, IdBottom_, pBottom );
             Width = pRight - pLeft;
             Height = pBottom - pTop;
         }
 
         if ( HaveToSaveOrRestoreState( storeOptions_ ) ) {
-            RESTORE_VALUE( configNode_, IdState_, WindowState );
+            //RESTORE_VALUE(
+            RestoreValue( configNode_, IdState_, WindowState );
         }
     }
 }
@@ -199,29 +208,36 @@ void TPersistFormVCL<CfgSingleton>::SaveValues()
 
         if ( !GetWindowPlacement( Handle, &WndPl ) ) {
             RaiseLastOSError();
-        }
-        if ( HaveToSaveOrRestorePos( storeOptions_ ) ) {
-            SAVE_VALUE(
-                configNode_, IdLeft_,
-                static_cast<int>( WndPl.rcNormalPosition.left )
-            );
-            SAVE_VALUE(
-                configNode_, IdTop_,
-                static_cast<int>( WndPl.rcNormalPosition.top )
-            );
-        }
-        if ( HaveToSaveOrRestoreSize( storeOptions_ ) ) {
-            SAVE_VALUE(
-                configNode_, IdRight_,
-                static_cast<int>( WndPl.rcNormalPosition.right )
-            );
-            SAVE_VALUE(
-                configNode_, IdBottom_,
-                static_cast<int>( WndPl.rcNormalPosition.bottom )
-            );
-        }
+		}
+		if ( HaveToSaveOrRestorePos( storeOptions_ ) ) {
+//          SAVE_VALUE(
+			SaveValue(
+				configNode_, IdLeft_,
+				static_cast<int>( WndPl.rcNormalPosition.left )
+			);
+//          SAVE_VALUE(
+            SaveValue(
+				configNode_, IdTop_,
+				static_cast<int>( WndPl.rcNormalPosition.top )
+			);
+		}
+		if ( HaveToSaveOrRestoreSize( storeOptions_ ) ) {
+//          SAVE_VALUE(
+			SaveValue(
+				configNode_, IdRight_,
+				static_cast<int>( WndPl.rcNormalPosition.right )
+			);
+//          SAVE_VALUE(
+            SaveValue(
+				configNode_, IdBottom_,
+				static_cast<int>( WndPl.rcNormalPosition.bottom )
+			);
+		}
         if ( HaveToSaveOrRestoreState( storeOptions_ ) ) {
-            SAVE_VALUE( configNode_, IdState_, WindowState );
+//          SAVE_VALUE(
+            SaveValue(
+                configNode_, IdState_, WindowState
+            );
         }
     }
 }

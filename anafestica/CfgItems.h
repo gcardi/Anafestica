@@ -357,7 +357,7 @@ void TConfigNode::Write( W& Writer, TConfigPath const & Path ) const
     if ( IsDeleted() ) {
         Writer.DeleteNode( Path );
     }
-    if ( Writer.GetAlwaysFlushNodeFlag() || ValueListModified() ) {
+	if ( Writer.GetAlwaysFlushNodeFlag() || ValueListModified() ) {
         Writer.SaveValueList( Path, valueItems_ );
     }
     TConfigPath TmpPath;
@@ -365,11 +365,28 @@ void TConfigNode::Write( W& Writer, TConfigPath const & Path ) const
     TmpPath = Path;
     TmpPath.push_back({});
     for ( auto const & n : nodeItems_ ) {
-        TmpPath.back() = n.first;
-        if ( Writer.GetAlwaysFlushNodeFlag() || n.second->IsModified() ) {
-            n.second->Write( Writer, TmpPath );
-        }
-    }
+		TmpPath.back() = n.first;
+		if ( Writer.GetAlwaysFlushNodeFlag() || n.second->IsModified() ) {
+			n.second->Write( Writer, TmpPath );
+		}
+	}
+}
+//---------------------------------------------------------------------------
+
+template<typename T>
+void RestoreValue( TConfigNode& Node, String KeyName, T& Value )
+{
+	std::remove_reference_t< decltype( Value )> Tmp{ Value }; \
+	Node.GetItem( KeyName, Tmp ); \
+	Value = Tmp; \
+}
+
+//---------------------------------------------------------------------------
+
+template<typename T>
+void SaveValue( TConfigNode& Node, String KeyName, T const & Value )
+{
+	Node.PutItem( KeyName, Value );
 }
 
 //---------------------------------------------------------------------------
@@ -378,25 +395,27 @@ void TConfigNode::Write( W& Writer, TConfigPath const & Path ) const
 
 #define RESTORE_PROPERTY( NODE, PROPERTY ) \
 {\
-    std::remove_reference_t< decltype( PROPERTY )> Tmp{ PROPERTY }; \
-    ( NODE ).GetItem( #PROPERTY, Tmp ); \
-    PROPERTY = Tmp; \
+	std::remove_reference_t< decltype( PROPERTY )> Tmp{ PROPERTY }; \
+	( NODE ).GetItem( #PROPERTY, Tmp ); \
+	PROPERTY = Tmp; \
 }
 
 #define SAVE_PROPERTY( NODE, PROPERTY ) \
-    ( NODE ).PutItem( #PROPERTY, PROPERTY )
+	( NODE ).PutItem( #PROPERTY, PROPERTY )
 
 //---------------------------------------------------------------------------
 
+/*
 #define RESTORE_VALUE( NODE, KEY_NAME, VALUE ) \
 {\
-    std::remove_reference_t< decltype( VALUE )> Tmp{ VALUE }; \
-    ( NODE ).GetItem( ( KEY_NAME ), Tmp ); \
-    VALUE = Tmp; \
+	std::remove_reference_t< decltype( VALUE )> Tmp{ VALUE }; \
+	( NODE ).GetItem( ( KEY_NAME ), Tmp ); \
+	VALUE = Tmp; \
 }
 
 #define SAVE_VALUE( NODE, KEY_NAME, VALUE ) \
-    ( NODE ).PutItem( ( KEY_NAME ), ( VALUE ) )
+	( NODE ).PutItem( ( KEY_NAME ), ( VALUE ) )
+*/
 
 //---------------------------------------------------------------------------
 

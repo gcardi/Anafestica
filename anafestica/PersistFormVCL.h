@@ -12,9 +12,13 @@
 namespace Anafestica {
 //---------------------------------------------------------------------------
 
+/*
+
+NOT NECESSARY after https://quality.embarcadero.com/browse/RSP-27859
+
 // This class is useful to be able to override the dynamic functions
 // of delphi in the context of template classes because, at least with
-// clang-based compilers, the linker complains that the function,
+// clang-based compilers until 10.4, the linker complains that the function,
 // although defined, does not exist. As this is not a template class,
 // overriding the dynamic functions of delphi is not a problem.
 class TPersistBaseForm : public Vcl::Forms::TForm {
@@ -35,12 +39,15 @@ protected:
     virtual void DoRestoreState() = 0;
 private:
 };
+*/
 
 template<typename CfgSingleton>
-class TPersistFormVCL : public TPersistBaseForm
+//class TPersistFormVCL : public TPersistBaseForm
+class TPersistFormVCL : public Vcl::Forms::TForm
 {
 public:
-    using inherited = TPersistBaseForm;
+    //using inherited = TPersistBaseForm;
+    using inherited = Vcl::Forms::TForm;
 
     enum class StoreOpts {
         None, OnlySize, OnlyPos, PosAndSize,
@@ -62,7 +69,15 @@ public:
     void ReadValues();
     void SaveValues();
 protected:
-    virtual void DoRestoreState() override;
+    virtual void DoRestoreState();
+    DYNAMIC void __fastcall DoShow() {
+        Vcl::Forms::TForm::DoShow();
+        try {
+            DoRestoreState();
+        }
+        catch (...) {
+        }
+    }
 private:
     static constexpr LPCTSTR IdLeft_{ _D( "Left" ) };
     static constexpr LPCTSTR IdTop_{ _D( "Top" ) };
@@ -146,17 +161,13 @@ void TPersistFormVCL<CfgSingleton>::ReadValues()
     if ( storeOptions_ != StoreOpts::None ) {
         if ( HaveToSaveOrRestorePos( storeOptions_ ) ) {
             int pLeft { BoundsRect.Left };
-            //RESTORE_VALUE(
             RestoreValue( configNode_, IdLeft_, pLeft );
             int pTop { BoundsRect.Top };
-            //RESTORE_VALUE(
             RestoreValue( configNode_, IdTop_, pTop );
             if ( HaveToSaveOrRestoreSize( storeOptions_ ) ) {
                 int pRight { BoundsRect.Right };
-                //RESTORE_VALUE(
                 RestoreValue( configNode_, IdRight_, pRight );
                 int pBottom {BoundsRect.Bottom };
-                //RESTORE_VALUE(
                 RestoreValue( configNode_, IdBottom_, pBottom );
                 BoundsRect = TRect( pLeft, pTop, pRight, pBottom );
             }
@@ -167,23 +178,18 @@ void TPersistFormVCL<CfgSingleton>::ReadValues()
         }
         else if ( HaveToSaveOrRestoreSize( storeOptions_ ) ) {
             int pLeft { BoundsRect.Left };
-            //RESTORE_VALUE(
             RestoreValue( configNode_, IdLeft_, pLeft );
             int pRight { BoundsRect.Right };
-            //RESTORE_VALUE(
             RestoreValue( configNode_, IdRight_, pRight );
             int pTop { BoundsRect.Top };
-            //RESTORE_VALUE(
             RestoreValue( configNode_, IdTop_, pTop );
             int pBottom { BoundsRect.Bottom };
-            //RESTORE_VALUE(
             RestoreValue( configNode_, IdBottom_, pBottom );
             Width = pRight - pLeft;
             Height = pBottom - pTop;
         }
 
         if ( HaveToSaveOrRestoreState( storeOptions_ ) ) {
-            //RESTORE_VALUE(
             RestoreValue( configNode_, IdState_, WindowState );
         }
     }
@@ -210,31 +216,26 @@ void TPersistFormVCL<CfgSingleton>::SaveValues()
             RaiseLastOSError();
 		}
 		if ( HaveToSaveOrRestorePos( storeOptions_ ) ) {
-//          SAVE_VALUE(
 			SaveValue(
 				configNode_, IdLeft_,
 				static_cast<int>( WndPl.rcNormalPosition.left )
 			);
-//          SAVE_VALUE(
             SaveValue(
 				configNode_, IdTop_,
 				static_cast<int>( WndPl.rcNormalPosition.top )
 			);
 		}
 		if ( HaveToSaveOrRestoreSize( storeOptions_ ) ) {
-//          SAVE_VALUE(
 			SaveValue(
 				configNode_, IdRight_,
 				static_cast<int>( WndPl.rcNormalPosition.right )
 			);
-//          SAVE_VALUE(
             SaveValue(
 				configNode_, IdBottom_,
 				static_cast<int>( WndPl.rcNormalPosition.bottom )
 			);
 		}
         if ( HaveToSaveOrRestoreState( storeOptions_ ) ) {
-//          SAVE_VALUE(
             SaveValue(
                 configNode_, IdState_, WindowState
             );

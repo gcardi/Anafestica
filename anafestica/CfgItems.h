@@ -376,9 +376,9 @@ void TConfigNode::Write( W& Writer, TConfigPath const & Path ) const
 template<typename T>
 void RestoreValue( TConfigNode& Node, String KeyName, T& Value )
 {
-	std::remove_reference_t< decltype( Value )> Tmp{ Value }; \
-	Node.GetItem( KeyName, Tmp ); \
-	Value = Tmp; \
+	std::remove_reference_t< decltype( Value )> Tmp{ Value };
+	Node.GetItem( KeyName, Tmp );
+	Value = Tmp;
 }
 
 //---------------------------------------------------------------------------

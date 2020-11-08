@@ -30,7 +30,7 @@ private:
     static constexpr LPCTSTR ValuesNodeName = _D( "values" );
     static constexpr LPCTSTR NodesNodeName = _D( "nodes" );
 public:
-    TConfig( String FileName, bool Compact = true, bool ReadOnly = false,
+    TConfig( String FileName, bool ReadOnly = false, bool Compact = true,
              bool FlushAllItems = false, bool ExplicitTypes = false )
         : Anafestica::TConfig( ReadOnly, FlushAllItems )
         , fileName_{ FileName }, compact_{ Compact }

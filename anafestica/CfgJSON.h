@@ -215,6 +215,8 @@ private:
     template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
     template<class... Ts> overload( Ts... ) -> overload<Ts...>;
 
+    std::unique_ptr<TBase64Encoding> base64_ { new TBase64Encoding{ 0 } };
+
     void SaveValue( TJSONObject& Obj, ValueContType::value_type const & v ) {
         boost::apply_visitor(
             overload {
@@ -335,25 +337,27 @@ private:
                     WriteStrings( Obj, cnv_xstr( TT_SV ), v.first, Val );
                 },
 
-                [&Obj, &v]( TBytes Val ) {
+                [this, &Obj, &v]( TBytes Val ) {
                     Write(
                         Obj, cnv_xstr( TT_DAB ), v.first,
                         std::make_unique<TJSONString>(
-                            TNetEncoding::Base64->EncodeBytesToString(
+                            //TNetEncoding::Base64->EncodeBytesToString(
+                            base64_->EncodeBytesToString(
                                 &Val[0], Val.High
                             )
                         )
                     );
                 },
 
-                [&Obj, &v]( std::vector<Byte> const & Val ) {
+                [this,&Obj, &v]( std::vector<Byte> const & Val ) {
                     Write(
                         Obj, cnv_xstr( TT_VB ), v.first,
                         std::make_unique<TJSONString>(
                             Val.empty() ?
                               String()
                             :
-                              TNetEncoding::Base64->EncodeBytesToString(
+                              //TNetEncoding::Base64->EncodeBytesToString(
+                              base64_->EncodeBytesToString(
                                   Val.data(), Val.size() - 1
                               )
                         )

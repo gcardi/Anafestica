@@ -1024,36 +1024,6 @@ private:
         );
     }
 };
-//---------------------------------------------------------------------------
-
-/*
-String GetProductPath( String FileName )
-{
-    TFileVersionInfo const Info( FileName );
-
-    return Format(
-        _D( "%s\\%s\\%s" ),
-        ARRAYOFCONST( (
-            Info.CompanyName,
-            Info.ProductName,
-            Info.ProductVersion
-        ) )
-    );
-}
-//---------------------------------------------------------------------------
-
-Anafestica::TConfig& GetConfigSingleton( String FileName = ParamStr( {} ) )
-{
-    static auto Cfg = TConfig(
-        HKEY_CURRENT_USER,
-        Format(
-            _D( "Software\\%s" ),
-            ARRAYOFCONST(( GetProductPath( FileName ) ))
-        )
-    );
-    return Cfg;
-}
-*/
 
 //---------------------------------------------------------------------------
 } // End namespace Registry

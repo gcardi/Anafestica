@@ -12,7 +12,7 @@ namespace Anafestica {
 namespace Registry {
 //---------------------------------------------------------------------------
 
-String GetProductPath( String FileName )
+inline String GetProductPath( String FileName )
 {
     TFileVersionInfo const Info( FileName );
 
@@ -27,7 +27,7 @@ String GetProductPath( String FileName )
 }
 //---------------------------------------------------------------------------
 
-Anafestica::TConfig& GetConfigSingleton( String FileName = ParamStr( {} ) )
+inline Anafestica::TConfig& GetConfigSingleton( String FileName = ParamStr( {} ) )
 {
     static auto Cfg = TConfig(
         HKEY_CURRENT_USER,

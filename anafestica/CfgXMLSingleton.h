@@ -12,7 +12,7 @@ namespace Anafestica {
 namespace XML {
 //---------------------------------------------------------------------------
 
-String GetFileName( String FileName )
+inline String GetFileName( String FileName )
 {
     TFileVersionInfo const Info( FileName );
     return
@@ -35,7 +35,7 @@ String GetFileName( String FileName )
 }
 //---------------------------------------------------------------------------
 
-Anafestica::TConfig& GetConfigSingleton( String FileName = ParamStr( {} ) )
+inline Anafestica::TConfig& GetConfigSingleton( String FileName = ParamStr( {} ) )
 {
     static auto Cfg = TConfig( GetFileName( FileName ), false );
     return Cfg;

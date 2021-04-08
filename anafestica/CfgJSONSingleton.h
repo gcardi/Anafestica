@@ -6,6 +6,7 @@
 #include <anafestica/FileVersionInfo.h>
 #include <anafestica/CfgJSON.h>
 
+
 //---------------------------------------------------------------------------
 namespace Anafestica {
 //---------------------------------------------------------------------------

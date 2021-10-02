@@ -6,7 +6,7 @@
 #include <memory>
 #include <vector>
 
-#include <anafestica/CfgNodevalueType.h>
+#include <anafestica/CfgNodeValueType.h>
 
 //---------------------------------------------------------------------------
 namespace Anafestica {

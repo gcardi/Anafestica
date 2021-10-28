@@ -110,7 +110,7 @@ public:
     }
 
     template<typename OutIt, typename BT = BuildString>
-    size_t ReadStringsTo( String Name, OutIt it );
+	size_t ReadStringsTo( String Name, OutIt it );
 
     template<typename OutIt>
     typename
@@ -348,10 +348,9 @@ size_t TRegistry::ReadStringsTo( String Name, OutIt It )
         throw ERegistryException( &_SInvalidRegType, ARRAYOFCONST(( Name )) );
     }
 
-    // deduces the return type from the function itself
-    decltype( ReadStringsTo( Name, It ) ) Cnt {};
+	size_t Cnt {};
 
-    auto Start = std::begin( Data );
+	auto Start = std::begin( Data );
     auto End = std::end( Data );
     for ( auto Begin = Start ; Begin != End ; ) {
         auto OldBegin = Begin++;

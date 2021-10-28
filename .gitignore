@@ -26,3 +26,8 @@ Win64/
 *.stat
 *.tds
 *.~*
+*.twfd
+*.twopts
+*.@@@
+~$*.*
+*.tmp

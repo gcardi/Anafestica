@@ -39,7 +39,7 @@ public:
     void SaveValues();
 protected:
     virtual void DoRestoreState();
-    DYNAMIC void __fastcall DoShow() {
+    DYNAMIC void __fastcall DoShow() override {
         Vcl::Forms::TForm::DoShow();
         try {
             DoRestoreState();

@@ -39,6 +39,9 @@ public:
     void SaveValues();
 protected:
     virtual void DoRestoreState();
+// To get rid of 'DoShow' overrides a member function but is not marked 'override' warning message
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Winconsistent-missing-override"
     DYNAMIC void __fastcall DoShow() {
         Vcl::Forms::TForm::DoShow();
         try {
@@ -47,6 +50,7 @@ protected:
         catch (...) {
         }
     }
+#pragma clang diagnostic pop
 private:
     static constexpr LPCTSTR IdLeft_{ _D( "Left" ) };
     static constexpr LPCTSTR IdTop_{ _D( "Top" ) };

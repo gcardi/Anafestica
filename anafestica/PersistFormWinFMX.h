@@ -121,7 +121,8 @@ void TPersistFormWinFMX<CfgSingleton>::ReadValues()
         }
 
         if ( HaveToSaveOrRestoreState( storeOptions_ ) ) {
-            RESTORE_VALUE( configNode_, IdState_, WndPl.showCmd );
+            //RESTORE_VALUE( configNode_, IdState_, WndPl.showCmd );
+            RestoreValue( configNode_, IdState_, WndPl.showCmd );
         }
 
         auto const WindowWidth =
@@ -129,11 +130,13 @@ void TPersistFormWinFMX<CfgSingleton>::ReadValues()
         auto const WindowHeight =
             WndPl.rcNormalPosition.bottom - WndPl.rcNormalPosition.top;
         if ( HaveToSaveOrRestorePos( storeOptions_ ) ) {
-            RESTORE_VALUE( configNode_, IdLeft_, WndPl.rcNormalPosition.left );
-            RESTORE_VALUE( configNode_, IdTop_, WndPl.rcNormalPosition.top );
+            //RESTORE_VALUE( configNode_, IdLeft_, WndPl.rcNormalPosition.left );
+            RestoreValue( configNode_, IdLeft_, WndPl.rcNormalPosition.left );
+            //RESTORE_VALUE( configNode_, IdTop_, WndPl.rcNormalPosition.top );
+            RestoreValue( configNode_, IdTop_, WndPl.rcNormalPosition.top );
             if ( HaveToSaveOrRestoreSize( storeOptions_ ) ) {
-                RESTORE_VALUE( configNode_, IdRight_, WndPl.rcNormalPosition.right );
-                RESTORE_VALUE( configNode_, IdBottom_, WndPl.rcNormalPosition.bottom );
+                RestoreValue( configNode_, IdRight_, WndPl.rcNormalPosition.right );
+                RestoreValue( configNode_, IdBottom_, WndPl.rcNormalPosition.bottom );
             }
             else {
                 WndPl.rcNormalPosition.right =
@@ -178,15 +181,15 @@ void TPersistFormWinFMX<CfgSingleton>::SaveValues()
             RaiseLastOSError();
         }
         if ( HaveToSaveOrRestorePos( storeOptions_ ) ) {
-            SAVE_VALUE( configNode_, IdLeft_, WndPl.rcNormalPosition.left );
-            SAVE_VALUE( configNode_, IdTop_, WndPl.rcNormalPosition.top );
+            SaveValue( configNode_, IdLeft_, WndPl.rcNormalPosition.left );
+            SaveValue( configNode_, IdTop_, WndPl.rcNormalPosition.top );
         }
         if ( HaveToSaveOrRestoreSize( storeOptions_ ) ) {
-            SAVE_VALUE( configNode_, IdRight_, WndPl.rcNormalPosition.right );
-            SAVE_VALUE( configNode_, IdBottom_, WndPl.rcNormalPosition.bottom );
+            SaveValue( configNode_, IdRight_, WndPl.rcNormalPosition.right );
+            SaveValue( configNode_, IdBottom_, WndPl.rcNormalPosition.bottom );
         }
         if ( HaveToSaveOrRestoreState( storeOptions_ ) ) {
-            SAVE_VALUE( configNode_, IdState_, WndPl.showCmd );
+            SaveValue( configNode_, IdState_, WndPl.showCmd );
         }
     }
 }

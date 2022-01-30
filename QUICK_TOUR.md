@@ -8,9 +8,9 @@ Here's how it could be the form layout:
 
 The application is conceptually simple. Alas, obtaining the persistence of the form and the custom attributes, "by hand", is not so simple: it requires writing a fair amount of code. On the other hand, using the Anafestica library greatly simplify the process: in short, it only takes a few lines of code to save a form in the Windows registry, as it's possible to see below:
 
-<img src="https://i.ibb.co/4RMBg1Y/1.png" alt="Sample header file">
+<a><img src="https://i.ibb.co/4RMBg1Y/1.png" alt="Sample header file"></a>
 
-<img src="https://i.ibb.co/TBNYKRk/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-2.png" alt="Sample implementation">
+<a><img src="https://i.ibb.co/TBNYKRk/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-2.png" alt="Sample implementation"></a>
 
 The whole story is a little longer, and the meaning of those lines of code will be revealed shortly, but it's immediately possible to note that the amount of additional code is minimal.
 
@@ -20,15 +20,15 @@ The answer is easy. In the most obvious place: in the `HKCU\Software\Vendor\Prod
 
 The *FormName* part is taken from the `Name` property of the `Form1` object, but where the *Vendor*, *Product*, and *Version* parts come from? How does the library user set these values? The answer is simple: from the project's version info keys. Namely:
 
-<img src="https://i.ibb.co/x3ZK9gZ/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-3.png" alt="Project Info Keys sample settings">
+<a><img src="https://i.ibb.co/x3ZK9gZ/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-3.png" alt="Project Info Keys sample settings"></a>
 
 So, the position, size, and the state for the Form1 are stored in `HKCU\Software\TestCompany\TestAnafestica\1.0\Form1\`:
 
-<img src="https://i.ibb.co/ws7wRyp/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-4.png" alt="Sample registry node layout">
+<a><img src="https://i.ibb.co/ws7wRyp/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-4.png" alt="Sample registry node layout"></a>
 
 Since the library, usually, uses one or more singletons for the serialization process, the other few lines of code (to be added only once), are used to ensure that the application forms are destroyed before the singletons gone. To ensure correct behavior, you need to add a few lines the project source file, as in the following snippet:
 
-<img src="https://i.ibb.co/gt7MDYs/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-5.png" alt="Addings to project source">
+<a><img src="https://i.ibb.co/gt7MDYs/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-5.png" alt="Addings to project source"></a>
 
 To manage custom attributes is better to use properties. It is not strictly necessary to use properties, but using them makes the code more readable. Properties are very handful when used along with some library macro. However, it's possible to have more granular control over the persistence process, by calling the library classes' methods directly instead of using the aforementioned macros, but the macros use makes life smoother.
 
@@ -40,27 +40,27 @@ Now let's see how to build it from scratch.
 
 Create a new VCL application for C++ Builder: 
 
-<img src="https://i.ibb.co/KrL66P5/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-9.png" alt="C++ VCL app creation">
+<a><img src="https://i.ibb.co/KrL66P5/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-9.png" alt="C++ VCL app creation"></a>
 
 Next, add the 64-bit platform for Windows:
 
-<img src="https://i.ibb.co/59VN2Rq/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-10.png" alt="Add the 64 bit platform for Windows">
+<a><img src="https://i.ibb.co/59VN2Rq/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-10.png" alt="Add the 64 bit platform for Windows"></a>
 
 Now make some essential "adjustments" to the project. From the Project->Options menu (Shift + Ctrl + F11):
 
 Turn off the "classic C++ compiler" (it's better to do it for all the platforms):
 
-<img src="https://i.ibb.co/7NGKxzm/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-12.png" alt="Turn off classic C++ compiler">
+<a><img src="https://i.ibb.co/7NGKxzm/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-12.png" alt="Turn off classic C++ compiler"></a>
 
 Set the appropriate values for *CompanyName*, *ProductName*, and *ProductVersion* in the version info keys for all platforms. 
 
-<img src="https://i.ibb.co/qdDQQP3/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-13.png" alt="Set version info keys">
+<a><img src="https://i.ibb.co/qdDQQP3/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-13.png" alt="Set version info keys"></a>
 
 > *Note: if you skip the previous step, when you start the application it will give you a "resource not found error". The application needs these values because it uses them to access the `HKCU\CompanyName\ProductName\ProductVersion` path in the Windows Registry.*
 
 Let's save the project.
 
-<img src="https://i.ibb.co/v4CDpkG/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-11.png" alt="Save demo project">
+<a><img src="https://i.ibb.co/v4CDpkG/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-11.png" alt="Save demo project"></a>
 
 Now **close** the project.
 
@@ -68,11 +68,11 @@ Why it's necessary to close the project? Because the template project contained 
 
 Create a backup copy of the main project file (.cbproj). Then open the original file in an editor:
 
-<img src="https://i.ibb.co/PGrNRth/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-14.png" alt="Fix project file from broken template"></a>
+<a><img src="https://i.ibb.co/PGrNRth/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-14.png" alt="Fix project file from broken template"></a>
 
 Now, edit the file: hence, remove all `<VerInfo_Keys>` tags from all nodes except the first one, which is usually `<PropertyGroup Condition = "'$ (Base)'! = ''">`:
   
-<img src="https://i.ibb.co/LJDXWnm/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-15.png" alt="Clear extra Ver Info Keys">
+<a><img src="https://i.ibb.co/LJDXWnm/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-15.png" alt="Clear extra Ver Info Keys"></a>
 
 Save the modified project file, then reopen it in the IDE. If you have problems, take the backup copy and try again.
 
@@ -124,7 +124,7 @@ end
 
 Now the main form should look like:
 
-<img src="https://i.ibb.co/zn0Hz91/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-18.png" alt="Complete GUI">
+<a><img src="https://i.ibb.co/zn0Hz91/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-18.png" alt="Complete GUI"></a>
 
 At this point, modify the Unit1.h file (the header file of the main form) as the following (you can copy and paste these lines directly in the code editor for the Unit1.h file):
 
@@ -244,7 +244,7 @@ Now all that remains is to look at the implementation of the methods and provide
 
 Let's implement the two (empty) event handlers by double-clicking on `Timer1` and `comboboxFontName`:
 
-<img src="https://i.ibb.co/hFktX8x/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-19.png" alt="Generating event handlers">
+<a><img src="https://i.ibb.co/hFktX8x/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-19.png" alt="Generating event handlers"></a>
 
 Now copy and paste in the Unit1.cpp file the following code:
 
@@ -505,15 +505,15 @@ Ok! We're almost done.
 
 Compile the application, then run it.
 
-<img src="https://i.ibb.co/17yWWNQ/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-20.png" alt="First run">
+<a><img src="https://i.ibb.co/17yWWNQ/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-20.png" alt="First run"></a>
 
 Now select a font different from the default one, then move the form in a different screen position or change the size.
 
-<img src="https://i.ibb.co/60sspnX/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-21.png" alt="Font and position is changed">
+<a><img src="https://i.ibb.co/60sspnX/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-21.png" alt="Font and position is changed"></a>
 
 Close the application and have a look at the Registry:
 
-<img src="https://i.ibb.co/0rWs9QJ/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-22.png" alt="The registry after the first application run">
+<a><img src="https://i.ibb.co/0rWs9QJ/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-22.png" alt="The registry after the first application run"></a>
 
 Let's see that the Form1's screen coordinates were written along with the name of the selected font. Note that the _REG_SZ_ value containing the font name was written with the name _SelectedFontName_, i.e. the same chosen name for the property in the source code. Also, note that the _State_ of the form (i.e Normal, maximized, or Minimized) wasn't written: this because the form's state still is "Normal", i.e the default value, like designed for TForm1 in the IDE. Yes, the library (at least for the Registry) saves only values different from defaults.
 

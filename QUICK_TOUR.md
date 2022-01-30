@@ -71,8 +71,8 @@ Create a backup copy of the main project file (.cbproj). Then open the original 
 <a><img src="https://i.ibb.co/PGrNRth/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-14.png" alt="Fix project file from broken template"></a>
 
 Now, edit the file: hence, remove all `<VerInfo_Keys>` tags from all nodes except the first one, which is usually `<PropertyGroup Condition = "'$ (Base)'! = ''">`:
-  
-<a><img src="https://i.ibb.co/LJDXWnm/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-15.png" alt="Clear extra Ver Info Keys"></a>
+
+<a><img src="https://i.imgur.com/5PoSe2P.png"></a>
 
 Save the modified project file, then reopen it in the IDE. If you have problems, take the backup copy and try again.
 

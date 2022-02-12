@@ -23,7 +23,7 @@ Anafestica uses "boost::variant" instead of "std::variant" due to an unresolved 
 
 The "boost::variant" class is contained in one of the boost project libraries. So it's necessary to obtain "boost libraries" first. Luckily, it's possible to use the IDE's GetIt tool to install seamlessly the boost libraries (e.g. 1.68.0 for Rad Studio 10.3 or 1.70.0 for Rad Studio 10.4).
 
-<img src="https://i.ibb.co/FmPznnX/3-611-D020-B-2-C12-4839-8567-A7-E8-A650940-E.png" alt="Figure 3">
+<img src="docs/assets/images/1.png" alt="Figure 1">
 
 Please, note that only _clang-based_ compilers are supported by this library (i.e bcc32c and bcc64).
 
@@ -39,9 +39,9 @@ C:\Users\Public\Documents\Embarcadero\Studio\21.0>git clone https://github.com/g
 
 To complete the installation, the last important step is to add the references to this library in the include path(s) of the development system. Using the IDE menu _Tool -> Options_, add the $(BDSCOMMONDIR)\Anafestica path to both bcc32c and bcc64 settings:
 
-<img src="https://i.ibb.co/RBQxLGt/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-6.png" alt="BCC64">
+<img src="docs/assets/images/2.png" alt="BCC64">
 
-<img src="https://i.ibb.co/JcgH89t/EED5-A532-D4-E7-484-C-8619-D2-EBF126686-A-7.png" alt="BCC32C">
+<img src="docs/assets/images/3.png" alt="BCC32C">
 
 That's all. 
 

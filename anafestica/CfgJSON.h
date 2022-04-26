@@ -486,7 +486,8 @@ protected:
                 std::vector<Byte> VBytes;
                 VBytes.reserve( Bytes.Length );
                 std::copy(
-                    System::begin( &Bytes ), System::end( &Bytes ),
+					std::begin( Bytes ),
+					std::end( Bytes ),
                     std::back_inserter( VBytes )
                 );
                 return VBytes;

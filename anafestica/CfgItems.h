@@ -77,7 +77,7 @@ public:
 
     template<typename T>
     T GetItem( String Id, Operation Op = Operation::None ) {
-        T Val;
+        T Val {};
         GetItem( Id, Val, Op );
         return Val;
     }
@@ -403,6 +403,15 @@ void SaveValue( TConfigNode& Node, String KeyName, T const & Value )
 #define SAVE_PROPERTY( NODE, PROPERTY ) \
     ( NODE ).PutItem( #PROPERTY, PROPERTY )
 
+#define RESTORE_ID_PROPERTY( NODE, ID, PROPERTY ) \
+{\
+    std::remove_reference_t< decltype( PROPERTY )> Tmp{ PROPERTY }; \
+    ( NODE ).GetItem( #ID, Tmp ); \
+    PROPERTY = Tmp; \
+}
+
+#define SAVE_ID_PROPERTY( NODE, ID, PROPERTY ) \
+    ( NODE ).PutItem( #ID, PROPERTY )
 
 //---------------------------------------------------------------------------
 

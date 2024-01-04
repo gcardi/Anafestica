@@ -822,9 +822,29 @@ private:
         return true;
     }
 
-    // https://www.bfilipek.com/2019/02/2lines3featuresoverload.html
-    template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
-    template<class... Ts> overload( Ts... ) -> overload<Ts...>;
+    // https://andreasfertig.blog/2023/07/visiting-a-stdvariant-safely/
+	template<class...>
+	constexpr bool always_false_v = false;
+
+	template<class... Ts>
+	struct overload : Ts...
+	{
+	  using Ts::operator()...;
+
+	  // Prevent implicit type conversions
+	  template<typename T>
+	  constexpr void operator()(T) const
+	  {
+		static_assert(always_false_v<T>, "Unsupported type");
+	  }
+	};
+
+	template<class... Ts>
+	overload(Ts...) -> overload<Ts...>;
+
+	// https://www.bfilipek.com/2019/02/2lines3featuresoverload.html
+	// template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
+	// template<class... Ts> overload( Ts... ) -> overload<Ts...>;
 
     void SaveValue( TRegistry& Reg, ValueContType::value_type const & v ) {
         boost::apply_visitor(

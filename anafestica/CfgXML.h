@@ -222,7 +222,7 @@ private:
     
     // https://andreasfertig.blog/2023/07/visiting-a-stdvariant-safely/
 	template<class...>
-	constexpr bool always_false_v = false;
+	static constexpr bool always_false_v = false;
 
 	template<class... Ts>
 	struct overload : Ts...

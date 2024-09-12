@@ -512,7 +512,11 @@ protected:
                 )
             >;
 
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+        static std::array<ValueBuilder,std::variant_size<TConfigNodeValueType>::value> Builders {
+#else
         static std::array<ValueBuilder,TConfigNodeValueType::types::size::value> Builders {
+#endif
 
             // CLASS  TAG         REG_DYPE      API
             // -----  -------     ------------  ----------------
@@ -847,7 +851,11 @@ private:
 	// template<class... Ts> overload( Ts... ) -> overload<Ts...>;
 
     void SaveValue( TRegistry& Reg, ValueContType::value_type const & v ) {
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+        std::visit(
+#else
         boost::apply_visitor(
+#endif
             overload {
                 // REG_BINARY    - Binary data in any form.
                 // REG_DWORD     - 32-bit number.

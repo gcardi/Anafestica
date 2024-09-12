@@ -34,7 +34,11 @@ bool PutItemTo( ValueContType& Values, String Id,
 {
     auto r = Values.insert( std::make_pair( Id, Val ) );
     if ( !r.second ) {
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+        if ( !( r.first->second.first == Val.first ) ) {
+#else
         if ( r.first->second.first != Val.first ) {
+#endif
             r.first->second = ValuePairType( Val.first, Operation::Write );
         }
     }

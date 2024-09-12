@@ -13,7 +13,12 @@
 #include <utility>
 #include <algorithm>
 
-#include <boost/variant.hpp>
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+# include <variant>
+# include <any>
+#else
+# include <boost/variant.hpp>
+#endif
 
 //---------------------------------------------------------------------------
 namespace Anafestica {
@@ -23,7 +28,11 @@ using StringCont = std::vector<String>;
 using BytesCont = std::vector<Byte>;
 
 using TConfigNodeValueType =
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+    std::variant<
+#else
     boost::variant<
+#endif
         int                         // TT_I   i
       , unsigned int                // TT_U   u
       , long                        // TT_L   l
@@ -98,7 +107,11 @@ std::optional<TypeTag> GetTypeTag( String Val )
     using Cont =
         std::array<
             std::pair<LPCTSTR,TypeTag>,
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+            std::variant_size<TConfigNodeValueType>::value
+#else
             TConfigNodeValueType::types::size::value
+#endif
         >;
 
     // Keys must be sorted because will be used with std::lower_bound

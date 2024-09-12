@@ -77,6 +77,8 @@ __fastcall TPersistFormVCL<CfgSingleton>::TPersistFormVCL(
   , storeOptions_( StoreOptions )
   , configNode_( GetOrCreateConfigNode( RootNode ) )
 {
+    auto& node = GetOrCreateConfigNode( RootNode );
+    ::Sleep( 0 );
 }
 //---------------------------------------------------------------------------
 

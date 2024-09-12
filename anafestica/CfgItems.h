@@ -89,7 +89,11 @@ public:
             std::back_inserter( Strs )
         );
         auto NewStrs =
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+            std::get<StringCont>(
+#else
             boost::get<StringCont>(
+#endif
                 GetItemFrom( valueItems_, Id, Strs, Op )
             );
         Val.Clear();
@@ -217,7 +221,11 @@ private:
     template<typename T>
     void GetItemAs( is_other_tag, String Id, T& Val, Operation Op ) {
         Val =
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+            std::get<std::remove_reference_t<T>>(
+#else
             boost::get<std::remove_reference_t<T>>(
+#endif
                 GetItemFrom( valueItems_, Id, Val, Op )
             );
     }
@@ -248,7 +256,11 @@ void TConfigNode::GetItemAs( is_enum_tag, String Id, T& Val, Operation Op )
             static_cast<T>(
                 GetEnumValue(
                     Info,
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+                    std::get<String>(
+#else
                     boost::get<String>(
+#endif
                         GetItemFrom(
                             valueItems_,
                             Id,
@@ -262,7 +274,11 @@ void TConfigNode::GetItemAs( is_enum_tag, String Id, T& Val, Operation Op )
     else {
         Val =
             static_cast<T>(
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+                std::get<int>(
+#else
                 boost::get<int>(
+#endif
                     GetItemFrom(
                         valueItems_,
                         Id,

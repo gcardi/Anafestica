@@ -65,7 +65,7 @@ private:
     class XMLObjRAII {
     public:
         XMLObjRAII( TConfig& Cfg ) : cfg_{ Cfg } { cfg_.CreateXMLObject(); }
-        ~XMLObjRAII() noexcept {
+        ~XMLObjRAII() {
             try { cfg_.DestroyAndCloseXMLObject(); } catch ( ... ) {}
         }
         XMLObjRAII( XMLObjRAII const & ) = delete;
@@ -221,24 +221,24 @@ private:
     //template<class... Ts> overload( Ts... ) -> overload<Ts...>;
     
     // https://andreasfertig.blog/2023/07/visiting-a-stdvariant-safely/
-	template<class...>
-	static constexpr bool always_false_v = false;
-
-	template<class... Ts>
-	struct overload : Ts...
-	{
-	  using Ts::operator()...;
-
-	  // Prevent implicit type conversions
-	  template<typename T>
-	  constexpr void operator()(T) const
-	  {
-		static_assert(always_false_v<T>, "Unsupported type");
-	  }
-	};
-
-	template<class... Ts>
-	overload(Ts...) -> overload<Ts...>;
+    template<class...>
+    static constexpr bool always_false_v = false;
+    
+    template<class... Ts>
+    struct overload : Ts...
+    {
+      using Ts::operator()...;
+    
+      // Prevent implicit type conversions
+      template<typename T>
+      constexpr void operator()(T) const
+      {
+        static_assert(always_false_v<T>, "Unsupported type");
+      }
+    };
+    
+    template<class... Ts>
+    overload(Ts...) -> overload<Ts...>;
 
     void SaveValue( _di_IXMLNode Node, ValueContType::value_type const & v ) {
         if ( auto ValueNode =

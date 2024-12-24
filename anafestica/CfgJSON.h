@@ -58,7 +58,7 @@ private:
     class JSONObjRAII {
     public:
         JSONObjRAII( TConfig& Cfg ) : cfg_{ Cfg } { Cfg.CreateJSONObject(); }
-        ~JSONObjRAII() noexcept {
+        ~JSONObjRAII() {
             try { cfg_.DestroyAndCloseJSONObject(); } catch ( ... ) {}
         }
         JSONObjRAII( JSONObjRAII const & ) = delete;
@@ -216,24 +216,24 @@ private:
     //template<class... Ts> overload( Ts... ) -> overload<Ts...>;
 
     // https://andreasfertig.blog/2023/07/visiting-a-stdvariant-safely/
-	template<class...>
-	static constexpr bool always_false_v = false;
+    template<class...>
+    static constexpr bool always_false_v = false;
 
-	template<class... Ts>
-	struct overload : Ts...
-	{
-	  using Ts::operator()...;
+    template<class... Ts>
+    struct overload : Ts...
+    {
+      using Ts::operator()...;
 
-	  // Prevent implicit type conversions
-	  template<typename T>
-	  constexpr void operator()(T) const
-	  {
-		static_assert(always_false_v<T>, "Unsupported type");
-	  }
-	};
+      // Prevent implicit type conversions
+      template<typename T>
+      constexpr void operator()(T) const
+      {
+        static_assert(always_false_v<T>, "Unsupported type");
+      }
+    };
 
-	template<class... Ts>
-	overload(Ts...) -> overload<Ts...>;
+    template<class... Ts>
+overload(Ts...) -> overload<Ts...>;
 
     std::unique_ptr<TBase64Encoding> base64_ { new TBase64Encoding{ 0 } };
 
@@ -506,8 +506,8 @@ protected:
                 std::vector<Byte> VBytes;
                 VBytes.reserve( Bytes.Length );
                 std::copy(
-					std::begin( Bytes ),
-					std::end( Bytes ),
+                    std::begin( Bytes ),
+                    std::end( Bytes ),
                     std::back_inserter( VBytes )
                 );
                 return VBytes;

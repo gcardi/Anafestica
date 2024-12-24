@@ -110,7 +110,7 @@ public:
     }
 
     template<typename OutIt, typename BT = BuildString>
-	size_t ReadStringsTo( String Name, OutIt it );
+    size_t ReadStringsTo( String Name, OutIt it );
 
     template<typename OutIt>
     typename
@@ -348,9 +348,9 @@ size_t TRegistry::ReadStringsTo( String Name, OutIt It )
         throw ERegistryException( &_SInvalidRegType, ARRAYOFCONST(( Name )) );
     }
 
-	size_t Cnt {};
+    size_t Cnt {};
 
-	auto Start = std::begin( Data );
+    auto Start = std::begin( Data );
     auto End = std::end( Data );
     for ( auto Begin = Start ; Begin != End ; ) {
         auto OldBegin = Begin++;
@@ -770,7 +770,7 @@ private:
     class RegObjRAII {
     public:
         RegObjRAII( TConfig& Cfg ) : cfg_{ Cfg } { Cfg.CreateRegistryObject(); }
-        ~RegObjRAII() noexcept {
+        ~RegObjRAII() {
             try { cfg_.DestroyAndCloseRegistryObject(); } catch ( ... ) {}
         }
         RegObjRAII( RegObjRAII const & ) = delete;
@@ -827,28 +827,28 @@ private:
     }
 
     // https://andreasfertig.blog/2023/07/visiting-a-stdvariant-safely/
-	template<class...>
-	static constexpr bool always_false_v = false;
+    template<class...>
+    static constexpr bool always_false_v = false;
 
-	template<class... Ts>
-	struct overload : Ts...
-	{
-	  using Ts::operator()...;
+    template<class... Ts>
+    struct overload : Ts...
+    {
+      using Ts::operator()...;
+    
+      // Prevent implicit type conversions
+      template<typename T>
+      constexpr void operator()(T) const
+      {
+        static_assert(always_false_v<T>, "Unsupported type");
+      }
+    };
 
-	  // Prevent implicit type conversions
-	  template<typename T>
-	  constexpr void operator()(T) const
-	  {
-		static_assert(always_false_v<T>, "Unsupported type");
-	  }
-	};
+    template<class... Ts>
+    overload(Ts...) -> overload<Ts...>;
 
-	template<class... Ts>
-	overload(Ts...) -> overload<Ts...>;
-
-	// https://www.bfilipek.com/2019/02/2lines3featuresoverload.html
-	// template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
-	// template<class... Ts> overload( Ts... ) -> overload<Ts...>;
+    // https://www.bfilipek.com/2019/02/2lines3featuresoverload.html
+    // template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
+    // template<class... Ts> overload( Ts... ) -> overload<Ts...>;
 
     void SaveValue( TRegistry& Reg, ValueContType::value_type const & v ) {
 #if defined( ANAFESTICA_USE_STD_VARIANT )

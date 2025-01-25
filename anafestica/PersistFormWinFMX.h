@@ -36,11 +36,11 @@ public:
     void SaveValues();
 protected:
 private:
-    static constexpr LPCTSTR IdLeft_{ _T( "Left" ) };
-    static constexpr LPCTSTR IdTop_{ _T( "Top" ) };
-    static constexpr LPCTSTR IdRight_{ _T( "Right" ) };
-    static constexpr LPCTSTR IdBottom_{ _T( "Bottom" ) };
-    static constexpr LPCTSTR IdState_{ _T( "State" ) };
+    static constexpr LPCTSTR IdLeft_{ _D( "Left" ) };
+    static constexpr LPCTSTR IdTop_{ _D( "Top" ) };
+    static constexpr LPCTSTR IdRight_{ _D( "Right" ) };
+    static constexpr LPCTSTR IdBottom_{ _D( "Bottom" ) };
+    static constexpr LPCTSTR IdState_{ _D( "State" ) };
 
     TConfigNode& configNode_;
     StoreOpts storeOptions_;

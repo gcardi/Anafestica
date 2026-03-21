@@ -17,6 +17,12 @@ The current library version includes serializers for Windows Registry, JSON, and
 
 The library consists only of header files, making it easy to use and integrate into your codebase without requiring additional compilation steps; you just need to include the necessary header files in your project. It can also be used in contexts other than GUI applications, but its real advantages are evident when developing GUI applications, where it greatly simplifies the management of persistent attributes such as form position, size, and state, as well as application-wide settings.
 
+## Documentation
+
+Try a [Quick Tour](QUICK_TOUR.md) in Anafestica.
+
+For detailed API documentation, see [Library Documentation](LIBRARY_DOCUMENTATION.md).
+
 ### Prerequisites / Dependencies
 
 Anafestica uses `boost::variant` instead of `std::variant` due to an unresolved bug in C++Builder's standard library that prevents direct assignment of values to `std::variant` (see https://quality.embarcadero.com/browse/RSP-27418 on the Embarcadero Quality Portal). However, the `bcc64x` compiler supports `std::variant` properly, so you can optionally use standard library variants by defining `ANAFESTICA_USE_STD_VARIANT` as a project-wide preprocessor definition when using this compiler.
@@ -43,11 +49,5 @@ To complete the installation, add references to this library in the development 
 
 <img src="docs/assets/images/3.png" alt="BCC32C, BCC64, BCC64X">
 
-That's all. 
-
-## More
-
-Try a [Quick Tour](QUICK_TOUR.md) in Anafestica.
-
-For detailed API documentation, see [Library Documentation](LIBRARY_DOCUMENTATION.md).
+That's all.
 

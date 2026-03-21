@@ -26,7 +26,7 @@ So, the position, size, and state for Form1 are stored in `HKCU\Software\TestCom
 
 <img src="docs/assets/images/t5.png" alt="Sample registry node layout">
 
-Since the library typically uses one or more singletons for the serialization process, a few additional lines of code (added only once) ensure that application forms are destroyed before the singletons are destroyed. To ensure correct behavior, you need to add a few lines to the project source file, as shown in the following snippet:
+Since the library typically uses one or more singletons for the serialization process, a few additional lines of code (added only once) ensure that application forms are destroyed before the singletons are destroyed. This is particularly important with Clang-based compilers (bcc32c, bcc64, bcc64x) to prevent access to destroyed singletons. To ensure correct behavior, you need to add a few lines to the project source file, as shown in the following snippet:
 
 <img src="docs/assets/images/t6.png" alt="Additions to project source">
 

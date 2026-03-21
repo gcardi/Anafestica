@@ -14,7 +14,7 @@ The library is particularly well-suited for GUI applications (FMX, VCL, and othe
 - **Type-safe operations**: Supports various data types including primitives, strings, dates, and collections
 - **Singleton pattern support**: Easy access through singleton classes
 - **Form persistence helpers**: Specialized classes for VCL and FMX form persistence
-- **Cross-platform compatibility**: Works with Embarcadero C++ compilers (bcc32c, bcc64)
+- **Cross-platform compatibility**: Works with Embarcadero C++ compilers (bcc32c, bcc64, bcc64x)
 
 ## Architecture
 
@@ -481,8 +481,8 @@ root.PutItem(_D("Version"), 1.0);
 
 ## Dependencies
 
-- **Boost Libraries**: Required for `boost::variant` (unless `ANAFESTICA_USE_STD_VARIANT` is defined)
-- **Embarcadero C++ Compiler**: Only clang-based compilers (bcc32c, bcc64) are supported
+- **Boost Libraries**: Required for `boost::variant` (unless `ANAFESTICA_USE_STD_VARIANT` is defined). The `bcc64x` compiler supports `std::variant` properly, so you can optionally use standard library variants by defining `ANAFESTICA_USE_STD_VARIANT` as a project-wide preprocessor definition when using this compiler.
+- **Embarcadero C++ Compiler**: Only clang-based compilers (bcc32c, bcc64, bcc64x) are supported
 - **RAD Studio**: Compatible with RAD Studio 10.3+ (earlier versions may work but are untested)
 
 ## Installation
@@ -512,6 +512,15 @@ The library uses exceptions for error conditions:
 5. Handle exceptions appropriately in production code
 6. Use properties with persistence macros for cleaner code (as shown in examples)
 7. Use the `_D()` macro around string literals for proper Unicode support in Embarcadero C++
+8. **For Clang-based compilers (bcc32c, bcc64, bcc64x)**: Add form cleanup code in your project's main application file to ensure proper destruction order. Since the library uses singletons for serialization, you must manually destroy all forms before the application terminates to prevent access to destroyed singletons. Add the following code after `Application->Run()`:
+
+   ```cpp
+   while (auto const Cnt = Screen->FormCount) {
+       delete Screen->Forms[Cnt - 1];
+   }
+   ```
+
+   This ensures that form objects (which may hold references to configuration singletons) are properly destroyed before the singletons themselves are cleaned up by the runtime.
 
 ## Limitations
 

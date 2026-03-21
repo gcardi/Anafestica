@@ -19,13 +19,13 @@ The library consists only of header files, making it easy to use and integrate i
 
 ### Prerequisites / Dependencies
 
-Anafestica uses `boost::variant` instead of `std::variant` due to an unresolved bug in C++Builder's standard library that prevents direct assignment of values to `std::variant` (see https://quality.embarcadero.com/browse/RSP-27418 on the Embarcadero Quality Portal).
+Anafestica uses `boost::variant` instead of `std::variant` due to an unresolved bug in C++Builder's standard library that prevents direct assignment of values to `std::variant` (see https://quality.embarcadero.com/browse/RSP-27418 on the Embarcadero Quality Portal). However, the `bcc64x` compiler supports `std::variant` properly, so you can optionally use standard library variants by defining `ANAFESTICA_USE_STD_VARIANT` as a project-wide preprocessor definition when using this compiler.
 
 The `boost::variant` class is part of the Boost project libraries. You must first obtain the Boost libraries. Fortunately, you can use the IDE's GetIt tool to install them seamlessly (e.g., version 1.68.0 for RAD Studio 10.3 or 1.70.0 for RAD Studio 10.4).
 
 <img src="docs/assets/images/1.png" alt="Figure 1">
 
-Please note that only Clang-based compilers are supported by this library (i.e., bcc32c and bcc64).
+Please note that only Clang-based compilers are supported by this library (i.e., bcc32c, bcc64, and bcc64x).
 
 ### Installing
 
@@ -37,11 +37,11 @@ To install the library, clone the repository to `$(BDSCOMMONDIR)`, which is norm
 C:\Users\Public\Documents\Embarcadero\Studio\21.0>git clone https://github.com/gcardi/Anafestica.git
 ```
 
-To complete the installation, add references to this library in the development system's include paths. Using the IDE menu **Tools → Options**, add the `$(BDSCOMMONDIR)\Anafestica` path to both bcc32c and bcc64 settings:
+To complete the installation, add references to this library in the development system's include paths. Using the IDE menu **Tools → Options**, add the `$(BDSCOMMONDIR)\Anafestica` path to both bcc32c, bcc64, and bcc64x settings:
 
 <img src="docs/assets/images/2.png" alt="BCC64">
 
-<img src="docs/assets/images/3.png" alt="BCC32C">
+<img src="docs/assets/images/3.png" alt="BCC32C, BCC64, BCC64X">
 
 That's all. 
 

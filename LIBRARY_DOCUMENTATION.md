@@ -474,7 +474,7 @@ Anafestica::JSON::TConfig config(_D("settings.json"));
 auto& root = config.GetRootNode();
 
 root.PutItem(_D("AppName"), _D("MyApplication"));
-root.PutItem(_D("Version"), 1.0);
+root.PutItem(_D("Version"), _D("1.0"));
 
 // Configuration is automatically saved on destruction
 ```

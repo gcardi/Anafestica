@@ -265,6 +265,154 @@ class TPersistFormFMX : public Fmx::Forms::TForm {
 };
 ```
 
+## Persistence Macros
+
+The library provides convenience macros for persisting properties and values. These macros are defined in `CfgItems.h` (general-purpose) and `PersistFormVCL.h`/`PersistFormFMX.h` (form-specific).
+
+### RESTORE_LOCAL_PROPERTY(PROPERTY)
+
+```cpp
+#define RESTORE_LOCAL_PROPERTY( PROPERTY ) \
+{ \
+    std::remove_reference_t< decltype( PROPERTY )> Tmp{ PROPERTY }; \
+    GetConfigNode().GetItem( #PROPERTY, Tmp ); \
+    PROPERTY = Tmp; \
+}
+```
+
+**Description:**  
+Restores a property value from the configuration storage. The macro creates a temporary variable of the same type as the property, reads the value from the configuration using the property name as the key, and assigns it back to the property. This provides safe restoration with default value fallback.
+
+**Parameters:**
+- `PROPERTY`: The property variable to restore
+
+**Example:**
+```cpp
+// In a form class that inherits from TPersistFormVCL
+RESTORE_LOCAL_PROPERTY(FontSize);  // Restores FontSize from config
+```
+
+### SAVE_LOCAL_PROPERTY(PROPERTY)
+
+```cpp
+#define SAVE_LOCAL_PROPERTY( PROPERTY ) \
+    GetConfigNode().PutItem( #PROPERTY, PROPERTY )
+```
+
+**Description:**  
+Saves a property value to the configuration storage. The macro uses the property name as the configuration key and stores the current property value.
+
+**Parameters:**
+- `PROPERTY`: The property variable to save
+
+**Example:**
+```cpp
+// In a form class that inherits from TPersistFormVCL
+SAVE_LOCAL_PROPERTY(FontSize);  // Saves FontSize to config
+```
+
+**Note:** These macros automatically use the property name as the configuration key, making the code more readable and less error-prone than manually specifying string keys.
+
+### RESTORE_PROPERTY(NODE, PROPERTY)
+
+```cpp
+#define RESTORE_PROPERTY( NODE, PROPERTY ) \
+{ \
+    std::remove_reference_t< decltype( PROPERTY )> Tmp{ PROPERTY }; \
+    ( NODE ).GetItem( #PROPERTY, Tmp ); \
+    PROPERTY = Tmp; \
+}
+```
+
+**Description:**  
+Restores a property value from a specified configuration node. The macro creates a temporary variable of the same type as the property, reads the value from the configuration node using the property name as the key, and assigns it back to the property. This provides safe restoration with default value fallback.
+
+**Parameters:**
+- `NODE`: The TConfigNode reference to read from
+- `PROPERTY`: The property variable to restore
+
+**Example:**
+```cpp
+auto& configNode = config.GetRootNode();
+int fontSize = 12;  // Default value
+RESTORE_PROPERTY(configNode, fontSize);  // Restores fontSize from config
+```
+
+### SAVE_PROPERTY(NODE, PROPERTY)
+
+```cpp
+#define SAVE_PROPERTY( NODE, PROPERTY ) \
+    ( NODE ).PutItem( #PROPERTY, PROPERTY )
+```
+
+**Description:**  
+Saves a property value to a specified configuration node. The macro uses the property name as the configuration key and stores the current property value.
+
+**Parameters:**
+- `NODE`: The TConfigNode reference to write to
+- `PROPERTY`: The property variable to save
+
+**Example:**
+```cpp
+auto& configNode = config.GetRootNode();
+int fontSize = 14;
+SAVE_PROPERTY(configNode, fontSize);  // Saves fontSize to config
+```
+
+### RESTORE_ID_PROPERTY(NODE, ID, PROPERTY)
+
+```cpp
+#define RESTORE_ID_PROPERTY( NODE, ID, PROPERTY ) \
+{ \
+    std::remove_reference_t< decltype( PROPERTY )> Tmp{ PROPERTY }; \
+    ( NODE ).GetItem( #ID, Tmp ); \
+    PROPERTY = Tmp; \
+}
+```
+
+**Description:**  
+Restores a property value from a specified configuration node using a custom identifier. Unlike `RESTORE_PROPERTY`, this macro allows you to specify a custom key name instead of using the property name. The macro creates a temporary variable of the same type as the property, reads the value from the configuration node using the specified ID as the key, and assigns it back to the property.
+
+**Parameters:**
+- `NODE`: The TConfigNode reference to read from
+- `ID`: The custom identifier/key to use for storage
+- `PROPERTY`: The property variable to restore
+
+**Example:**
+```cpp
+auto& configNode = config.GetRootNode();
+int fontSize = 12;  // Default value
+RESTORE_ID_PROPERTY(configNode, "FontSize", fontSize);  // Restores using custom key
+```
+
+### SAVE_ID_PROPERTY(NODE, ID, PROPERTY)
+
+```cpp
+#define SAVE_ID_PROPERTY( NODE, ID, PROPERTY ) \
+    ( NODE ).PutItem( #ID, PROPERTY )
+```
+
+**Description:**  
+Saves a property value to a specified configuration node using a custom identifier. Unlike `SAVE_PROPERTY`, this macro allows you to specify a custom key name instead of using the property name.
+
+**Parameters:**
+- `NODE`: The TConfigNode reference to write to
+- `ID`: The custom identifier/key to use for storage
+- `PROPERTY`: The property variable to save
+
+**Example:**
+```cpp
+auto& configNode = config.GetRootNode();
+int fontSize = 14;
+SAVE_ID_PROPERTY(configNode, "FontSize", fontSize);  // Saves using custom key
+```
+
+**Note:** The `*_ID_*` variants are useful when you need to use a different key name than the property name, or when working with properties that don't have meaningful names for storage purposes.
+
+**Macro Categories:**
+- **Local macros** (`RESTORE_LOCAL_PROPERTY`, `SAVE_LOCAL_PROPERTY`): Designed for use within form classes that inherit from `TPersistFormVCL` or `TPersistFormFMX`. They automatically use `GetConfigNode()` to access the form's configuration node.
+- **General macros** (`RESTORE_PROPERTY`, `SAVE_PROPERTY`, `RESTORE_ID_PROPERTY`, `SAVE_ID_PROPERTY`): Can be used with any `TConfigNode` reference, providing flexibility for custom configuration scenarios.
+
 ## Usage Examples
 
 ### Basic Usage with Registry
@@ -277,11 +425,11 @@ auto& config = Anafestica::TConfigRegistrySingleton::GetConfig();
 auto& root = config.GetRootNode();
 
 // Store a value
-root.PutItem("Setting1", 42);
-root.PutItem("Setting2", "Hello World");
+root.PutItem(_D("Setting1"), 42);
+root.PutItem(_D("Setting2"), _D("Hello World"));
 
 // Retrieve a value
-int value = root.GetItem<int>("Setting1");
+int value = root.GetItem<int>(_D("Setting1"));
 
 // Flush changes to registry
 config.Flush();
@@ -291,14 +439,14 @@ config.Flush();
 
 ```cpp
 // Create a sub-node
-auto& subNode = root["UserPreferences"];
+auto& subNode = root[_D("UserPreferences")];
 
 // Store values in sub-node
-subNode.PutItem("Theme", "Dark");
-subNode.PutItem("FontSize", 12);
+subNode.PutItem(_D("Theme"), _D("Dark"));
+subNode.PutItem(_D("FontSize"), 12);
 
 // Access sub-node
-String theme = root["UserPreferences"].GetItem<String>("Theme");
+String theme = root[_D("UserPreferences")].GetItem<String>(_D("Theme"));
 ```
 
 ### Form Persistence
@@ -322,11 +470,11 @@ TMyForm::TMyForm(TComponent* Owner)
 ```cpp
 #include <anafestica/CfgJSON.h>
 
-Anafestica::JSON::TConfig config("settings.json");
+Anafestica::JSON::TConfig config(_D("settings.json"));
 auto& root = config.GetRootNode();
 
-root.PutItem("AppName", "MyApplication");
-root.PutItem("Version", 1.0);
+root.PutItem(_D("AppName"), _D("MyApplication"));
+root.PutItem(_D("Version"), 1.0);
 
 // Configuration is automatically saved on destruction
 ```
@@ -363,6 +511,7 @@ The library uses exceptions for error conditions:
 4. Call `Flush()` explicitly or rely on destructor for automatic saving
 5. Handle exceptions appropriately in production code
 6. Use properties with persistence macros for cleaner code (as shown in examples)
+7. Use the `_D()` macro around string literals for proper Unicode support in Embarcadero C++
 
 ## Limitations
 

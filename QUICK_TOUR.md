@@ -1,62 +1,62 @@
-# Quick tour
+# Quick Tour
 
-Suppose the goal is to create a small application consisting of a single form. The application must be able to save the position, size, and state of the form along with an additional attribute. To make sense of this "journey" into the library, let's try writing a small clock gadget. This gadget must allow (and remember) the selection of the font used to show the time. Also, even the form position, the size, and the state have to be stored. 
+Suppose our goal is to create a small application consisting of a single form. The application must save the position, size, and state of the form along with an additional custom attribute. To demonstrate the library's capabilities, let's create a small clock gadget. This gadget must allow (and remember) the selection of the font used to display the time. The form position, size, and state must also be stored.
 
-Here's how it could be the form layout:
+Here's how the form layout could look:
 
 <img src="docs/assets/images/t1.png" alt="Demo app screenshot">
 
-The application is conceptually simple. Alas, obtaining the persistence of the form and the custom attributes, "by hand", is not so simple: it requires writing a fair amount of code. On the other hand, using the Anafestica library greatly simplify the process: in short, it only takes a few lines of code to save a form in the Windows registry, as it's possible to see below:
+The application is conceptually simple. However, implementing persistence for the form and custom attributes manually is not so simple—it requires writing a significant amount of code. On the other hand, using the Anafestica library greatly simplifies the process: in short, it only takes a few lines of code to save a form to the Windows Registry, as you can see below:
 
 <img src="docs/assets/images/t2.png" alt="Sample header file">
 
 <img src="docs/assets/images/t3.png" alt="Sample implementation">
 
-The whole story is a little longer, and the meaning of those lines of code will be revealed shortly, but it's immediately possible to note that the amount of additional code is minimal.
+The full story is a bit longer, and the meaning of those lines of code will be explained shortly, but you can immediately see that the amount of additional code is minimal.
 
-As this application uses the Windows Registry, a question immediately comes to mind: where are the attributes of the form stored? In particular, which place in the Windows Registry? 
+Since this application uses the Windows Registry, a question immediately comes to mind: where are the form attributes stored? In particular, which location in the Windows Registry?
 
-The answer is easy. In the most obvious place: in the `HKCU\Software\Vendor\Product\Version\FormName\` registry key.
+The answer is straightforward. In the most obvious place: the `HKCU\Software\Vendor\Product\Version\FormName\` registry key.
 
-The *FormName* part is taken from the `Name` property of the `Form1` object, but where the *Vendor*, *Product*, and *Version* parts come from? How does the library user set these values? The answer is simple: from the project's version info keys. Namely:
+The *FormName* part comes from the `Name` property of the `Form1` object, but where do the *Vendor*, *Product*, and *Version* parts come from? How does the library user set these values? The answer is simple: from the project's version info keys. Specifically:
 
 <img src="docs/assets/images/t4.png" alt="Project Info Keys sample settings">
 
-So, the position, size, and the state for the Form1 are stored in `HKCU\Software\TestCompany\TestAnafestica\1.0\Form1\`:
+So, the position, size, and state for Form1 are stored in `HKCU\Software\TestCompany\TestAnafestica\1.0\Form1\`:
 
 <img src="docs/assets/images/t5.png" alt="Sample registry node layout">
 
-Since the library, usually, uses one or more singletons for the serialization process, the other few lines of code (to be added only once), are used to ensure that the application forms are destroyed before the singletons gone. To ensure correct behavior, you need to add a few lines the project source file, as in the following snippet:
+Since the library typically uses one or more singletons for the serialization process, a few additional lines of code (added only once) ensure that application forms are destroyed before the singletons are destroyed. To ensure correct behavior, you need to add a few lines to the project source file, as shown in the following snippet:
 
-<img src="docs/assets/images/t6.png" alt="Addings to project source">
+<img src="docs/assets/images/t6.png" alt="Additions to project source">
 
-To manage custom attributes is better to use properties. It is not strictly necessary to use properties, but using them makes the code more readable. Properties are very handful when used along with some library macro. However, it's possible to have more granular control over the persistence process, by calling the library classes' methods directly instead of using the aforementioned macros, but the macros use makes life smoother.
+To manage custom attributes, it is better to use properties. It is not strictly necessary to use properties, but doing so makes the code more readable. Properties are very handy when used along with library macros. However, it is possible to have more granular control over the persistence process by calling the library classes' methods directly instead of using the aforementioned macros, but using the macros makes development smoother.
 
-> *Before continuing, it is better to know that all the steps described here can be skipped by loading one of the reference applications in the [App](Appl) folder (then saving them as a copy in a different place) or saving a prototype of "typical application" in the IDE's object repository for subsequent use, so you don't have to repeat the next steps for each new project.*
+> *Before continuing, note that all the steps described here can be skipped by loading one of the reference applications in the [App](App) folder (then saving it as a copy in a different location) or by saving a prototype of a "typical application" in the IDE's object repository for reuse, so you don't have to repeat these steps for each new project.*
 
-In this GitHub repository there's [the clock gadget example](Demo/VCLSimpleDemo) that will be replicated in the following steps. As it uses properties along with macros, it is one of the simplest scenarios for the management of persistent attributes.
+This GitHub repository contains [the clock gadget example](Demo/VCLSimpleDemo) that we will replicate in the following steps. Since it uses properties along with macros, it represents one of the simplest scenarios for managing persistent attributes.
 
 Now let's see how to build it from scratch.
 
-Create a new VCL application for C++ Builder: 
+Create a new VCL application for C++Builder:
 
 <img src="docs/assets/images/t7.png" alt="C++ VCL app creation">
 
 Next, add the 64-bit platform for Windows:
 
-<img src="docs/assets/images/t8.png" alt="Add the 64 bit platform for Windows">
+<img src="docs/assets/images/t8.png" alt="Add the 64-bit platform for Windows">
 
-Now make some essential "adjustments" to the project. From the Project->Options menu (Shift + Ctrl + F11):
+Now make some essential adjustments to the project. From the Project → Options menu (Shift + Ctrl + F11):
 
-Turn off the "classic C++ compiler" (it's better to do it for all the platforms):
+Turn off the "classic C++ compiler" (it's better to do this for all platforms):
 
 <img src="docs/assets/images/t9.png" alt="Turn off classic C++ compiler">
 
-Set the appropriate values for *CompanyName*, *ProductName*, and *ProductVersion* in the version info keys for all platforms. 
+Set the appropriate values for *CompanyName*, *ProductName*, and *ProductVersion* in the version info keys for all platforms.
 
 <img src="docs/assets/images/t10.png" alt="Set version info keys">
 
-> *Note: if you skip the previous step, when you start the application it will give you a "resource not found error". The application needs these values because it uses them to access the `HKCU\CompanyName\ProductName\ProductVersion` path in the Windows Registry.*
+> *Note: if you skip the previous step, the application will show a "resource not found" error when started. The application needs these values to access the `HKCU\CompanyName\ProductName\ProductVersion` path in the Windows Registry.*
 
 Let's save the project.
 
@@ -64,21 +64,21 @@ Let's save the project.
 
 Now **close** the project.
 
-Why it's necessary to close the project? Because the template project contained in the IDE and used to initially create this application, as it is, doesn't propagate the settings you made so far on all the platforms and their associated configurations. So now, with a simple text editor, it's possible to remove the problematic lines inside the project file (.cbproj).
+Why is it necessary to close the project? Because the template project used by the IDE to create this application does not propagate the settings you made to all platforms and their associated configurations. So now, using a simple text editor, you can remove the problematic lines from the project file (.cbproj).
 
 Create a backup copy of the main project file (.cbproj). Then open the original file in an editor:
 
 <img src="docs/assets/images/t12.png" alt="Fix project file from broken template">
 
-Now, edit the file: hence, remove all `<VerInfo_Keys>` tags from all nodes except the first one, which is usually `<PropertyGroup Condition = "'$ (Base)'! = ''">`:
+Now edit the file: specifically, remove all `<VerInfo_Keys>` tags from all nodes except the first one, which is usually `<PropertyGroup Condition="'$(Base)'!='''">`:
 
 <img src="docs/assets/images/t13.png" alt="Manual editing .cbproj file">
 
-Save the modified project file, then reopen it in the IDE. If you have problems, take the backup copy and try again.
+Save the modified project file, then reopen it in the IDE. If you have problems, use the backup copy and try again.
 
-Now, let's reduce the size of the main form a bit: for example, with the Width property set to 340 and the Height property to 200. 
+Now, let's reduce the size of the main form a bit—for example, set the Width property to 340 and the Height property to 200.
 
-Next, copy into the clipboard the following snippet, then paste it into the main form (right-click on the form then select Edit -> Paste from the context menu). This creates the necessary components without needs to drag them from the IDE's component palette:
+Next, copy the following snippet to the clipboard, then paste it into the main form (right-click on the form and select **Edit → Paste** from the context menu). This creates the necessary components without needing to drag them from the IDE's component palette:
 
 ```dfm
 object lblClock: TLabel

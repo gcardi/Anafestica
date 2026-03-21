@@ -481,7 +481,7 @@ root.PutItem(_D("Version"), _D("1.0"));
 
 ## Dependencies
 
-- **Boost Libraries**: Required for `boost::variant` (unless `ANAFESTICA_USE_STD_VARIANT` is defined). The `bcc64x` compiler supports `std::variant` properly, so you can optionally use standard library variants by defining `ANAFESTICA_USE_STD_VARIANT` as a project-wide preprocessor definition when using this compiler.
+- **Boost Libraries**: Required for `boost::variant` when using `bcc32c` or `bcc64` compilers (unless `ANAFESTICA_USE_STD_VARIANT` is defined). The `bcc64x` compiler (which uses Clang 20) supports `std::variant` properly, so you can optionally use standard library variants by defining `ANAFESTICA_USE_STD_VARIANT` as a project-wide preprocessor definition when using this compiler.
 - **Embarcadero C++ Compiler**: Only clang-based compilers (bcc32c, bcc64, bcc64x) are supported
 - **RAD Studio**: Compatible with RAD Studio 10.3+ (earlier versions may work but are untested)
 

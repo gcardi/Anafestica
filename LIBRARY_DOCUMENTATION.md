@@ -482,6 +482,33 @@ root.PutItem(_D("Version"), _D("1.0"));
 // Configuration is automatically saved on destruction
 ```
 
+### Using Collection Data Types
+
+The library supports storing collections of strings and bytes. `StringCont` (defined as `std::vector<String>`) stores multiple strings and maps to `REG_MULTI_SZ` in the Windows Registry. `BytesCont` (defined as `std::vector<Byte>`) stores binary data.
+
+```cpp
+#include <anafestica/CfgRegistrySingleton.h>
+
+// Get the singleton configuration
+auto& config = Anafestica::TConfigRegistrySingleton::GetConfig();
+auto& root = config.GetRootNode();
+
+// Store a collection of strings (maps to REG_MULTI_SZ in registry)
+StringCont recentFiles = { _D("file1.txt"), _D("file2.txt"), _D("file3.txt") };
+root.PutItem(_D("RecentFiles"), recentFiles);
+
+// Store binary data
+BytesCont binaryData = { 0x01, 0x02, 0x03, 0x04 };
+root.PutItem(_D("BinaryBlob"), binaryData);
+
+// Retrieve the collections
+StringCont loadedFiles = root.GetItem<StringCont>(_D("RecentFiles"));
+BytesCont loadedData = root.GetItem<BytesCont>(_D("BinaryBlob"));
+
+// Flush changes to registry
+config.Flush();
+```
+
 ## Dependencies
 
 - **Boost Libraries**: Required for `boost::variant` when using `bcc32c` or `bcc64` compilers (unless `ANAFESTICA_USE_STD_VARIANT` is defined). The `bcc64x` compiler (which uses Clang 20) supports `std::variant` properly, so you can optionally use standard library variants by defining `ANAFESTICA_USE_STD_VARIANT` as a project-wide preprocessor definition when using this compiler.

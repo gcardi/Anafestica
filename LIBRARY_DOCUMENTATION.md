@@ -146,6 +146,87 @@ The library supports the following data types through template specialization:
 **Special Handling for Enums:**
 Enumerated types are automatically handled. If the enum has RTTI information, it's stored as a string; otherwise, as an integer.
 
+### TFileVersionInfo
+
+A utility class for extracting version information from the VERSIONINFO resource of a compiled executable. This class provides access to all standard version information fields that can be embedded in Windows executables through the VERSIONINFO resource.
+
+#### Public Members
+
+```cpp
+class TFileVersionInfo {
+public:
+    explicit TFileVersionInfo(String FileName);
+    
+    __property String CompanyName = { read = GetCompanyName };
+    __property String ProductName = { read = GetProductName };
+    __property String ProductVersion = { read = GetProductVersion };
+    __property String FileDescription = { read = GetFileDescription };
+    __property String FileVersion = { read = GetFileVersion };
+    __property String InternalName = { read = GetInternalName };
+    __property String LegalCopyright = { read = GetLegalCopyright };
+    __property String OriginalFilename = { read = GetOriginalFilename };
+    __property String Comments = { read = GetComments };
+};
+```
+
+**Constructor Parameters:**
+- `FileName`: Path to the executable file containing VERSIONINFO resource
+
+**Available Properties:**
+- `CompanyName`: Company name from version info
+- `ProductName`: Product name from version info
+- `ProductVersion`: Product version string (e.g., "1.0.0.0")
+- `FileDescription`: File description
+- `FileVersion`: File version string
+- `InternalName`: Internal name
+- `LegalCopyright`: Copyright information
+- `OriginalFilename`: Original filename
+- `Comments`: Additional comments
+
+**Example Usage:**
+
+```cpp
+#include <anafestica/FileVersionInfo.h>
+
+using Anafestica::TFileVersionInfo;
+
+// Get version info from current executable
+String GetModuleFileName() {
+    return ::GetModuleName(reinterpret_cast<NativeUInt>(HInstance));
+}
+
+void SetupApplicationCaption(TForm* Form) {
+    TFileVersionInfo versionInfo{GetModuleFileName()};
+    
+    Form->Caption = Format(
+        _T("%s, Version %s"),
+        ARRAYOFCONST((
+            versionInfo.ProductName,
+            versionInfo.ProductVersion
+        ))
+    );
+}
+
+// Display version information in About dialog
+void ShowVersionInfo() {
+    TFileVersionInfo info{GetModuleFileName()};
+    
+    ShowMessage(
+        Format(
+            _T("Product: %s\nVersion: %s\nCompany: %s\nCopyright: %s"),
+            ARRAYOFCONST((
+                info.ProductName,
+                info.ProductVersion,
+                info.CompanyName,
+                info.LegalCopyright
+            ))
+        )
+    );
+}
+```
+
+This class is commonly used to dynamically display version information in application captions, About dialogs, or for configuration purposes (as seen in the singleton classes that use version info to determine registry paths). The VERSIONINFO resource is typically set in your project's version information settings in the IDE.
+
 ## Concrete Implementations
 
 ### Registry::TConfig

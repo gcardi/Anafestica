@@ -552,10 +552,40 @@ The library uses exceptions for error conditions:
 
    This ensures that form objects (which may hold references to configuration singletons) are properly destroyed before the singletons themselves are cleaned up by the runtime.
 
+   Example: 
+   
+   ```cpp
+   int WINAPI _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)
+   {
+       try
+       {
+           Application->Initialize();
+           Application->MainFormOnTaskBar = true;
+           Application->CreateForm(__classid(TForm1), &Form1);
+           Application->Run();
+           while ( auto const Cnt = Screen->FormCount ) {
+               delete Screen->Forms[Cnt - 1];
+           }
+       }
+       catch (Exception &exception) {
+           Application->ShowException(&exception);
+       }
+       catch (...)
+       {
+           try {
+               throw Exception("");
+           }
+           catch (Exception &exception) {
+               Application->ShowException(&exception);
+           }
+       }
+       return 0;
+   }
+   ```
+
 ## Limitations
 
 - Limited to Embarcadero C++ compilers
 - Windows Registry support is Windows-only
 - No built-in encryption or security features
-- No concurrent access protection</content>
-<parameter name="filePath">c:\Users\Public\Documents\Embarcadero\Studio\37.0\Anafestica\LIBRARY_DOCUMENTATION.md
+- No concurrent access protection (it's not thread safe)

@@ -553,6 +553,296 @@ The four `TStrings` specialized methods are:
 
 Both pointer and reference overloads provide the same functionality; choose based on your coding style. The library internally converts between `TStrings` and `StringCont` (a `std::vector<String>`), allowing seamless integration with VCL controls.
 
+### Service Application Configuration Example
+
+Here is a real-world example showing how to use `TConfigJSON` to manage complex hierarchical configurations for a service application. This pattern demonstrates how to organize nested settings groups, track modifications, and persist configuration to JSON files.
+
+**Header File (ServiceConfig.h):**
+
+```cpp
+#ifndef ServiceConfigH
+#define ServiceConfigH
+
+#include <anafestica/CfgItems.h>
+#include <memory>
+
+namespace ServiceApp::Config {
+
+// Change tracking utility
+template<typename T>
+class ConfigValue {
+public:
+    ConfigValue() = default;
+    ConfigValue(Anafestica::TConfigNode& Node, String KeyName, T DefaultValue)
+        : value_(DefaultValue), oldValue_(DefaultValue) {
+        try {
+            Node.GetItem(KeyName, value_);
+        } catch (...) {
+            // Use default if key doesn't exist
+        }
+        oldValue_ = value_;
+    }
+    
+    T Get() const noexcept { return value_; }
+    void Set(T Val) noexcept { value_ = Val; }
+    bool IsModified() const noexcept { return value_ != oldValue_; }
+    void SetUnmodified() noexcept { oldValue_ = value_; }
+    
+private:
+    T value_{};
+    T oldValue_{};
+};
+
+// Database Configuration
+class DatabaseSettings {
+public:
+    DatabaseSettings() = default;
+    DatabaseSettings(Anafestica::TConfigNode& Cfg) 
+        : server_(Cfg, _D("Server"), _D("localhost"))
+        , port_(Cfg, _D("Port"), 5432)
+        , database_(Cfg, _D("Database"), _D("myapp"))
+        , username_(Cfg, _D("Username"), _D("admin"))
+    {
+    }
+    
+    void SaveTo(Anafestica::TConfigNode& Cfg) {
+        Cfg.PutItem(_D("Server"), server_.Get());
+        Cfg.PutItem(_D("Port"), port_.Get());
+        Cfg.PutItem(_D("Database"), database_.Get());
+        Cfg.PutItem(_D("Username"), username_.Get());
+    }
+    
+    String GetServer() const noexcept { return server_.Get(); }
+    void SetServer(String Val) noexcept { server_.Set(Val); }
+    
+    int GetPort() const noexcept { return port_.Get(); }
+    void SetPort(int Val) noexcept { port_.Set(Val); }
+    
+    String GetDatabase() const noexcept { return database_.Get(); }
+    void SetDatabase(String Val) noexcept { database_.Set(Val); }
+    
+    String GetUsername() const noexcept { return username_.Get(); }
+    void SetUsername(String Val) noexcept { username_.Set(Val); }
+    
+    bool IsModified() const noexcept {
+        return server_.IsModified() || port_.IsModified() 
+            || database_.IsModified() || username_.IsModified();
+    }
+    
+    void SetUnmodified() {
+        server_.SetUnmodified();
+        port_.SetUnmodified();
+        database_.SetUnmodified();
+        username_.SetUnmodified();
+    }
+    
+private:
+    ConfigValue<String> server_;
+    ConfigValue<int> port_;
+    ConfigValue<String> database_;
+    ConfigValue<String> username_;
+};
+
+// Logging Configuration
+class LoggingSettings {
+public:
+    LoggingSettings() = default;
+    LoggingSettings(Anafestica::TConfigNode& Cfg)
+        : enabled_(Cfg, _D("Enabled"), true)
+        , logLevel_(Cfg, _D("LogLevel"), _D("Info"))
+        , maxFileSize_(Cfg, _D("MaxFileSize"), 10485760)  // 10 MB
+    {
+    }
+    
+    void SaveTo(Anafestica::TConfigNode& Cfg) {
+        Cfg.PutItem(_D("Enabled"), enabled_.Get());
+        Cfg.PutItem(_D("LogLevel"), logLevel_.Get());
+        Cfg.PutItem(_D("MaxFileSize"), maxFileSize_.Get());
+    }
+    
+    bool GetEnabled() const noexcept { return enabled_.Get(); }
+    void SetEnabled(bool Val) noexcept { enabled_.Set(Val); }
+    
+    String GetLogLevel() const noexcept { return logLevel_.Get(); }
+    void SetLogLevel(String Val) noexcept { logLevel_.Set(Val); }
+    
+    int GetMaxFileSize() const noexcept { return maxFileSize_.Get(); }
+    void SetMaxFileSize(int Val) noexcept { maxFileSize_.Set(Val); }
+    
+    bool IsModified() const noexcept {
+        return enabled_.IsModified() || logLevel_.IsModified() 
+            || maxFileSize_.IsModified();
+    }
+    
+    void SetUnmodified() {
+        enabled_.SetUnmodified();
+        logLevel_.SetUnmodified();
+        maxFileSize_.SetUnmodified();
+    }
+    
+private:
+    ConfigValue<bool> enabled_;
+    ConfigValue<String> logLevel_;
+    ConfigValue<int> maxFileSize_;
+};
+
+// Main Service Settings
+class Settings {
+public:
+    Settings() = default;
+    
+    Settings(Anafestica::TConfigNode& Cfg)
+        : database_(Cfg.GetSubNode(_D("Database")))
+        , logging_(Cfg.GetSubNode(_D("Logging")))
+    {
+    }
+    
+    void LoadFrom(Anafestica::TConfigNode& Cfg) {
+        database_ = DatabaseSettings(Cfg.GetSubNode(_D("Database")));
+        logging_ = LoggingSettings(Cfg.GetSubNode(_D("Logging")));
+    }
+    
+    void SaveTo(Anafestica::TConfigNode& Cfg) {
+        database_.SaveTo(Cfg.GetSubNode(_D("Database")));
+        logging_.SaveTo(Cfg.GetSubNode(_D("Logging")));
+    }
+    
+    DatabaseSettings& GetDatabase() noexcept { return database_; }
+    DatabaseSettings const& GetDatabase() const noexcept { return database_; }
+    
+    LoggingSettings& GetLogging() noexcept { return logging_; }
+    LoggingSettings const& GetLogging() const noexcept { return logging_; }
+    
+    bool IsModified() const noexcept {
+        return database_.IsModified() || logging_.IsModified();
+    }
+    
+    void SetUnmodified() {
+        database_.SetUnmodified();
+        logging_.SetUnmodified();
+    }
+    
+private:
+    DatabaseSettings database_;
+    LoggingSettings logging_;
+};
+
+}  // End of namespace ServiceApp::Config
+
+#endif
+```
+
+**Implementation Example (Service Main Code):**
+
+```cpp
+#include <anafestica/CfgJSON.h>
+#include "ServiceConfig.h"
+
+using Anafestica::JSON::TConfig;
+
+class ServiceApplication {
+private:
+    std::unique_ptr<TConfig> config_;
+    ServiceApp::Config::Settings settings_;
+    
+public:
+    ServiceApplication(String ConfigFileName) {
+        // Load configuration from JSON file (read-only initially)
+        config_ = std::make_unique<TConfig>(ConfigFileName, true);  // true = read-only
+        auto& root = config_->GetRootNode();
+        settings_ = ServiceApp::Config::Settings(root);
+    }
+    
+    void SaveConfiguration() {
+        if (settings_.IsModified()) {
+            // Create a new writable config instance to save changes
+            TConfig writableConfig(config file path, false);  // false = read-write
+            settings_.SaveTo(writableConfig.GetRootNode());
+            writableConfig.Flush();  // Write to file
+            
+            // Mark all settings as unmodified
+            settings_.SetUnmodified();
+        }
+    }
+    
+    void ConfigureDatabase(String Server, int Port, String Database, String User) {
+        auto& dbSettings = settings_.GetDatabase();
+        dbSettings.SetServer(Server);
+        dbSettings.SetPort(Port);
+        dbSettings.SetDatabase(Database);
+        dbSettings.SetUsername(User);
+    }
+    
+    void ConfigureLogging(bool Enabled, String LogLevel, int MaxSize) {
+        auto& logSettings = settings_.GetLogging();
+        logSettings.SetEnabled(Enabled);
+        logSettings.SetLogLevel(LogLevel);
+        logSettings.SetMaxFileSize(MaxSize);
+    }
+    
+    String GetDatabaseServer() const {
+        return settings_.GetDatabase().GetServer();
+    }
+    
+    bool HasPendingChanges() const {
+        return settings_.IsModified();
+    }
+};
+
+// Usage in application entry point
+int main() {
+    try {
+        ServiceApplication app(_D("C:\\ProgramData\\MyService\\Config.json"));
+        
+        // Modify configuration as needed
+        app.ConfigureDatabase(
+            _D("db.example.com"), 5432, _D("production"), _D("svc_user")
+        );
+        app.ConfigureLogging(true, _D("Debug"), 50 * 1024 * 1024);  // 50 MB
+        
+        // Save only if changes were made
+        if (app.HasPendingChanges()) {
+            app.SaveConfiguration();
+        }
+        
+        // Use configuration...
+        String server = app.GetDatabaseServer();
+        
+    } catch (Exception& E) {
+        MessageBox(NULL, E.Message.c_str(), _D("Error"), MB_OK | MB_ICONERROR);
+        return 1;
+    }
+    
+    return 0;
+}
+```
+
+**Generated JSON File Structure:**
+
+```json
+{
+  "Database": {
+    "Server": "db.example.com",
+    "Port": 5432,
+    "Database": "production",
+    "Username": "svc_user"
+  },
+  "Logging": {
+    "Enabled": true,
+    "LogLevel": "Debug",
+    "MaxFileSize": 52428800
+  }
+}
+```
+
+This pattern demonstrates:
+- **Hierarchical organization**: Settings grouped into logical sections using sub-nodes
+- **Change tracking**: Each setting tracks its original value for detecting modifications
+- **Default values**: Fallback defaults if configuration keys don't exist
+- **Nested objects**: `Settings` class manages multiple configuration groups
+- **Atomic saves**: Only write to file when there are actual changes
+- **Type safety**: Strongly-typed configuration properties
+
 ## Dependencies
 
 - **Boost Libraries**: Required for `boost::variant` when using `bcc32c` or `bcc64` compilers (unless `ANAFESTICA_USE_STD_VARIANT` is defined). The `bcc64x` compiler (which uses Clang 20) supports `std::variant` properly, so you can optionally use standard library variants by defining `ANAFESTICA_USE_STD_VARIANT` as a project-wide preprocessor definition when using this compiler.

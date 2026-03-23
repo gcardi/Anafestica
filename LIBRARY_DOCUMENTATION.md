@@ -127,9 +127,9 @@ public:
 - `DeleteItem(Id)`: Marks a value for deletion
 
 **Enumeration:**
-- `EnumerateNodes()`: Lists all sub-node names
-- `EnumerateValueNames()`: Lists all value names
-- `EnumeratePairs()`: Lists all name-value pairs
+- `EnumerateNodes()`: Lists all sub-node names. The `OutputIterator` receives `String` values representing the names of sub-nodes.
+- `EnumerateValueNames()`: Lists all value names. The `OutputIterator` receives `String` values representing the names of stored values.
+- `EnumeratePairs()`: Lists all name-value pairs. The `OutputIterator` receives `std::pair<String, ValueType>` elements, where `ValueType` is a variant that can hold any supported configuration value type (primitives, strings, dates, collections, etc.).
 
 **Supported Data Types:**
 The library supports the following data types through template specialization:

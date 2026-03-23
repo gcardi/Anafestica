@@ -509,6 +509,50 @@ BytesCont loadedData = root.GetItem<BytesCont>(_D("BinaryBlob"));
 config.Flush();
 ```
 
+### Working with TStrings-based Controls (TMemo)
+
+The library provides specialized overloads of `GetItem` and `PutItem` that work directly with `TStrings` descendants (such as `TMemo::Lines`). These methods automatically convert between `TStrings` and the internal `StringCont` representation, making it convenient to persist multi-line text controls.
+
+```cpp
+#include <anafestica/CfgRegistrySingleton.h>
+#include <vcl.h>
+
+// Example: Saving and restoring TMemo lines
+class TMyForm : public TForm {
+private:
+    TMemo* Memo1;
+    
+public:
+    void SaveMemoContent() {
+        auto& config = Anafestica::TConfigRegistrySingleton::GetConfig();
+        auto& root = config.GetRootNode();
+        
+        // Save TMemo lines directly using the reference overload
+        root.PutItem(_D("MemoLines"), Memo1->Lines);
+        
+        // Flush changes to registry (maps to REG_MULTI_SZ in Windows Registry)
+        config.Flush();
+    }
+    
+    void RestoreMemoContent() {
+        auto& config = Anafestica::TConfigRegistrySingleton::GetConfig();
+        auto& root = config.GetRootNode();
+        
+        // Restore TMemo lines directly using the reference overload
+        // If the key doesn't exist or operation fails, Memo1->Lines remains unchanged
+        root.GetItem(_D("MemoLines"), Memo1->Lines);
+    }
+};
+```
+
+The four `TStrings` specialized methods are:
+- `void GetItem(String Id, TStrings& Val, Operation Op = Operation::None)` – Retrieve lines by reference
+- `void GetItem(String Id, TStrings* const Val, Operation Op = Operation::None)` – Retrieve lines by pointer
+- `bool PutItem(String Id, TStrings& Val, Operation Op = Operation::Write)` – Store lines by reference
+- `bool PutItem(String Id, TStrings* const Val, Operation Op = Operation::Write)` – Store lines by pointer
+
+Both pointer and reference overloads provide the same functionality; choose based on your coding style. The library internally converts between `TStrings` and `StringCont` (a `std::vector<String>`), allowing seamless integration with VCL controls.
+
 ## Dependencies
 
 - **Boost Libraries**: Required for `boost::variant` when using `bcc32c` or `bcc64` compilers (unless `ANAFESTICA_USE_STD_VARIANT` is defined). The `bcc64x` compiler (which uses Clang 20) supports `std::variant` properly, so you can optionally use standard library variants by defining `ANAFESTICA_USE_STD_VARIANT` as a project-wide preprocessor definition when using this compiler.

@@ -166,6 +166,9 @@ public:
 - `KeyPath`: Path within the registry
 - `ReadOnly`, `FlushAllItems`: Same as base class
 
+**Data Type Handling:**  
+The registry serializer maps configuration data types to native Windows Registry value types where possible. For data types that do not have direct registry equivalents (such as `unsigned int`, `long`, `char`, `bool`, `float`, `double`, `System::Currency`, `StringCont`, and `std::vector<Byte>`), type information is encoded into the registry key name using a colon-separated suffix syntax: `KeyName:(TypeTag)`. For example, an `unsigned int` value named "Count" would be stored under the registry key "Count:(u)". During reading, the serializer parses these encoded key names to reconstruct the correct data types. This approach ensures type safety while working within the constraints of the Windows Registry's native value types.
+
 ### JSON::TConfig
 
 Implements configuration storage in JSON files.

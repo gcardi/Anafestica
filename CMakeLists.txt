@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.27)
 project(AnafesticaTest LANGUAGES CXX)
 
 # Use C++Builder compiler by default when not specified on the command line.

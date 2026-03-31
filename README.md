@@ -95,22 +95,8 @@ or
 5. For CI/commit hygiene, remove generated artifacts before pushing:
 
 ```powershell
-cd ..
-rm -r build
-```
-
-Add these paths to `.gitignore`:
-
-```
-/build/
-/CMakeFiles/
-/CMakeCache.txt
-/*.exe
-/*.obj
-/*.o
-/*.lib
-/*.a
-/*.dll
+cd {repository root}
+rd /S /Q build
 ```
 
 <img src="docs/assets/images/2.png" alt="BCC64">

@@ -31,3 +31,9 @@ Win64/
 *.@@@
 ~$*.*
 *.tmp
+
+# Build artifacts
+build/
+
+# Python virtual environment
+.venv/

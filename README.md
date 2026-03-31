@@ -51,3 +51,71 @@ To complete the installation, add references to this library in the development 
 
 That's all.
 
+## Building and running tests (CMake + Ninja)
+
+A `CMakeLists.txt` is included to build the unit-test target using CMake + Ninja with C++Builder.
+
+1. Create and enter a build directory:
+
+```powershell
+mkdir build
+cd build
+```
+
+2. Configure with C++Builder compiler and auto-detected Boost path from registry:
+
+```powershell
+cmake -G Ninja ..
+```
+
+If your Boost layout is non-standard, override:
+
+```powershell
+cmake -G Ninja -DBOOST_ROOT="C:\\Program Files (x86)\\Embarcadero\\Studio\\37.0" ..
+```
+
+3. Build the tests:
+
+```powershell
+ninja
+```
+
+4. Run tests:
+
+```powershell
+ctest -V
+```
+
+or
+
+```powershell
+.\anafestica_test.exe
+```
+
+5. For CI/commit hygiene, remove generated artifacts before pushing:
+
+```powershell
+cd ..
+rm -r build
+```
+
+Add these paths to `.gitignore`:
+
+```
+/build/
+/CMakeFiles/
+/CMakeCache.txt
+/*.exe
+/*.obj
+/*.o
+/*.lib
+/*.a
+/*.dll
+```
+
+<img src="docs/assets/images/2.png" alt="BCC64">
+
+<img src="docs/assets/images/3.png" alt="BCC32C, BCC64, BCC64X">
+
+That's all.
+

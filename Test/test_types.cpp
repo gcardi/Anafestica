@@ -219,6 +219,16 @@ BOOST_AUTO_TEST_CASE(TRegistry_ExpandString_roundtrip)
     reg->CloseKey();
 }
 
+BOOST_AUTO_TEST_CASE(Variant_Usage_Info)
+{
+#ifdef ANAFESTICA_USE_STD_VARIANT
+    BOOST_TEST_MESSAGE("Using std::variant");
+#else
+    BOOST_TEST_MESSAGE("Using boost::variant");
+#endif
+    BOOST_TEST(true); // Always pass
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 

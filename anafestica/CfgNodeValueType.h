@@ -13,6 +13,27 @@
 #include <utility>
 #include <algorithm>
 
+// Compiler-specific configuration for variant usage
+#if defined(__BORLANDC__) && !defined(__clang__)
+  // Old BCC32: not supported, emit error
+  #error "Old BCC32 compiler is not supported. Please use bcc32c, bcc64, or bcc64x compilers."
+#endif
+
+#if defined(__clang__) && defined(_WIN32) && !defined(__WIN64__)
+  // bcc32c: use boost::variant (do not define ANAFESTICA_USE_STD_VARIANT)
+  // ANAFESTICA_USE_STD_VARIANT is not defined here
+#endif
+
+#if defined(__clang__) && defined(__WIN64__) && defined(__BORLANDC__)
+  // bcc64: use boost::variant (do not define ANAFESTICA_USE_STD_VARIANT)
+  // ANAFESTICA_USE_STD_VARIANT is not defined here
+#endif
+
+#if defined(__clang__) && defined(__WIN64__) && !defined(__BORLANDC__)
+  // bcc64x: use std::variant (define ANAFESTICA_USE_STD_VARIANT)
+  #define ANAFESTICA_USE_STD_VARIANT
+#endif
+
 #if defined( ANAFESTICA_USE_STD_VARIANT )
 # include <variant>
 # include <any>

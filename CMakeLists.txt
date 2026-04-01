@@ -78,10 +78,19 @@ if(NOT Boost_FOUND AND DEFINED BOOST_ROOT)
   message(STATUS "Boost include path = ${Boost_INCLUDE_DIRS}")
   message(STATUS "Boost library path = ${Boost_LIBRARYDIR}")
 
-  file(GLOB BOOST_TEST_LIBS
-    "${Boost_LIBRARYDIR}/*boost_unit_test_framework*1_89*"
-    "${Boost_LIBRARYDIR}/*unit_test_framework*1_89*"
-  )
+  # Determine library extension based on compiler
+  if(CMAKE_CXX_COMPILER MATCHES "bcc64x")
+    set(LIB_EXTS ".lib" ".a")
+  else()
+    set(LIB_EXTS ".a" ".lib")
+  endif()
+
+  set(BOOST_TEST_LIBS "")
+  foreach(EXT IN LISTS LIB_EXTS)
+    file(GLOB LIBS "${Boost_LIBRARYDIR}/*boost_unit_test_framework*1_89*${EXT}"
+                   "${Boost_LIBRARYDIR}/*unit_test_framework*1_89*${EXT}")
+    list(APPEND BOOST_TEST_LIBS ${LIBS})
+  endforeach()
 
   message(STATUS "Glob results for unit test libs: ${BOOST_TEST_LIBS}")
 
@@ -109,6 +118,11 @@ set(ANAFESTICA_TEST_SOURCES
 add_executable(anafestica_test ${ANAFESTICA_TEST_SOURCES})
 
 target_compile_definitions(anafestica_test PRIVATE UNICODE _UNICODE)
+
+# Define ANAFESTICA_USE_STD_VARIANT for bcc64x compiler
+if(CMAKE_CXX_COMPILER MATCHES "bcc64x")
+  target_compile_definitions(anafestica_test PRIVATE ANAFESTICA_USE_STD_VARIANT)
+endif()
 
 target_include_directories(anafestica_test PRIVATE
   ${CMAKE_SOURCE_DIR}

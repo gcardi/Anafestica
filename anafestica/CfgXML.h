@@ -137,8 +137,8 @@ private:
         if ( _di_IXMLNode RootNode = XMLDoc_->DocumentElement ) {
             if ( _di_IXMLNode Current = RootNode->ChildNodes->FindNode( ConfigNodeName ) ) {
                 for ( auto const & AttrName : Path ) {
-                    if ( Current = Current->ChildNodes->FindNode( NodesNodeName ) ) {
-                        if ( Current = FindNodeByNameAndAttrValue( Current, NodeNodeName, NameAttrName, AttrName ) ) {
+                    if ( (Current = Current->ChildNodes->FindNode( NodesNodeName )) ) {
+                        if ( (Current = FindNodeByNameAndAttrValue( Current, NodeNodeName, NameAttrName, AttrName )) ) {
                             return Current;
                         }
                     }
@@ -190,7 +190,7 @@ private:
         if ( auto RootNode = XMLDoc_->DocumentElement ) {
             if ( auto Current = OpenOrForceNode( RootNode, ConfigNodeName ) ) {
                 for ( auto const & AttrName : Path ) {
-                    if ( Current = OpenOrForceNode( Current, NodesNodeName ) ) {
+                    if ( (Current = OpenOrForceNode( Current, NodesNodeName )) ) {
                         Current =
                             OpenOrForceNode(
                                 Current, NodeNodeName, NameAttrName, AttrName
@@ -244,7 +244,11 @@ private:
         if ( auto ValueNode =
                 OpenOrForceNode( Node, ValueNodeName, NameAttrName, v.first ) )
         {
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+            std::visit(
+#else
             boost::apply_visitor(
+#endif
                 overload {
                     [this, &ValueNode]( int Val ) {
                         ValueNode->Attributes[TypeAttrName] =
@@ -382,6 +386,9 @@ private:
                 },
                 v.second.first
             );
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+#else
+#endif
         }
     }
 
@@ -389,7 +396,13 @@ protected:
     virtual ValueContType DoCreateValueList( TConfigPath const & Path ) override {
         using Fn = std::function<TConfigNodeValueType(String)>;
 
-        static std::array<Fn,TConfigNodeValueType::types::size::value> Builders {
+        static std::array<Fn,
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+            std::variant_size<TConfigNodeValueType>::value
+#else
+            TConfigNodeValueType::types::size::value
+#endif
+        > Builders {
             // TT_I
             []( String Value ) {
                 return std::stoi( Value.c_str() );
@@ -495,7 +508,7 @@ protected:
                 std::vector<Byte> VBytes;
                 VBytes.reserve( Bytes.Length );
                 std::copy(
-                    System::begin( &Bytes ), System::end( &Bytes ),
+                    Bytes.begin(), Bytes.end(),
                     std::back_inserter( VBytes )
                 );
                 return VBytes;

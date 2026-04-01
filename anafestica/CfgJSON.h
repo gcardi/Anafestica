@@ -238,7 +238,11 @@ overload(Ts...) -> overload<Ts...>;
     std::unique_ptr<TBase64Encoding> base64_ { new TBase64Encoding{ 0 } };
 
     void SaveValue( TJSONObject& Obj, ValueContType::value_type const & v ) {
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+        std::visit(
+#else
         boost::apply_visitor(
+#endif
             overload {
                 [this, &Obj, &v]( int Val ) {
                     if ( explicitTypes_ ) {
@@ -386,6 +390,9 @@ overload(Ts...) -> overload<Ts...>;
             },
             v.second.first
         );
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+#else
+#endif
     }
 
 protected:
@@ -393,7 +400,13 @@ protected:
 
         using Fn = std::function<TConfigNodeValueType(TJSONValue&)>;
 
-        static std::array<Fn,TConfigNodeValueType::types::size::value> Builders {
+        static std::array<Fn,
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+            std::variant_size<TConfigNodeValueType>::value
+#else
+            TConfigNodeValueType::types::size::value
+#endif
+        > Builders {
             // TT_I
             []( TJSONValue& Value ) {
                 return Value.GetValue<int>();

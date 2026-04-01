@@ -55,6 +55,8 @@ That's all.
 
 A `CMakeLists.txt` is included to build the unit-test target using CMake + Ninja with C++Builder.
 
+See also: [TESTS.md](TESTS.md) for an extended test plan and variant coverage matrix.
+
 1. Create and enter a build directory:
 
 ```powershell
@@ -92,12 +94,32 @@ or
 .\anafestica_test.exe
 ```
 
+The CMakeLists file now sets `CTEST_OUTPUT_ON_FAILURE` by default:
+
+```cmake
+set(CTEST_OUTPUT_ON_FAILURE TRUE CACHE INTERNAL "Show output when test fails")
+```
+
+This ensures test failures display output in CI.
+
 5. For CI/commit hygiene, remove generated artifacts before pushing:
 
 ```powershell
 cd {repository root}
 rd /S /Q build
 ```
+
+## Current unit-test coverage for `TConfigNodeValueType`
+
+The existing unit tests in `Test/test_types.cpp` are focused on registry operations (roundtrip, type mismatch, MultiSz, binary data, expand string) and do not yet include exhaustive tests for all variant element types in `TConfigNodeValueType`.  
+
+Targets covered by current tests:
+- `unsigned long long` (QWORD) roundtrip and mismatch behavior
+- `std::vector<String>` (MultiSz) roundtrip
+- `System::Sysutils::TBytes` (binary data) roundtrip and mismatch behavior
+- `System::String` expand-string semantics
+
+Future work should add dedicated tests for all `TConfigNodeValueType` variants (int, unsigned, long, char, bool, date/time, currency, etc.) to ensure full coverage.
 
 <img src="docs/assets/images/2.png" alt="BCC64">
 

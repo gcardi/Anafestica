@@ -35,5 +35,8 @@ Win64/
 # Build artifacts
 build/
 
+# CTest temporary files
+Testing/
+
 # Python virtual environment
 .venv/

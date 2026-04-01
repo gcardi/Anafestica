@@ -19,24 +19,33 @@ using std::vector;
 
 class ConsoleAttrKeeper {
 public:
-    ConsoleAttrKeeper() = default;
-    ~ConsoleAttrKeeper() {
-        SetConsoleTextAttribute( GetStdHandle ( STD_OUTPUT_HANDLE ), oldAttr_ );
+    ConsoleAttrKeeper() {
+        auto handle = GetStdHandle( STD_OUTPUT_HANDLE );
+        CONSOLE_SCREEN_BUFFER_INFO info;
+
+        if ( handle != INVALID_HANDLE_VALUE
+            && GetFileType( handle ) == FILE_TYPE_CHAR
+            && GetConsoleScreenBufferInfo( handle, &info ) ) {
+            oldAttr_ = info.wAttributes;
+            hasOldAttr_ = true;
+        }
     }
+
+    ~ConsoleAttrKeeper() {
+        if ( hasOldAttr_ ) {
+            auto handle = GetStdHandle( STD_OUTPUT_HANDLE );
+            if ( handle != INVALID_HANDLE_VALUE && GetFileType( handle ) == FILE_TYPE_CHAR ) {
+                SetConsoleTextAttribute( handle, oldAttr_ );
+            }
+        }
+    }
+
     ConsoleAttrKeeper( ConsoleAttrKeeper const & ) = delete;
     ConsoleAttrKeeper& operator=( ConsoleAttrKeeper const & ) = delete;
+
 private:
-    using AttrType = decltype( CONSOLE_SCREEN_BUFFER_INFO{}.wAttributes );
-
-    AttrType oldAttr_ { GetColor() };
-
-    static AttrType GetColor()  {
-        CONSOLE_SCREEN_BUFFER_INFO info;
-        if ( !GetConsoleScreenBufferInfo( GetStdHandle ( STD_OUTPUT_HANDLE ), &info ) ) {
-            RaiseLastOSError();
-        }
-        return info.wAttributes;
-    }
+    WORD oldAttr_{};
+    bool hasOldAttr_ = false;
 } Restore;
 
 #if !defined( BOOST_TEST_MODULE )

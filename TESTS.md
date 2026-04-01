@@ -31,15 +31,13 @@ cmake --build .
 
 ```powershell
 cd build
-ctest -V
+.\anafestica_test.exe
 ```
 
-5. For extended output on failure (CI):
-
-```powershell
-cd build
-ctest --output-on-failure -V
-```
+> **Note:** Do not use `ctest` or `ctest -V` to run the tests. Due to how ctest
+> redirects stdout to a pipe, the Embarcadero RTL crashes with a segmentation
+> fault / access violation mid-run. The same binary runs correctly when launched
+> directly. Always invoke `anafestica_test.exe` directly.
 
 6. Clean:
 
@@ -85,20 +83,19 @@ Existing tests in `Test/test_types.cpp` cover:
 
 ## 5. CTest integration notes
 
-- `CMakeLists.txt` already contains:
-
-```cmake
-set(CTEST_OUTPUT_ON_FAILURE TRUE CACHE INTERNAL "Show output when test fails")
-```
-
-- Always use `ctest -V` for full log
-- Use `ctest -jN` for parallel execution in CI
+- `CMakeLists.txt` registers the test via `add_test()` for potential CI/CDash
+  integration, but **ctest cannot be used to run tests locally**.
+- Running via ctest causes a segmentation fault / access violation mid-run.
+  The root cause is that ctest redirects the child process stdout to a pipe;
+  the Embarcadero RTL then switches to full block-buffering and crashes before
+  flushing any output, making the failure impossible to diagnose through ctest.
+- **Always run `anafestica_test.exe` directly.**
 
 ---
 
 ## 6. Quick checklist
 
 - [x] Builds
-- [x] `ctest -V` passes
 - [x] `anafestica_test.exe` passes directly
+- [ ] `ctest -V` — known crash (SEGFAULTs due to Embarcadero RTL + pipe redirection incompatibility)
 - [ ] Add tests covering all variant types

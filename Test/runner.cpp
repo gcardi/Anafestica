@@ -89,6 +89,7 @@ int _tmain(int argc, _TCHAR* argv[])
             UTF8argv.push_back( TextBuffer.data() + p );
         }
     }
+    setvbuf(stdout, nullptr, _IONBF, 0);
     extern int main( int, char** );
     return main( argc, &UTF8argv[0] );
 }

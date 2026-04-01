@@ -625,7 +625,8 @@ protected:
                         ))
                     );
                 }
-                auto Bytes = std::vector<Byte>( Size );
+                std::vector<Byte> Bytes;
+                Bytes.reserve( Size );
                 Reg.ReadBinaryDataTo( KeyName, std::back_inserter( Bytes ) );
                 return std::move( Bytes );
             },

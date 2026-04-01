@@ -113,6 +113,7 @@ endif()
 set(ANAFESTICA_TEST_SOURCES
   Test/runner.cpp
   Test/test_types.cpp
+  Test/test_config.cpp
 )
 
 add_executable(anafestica_test ${ANAFESTICA_TEST_SOURCES})
@@ -135,8 +136,8 @@ target_link_libraries(anafestica_test PRIVATE
 )
 
 if(WIN32)
-  # Registry and Windows wrapper support
-  target_link_libraries(anafestica_test PRIVATE advapi32 rtl)
+  # Registry, XML and Windows wrapper support
+  target_link_libraries(anafestica_test PRIVATE advapi32 rtl xmlrtl)
   if(DEFINED BOOST_ROOT)
     target_link_libraries(anafestica_test PRIVATE
       "${BOOST_ROOT}/lib/win64x/release/SysInit.o"

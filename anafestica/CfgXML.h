@@ -336,13 +336,20 @@ private:
                     [this, &ValueNode]( float Val ) {
                         ValueNode->Attributes[TypeAttrName] =
                             String( cnv_xstr( TT_FLT ) );
-                        ValueNode->Text = Val;
+                        TFormatSettings FS;
+                        FS.DecimalSeparator = _D( '.' );
+                        ValueNode->Text =
+                            FloatToStrF( static_cast<double>( Val ),
+                                         TFloatFormat::ffGeneral, 9, 0, FS );
                     },
 
                     [this, &ValueNode]( double Val ) {
                         ValueNode->Attributes[TypeAttrName] =
                             String( cnv_xstr( TT_DBL ) );
-                        ValueNode->Text = Val;
+                        TFormatSettings FS;
+                        FS.DecimalSeparator = _D( '.' );
+                        ValueNode->Text =
+                            FloatToStrF( Val, TFloatFormat::ffGeneral, 17, 0, FS );
                     },
 
                     [this, &ValueNode]( System::Currency Val ) {

@@ -40,3 +40,6 @@ Testing/
 
 # Python virtual environment
 .venv/
+
+# Claude Code personal config
+.claude/

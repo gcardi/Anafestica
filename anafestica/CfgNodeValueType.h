@@ -36,7 +36,6 @@
 
 #if defined( ANAFESTICA_USE_STD_VARIANT )
 # include <variant>
-# include <any>
 #else
 # include <boost/variant.hpp>
 #endif

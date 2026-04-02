@@ -107,21 +107,3 @@ cd {repository root}
 rd /S /Q build
 ```
 
-## Current unit-test coverage for `TConfigNodeValueType`
-
-The existing unit tests in `Test/test_types.cpp` are focused on registry operations (roundtrip, type mismatch, MultiSz, binary data, expand string) and do not yet include exhaustive tests for all variant element types in `TConfigNodeValueType`.  
-
-Targets covered by current tests:
-- `unsigned long long` (QWORD) roundtrip and mismatch behavior
-- `std::vector<String>` (MultiSz) roundtrip
-- `System::Sysutils::TBytes` (binary data) roundtrip and mismatch behavior
-- `System::String` expand-string semantics
-
-Future work should add dedicated tests for all `TConfigNodeValueType` variants (int, unsigned, long, char, bool, date/time, currency, etc.) to ensure full coverage.
-
-<img src="docs/assets/images/2.png" alt="BCC64">
-
-<img src="docs/assets/images/3.png" alt="BCC32C, BCC64, BCC64X">
-
-That's all.
-

@@ -246,7 +246,7 @@ overload(Ts...) -> overload<Ts...>;
             overload {
                 [this, &Obj, &v]( int Val ) {
                     if ( explicitTypes_ ) {
-                        WriteNumber<int>( Obj, cnv_xstr( TT_I ), v.first, Val );
+                        WriteNumber<int>( Obj, ana_cnv_xstr( ANA_TT_I ), v.first, Val );
                     }
                     else {
                         Write(
@@ -257,40 +257,40 @@ overload(Ts...) -> overload<Ts...>;
                 },
 
                 [&Obj, &v]( unsigned int Val ) {
-                    WriteNumber<__int64>( Obj, cnv_xstr( TT_U ), v.first, Val );
+                    WriteNumber<__int64>( Obj, ana_cnv_xstr( ANA_TT_U ), v.first, Val );
                 },
 
                 [&Obj, &v]( long Val ) {
-                    WriteNumber<__int64>( Obj, cnv_xstr( TT_L ), v.first, Val );
+                    WriteNumber<__int64>( Obj, ana_cnv_xstr( ANA_TT_L ), v.first, Val );
                 },
 
                 [&Obj, &v]( unsigned long Val ) {
-                    WriteNumber<__int64>( Obj, cnv_xstr( TT_UL ), v.first, Val );
+                    WriteNumber<__int64>( Obj, ana_cnv_xstr( ANA_TT_UL ), v.first, Val );
                 },
 
                 [&Obj, &v]( char Val ) {
-                    WriteNumber<int>( Obj, cnv_xstr( TT_C ), v.first, Val );
+                    WriteNumber<int>( Obj, ana_cnv_xstr( ANA_TT_C ), v.first, Val );
                 },
 
                 [&Obj, &v]( unsigned char Val ) {
-                    WriteNumber<int>( Obj, cnv_xstr( TT_UC ), v.first, Val );
+                    WriteNumber<int>( Obj, ana_cnv_xstr( ANA_TT_UC ), v.first, Val );
                 },
 
                 [&Obj, &v]( short Val ) {
-                    WriteNumber<int>( Obj, cnv_xstr( TT_S ), v.first, Val );
+                    WriteNumber<int>( Obj, ana_cnv_xstr( ANA_TT_S ), v.first, Val );
                 },
 
                 [&Obj, &v]( unsigned short Val ) {
-                    WriteNumber<int>( Obj, cnv_xstr( TT_US ), v.first, Val );
+                    WriteNumber<int>( Obj, ana_cnv_xstr( ANA_TT_US ), v.first, Val );
                 },
 
                 [&Obj, &v]( long long Val ) {
-                    WriteNumber<__int64>( Obj, cnv_xstr( TT_LL ), v.first, Val );
+                    WriteNumber<__int64>( Obj, ana_cnv_xstr( ANA_TT_LL ), v.first, Val );
                 },
 
                 [&Obj, &v]( unsigned long long Val ) {
                     Write(
-                        Obj, cnv_xstr( TT_ULL ), v.first,
+                        Obj, ana_cnv_xstr( ANA_TT_ULL ), v.first,
                         std::make_unique<TJSONString>(
 #if defined( _UNICODE )
                             std::to_wstring( Val ).c_str()
@@ -304,7 +304,7 @@ overload(Ts...) -> overload<Ts...>;
                 [this, &Obj, &v]( bool Val ) {
                     if ( explicitTypes_ ) {
                         Write(
-                            Obj, cnv_xstr( TT_B ), v.first,
+                            Obj, ana_cnv_xstr( ANA_TT_B ), v.first,
                             std::make_unique<TJSONBool>( Val )
                         );
                     }
@@ -319,7 +319,7 @@ overload(Ts...) -> overload<Ts...>;
                 [this, &Obj, &v]( System::UnicodeString Val ) {
                     if ( explicitTypes_ ) {
                         Write(
-                            Obj, cnv_xstr( TT_SZ ), v.first,
+                            Obj, ana_cnv_xstr( ANA_TT_SZ ), v.first,
                             std::make_unique<TJSONString>( Val )
                         );
                     }
@@ -333,7 +333,7 @@ overload(Ts...) -> overload<Ts...>;
 
                 [&Obj, &v]( System::TDateTime Val ) {
                     Write(
-                        Obj, cnv_xstr( TT_DT ), v.first,
+                        Obj, ana_cnv_xstr( ANA_TT_DT ), v.first,
                         std::make_unique<TJSONString>(
                             DateToISO8601( Val, false )
                         )
@@ -341,41 +341,43 @@ overload(Ts...) -> overload<Ts...>;
                 },
 
                 [&Obj, &v]( float Val ) {
-                    WriteNumber<double>( Obj, cnv_xstr( TT_FLT ), v.first, Val );
+                    WriteNumber<double>( Obj, ana_cnv_xstr( ANA_TT_FLT ), v.first, Val );
                 },
 
                 [&Obj, &v]( double Val ) {
-                    WriteNumber<double>( Obj, cnv_xstr( TT_DBL ), v.first, Val );
+                    WriteNumber<double>( Obj, ana_cnv_xstr( ANA_TT_DBL ), v.first, Val );
                 },
 
                 [&Obj, &v]( System::Currency Val ) {
                     TFormatSettings FS;
                     FS.DecimalSeparator = _D( '.' );
                     Write(
-                        Obj, cnv_xstr( TT_CUR ), v.first,
+                        Obj, ana_cnv_xstr( ANA_TT_CUR ), v.first,
                         std::make_unique<TJSONString>( CurrToStr( Val, FS ) )
                     );
                 },
 
                 [&Obj, &v]( StringCont const & Val ) {
-                    WriteStrings( Obj, cnv_xstr( TT_SV ), v.first, Val );
+                    WriteStrings( Obj, ana_cnv_xstr( ANA_TT_SV ), v.first, Val );
                 },
 
                 [this, &Obj, &v]( TBytes Val ) {
                     Write(
-                        Obj, cnv_xstr( TT_DAB ), v.first,
+                        Obj, ana_cnv_xstr( ANA_TT_DAB ), v.first,
                         std::make_unique<TJSONString>(
-                            //TNetEncoding::Base64->EncodeBytesToString(
-                            base64_->EncodeBytesToString(
-                                &Val[0], Val.High
-                            )
+                            Val.Length == 0 ?
+                              String()
+                            :
+                              base64_->EncodeBytesToString(
+                                  &Val[0], Val.High
+                              )
                         )
                     );
                 },
 
                 [this,&Obj, &v]( std::vector<Byte> const & Val ) {
                     Write(
-                        Obj, cnv_xstr( TT_VB ), v.first,
+                        Obj, ana_cnv_xstr( ANA_TT_VB ), v.first,
                         std::make_unique<TJSONString>(
                             Val.empty() ?
                               String()
@@ -390,7 +392,7 @@ overload(Ts...) -> overload<Ts...>;
 
                 [&Obj, &v]( std::string const & Val ) {
                     Write(
-                        Obj, cnv_xstr( TT_STR ), v.first,
+                        Obj, ana_cnv_xstr( ANA_TT_STR ), v.first,
                         std::make_unique<TJSONString>(
                             UTF8ToString( Val.c_str() )
                         )
@@ -399,7 +401,7 @@ overload(Ts...) -> overload<Ts...>;
 
                 [&Obj, &v]( std::wstring const & Val ) {
                     Write(
-                        Obj, cnv_xstr( TT_WSTR ), v.first,
+                        Obj, ana_cnv_xstr( ANA_TT_WSTR ), v.first,
                         std::make_unique<TJSONString>(
                             String( Val.c_str() )
                         )

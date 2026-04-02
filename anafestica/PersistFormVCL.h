@@ -77,8 +77,6 @@ __fastcall TPersistFormVCL<CfgSingleton>::TPersistFormVCL(
   , storeOptions_( StoreOptions )
   , configNode_( GetOrCreateConfigNode( RootNode ) )
 {
-    auto& node = GetOrCreateConfigNode( RootNode );
-    ::Sleep( 0 );
 }
 //---------------------------------------------------------------------------
 
@@ -144,7 +142,14 @@ void TPersistFormVCL<CfgSingleton>::ReadValues()
                 RestoreValue( configNode_, IdRight_, pRight );
                 int pBottom {BoundsRect.Bottom };
                 RestoreValue( configNode_, IdBottom_, pBottom );
-                BoundsRect = TRect( pLeft, pTop, pRight, pBottom );
+                // Validate: ensure size is at least 1x1 and the
+                // window intersects a monitor.
+                if ( pRight > pLeft && pBottom > pTop ) {
+                    TRect R( pLeft, pTop, pRight, pBottom );
+                    if ( Screen->MonitorFromRect( R ) ) {
+                        BoundsRect = R;
+                    }
+                }
             }
             else {
                 Left = pLeft;
@@ -160,8 +165,12 @@ void TPersistFormVCL<CfgSingleton>::ReadValues()
             RestoreValue( configNode_, IdTop_, pTop );
             int pBottom { BoundsRect.Bottom };
             RestoreValue( configNode_, IdBottom_, pBottom );
-            Width = pRight - pLeft;
-            Height = pBottom - pTop;
+            auto w = pRight - pLeft;
+            auto h = pBottom - pTop;
+            if ( w > 0 && h > 0 ) {
+                Width = w;
+                Height = h;
+            }
         }
 
         if ( HaveToSaveOrRestoreState( storeOptions_ ) ) {

@@ -90,19 +90,18 @@ public:
             System::begin( &Val ), System::end( &Val ),
             std::back_inserter( Strs )
         );
-        auto NewStrs =
+        auto& Result = GetItemFrom( valueItems_, Id, Strs, Op );
 #if defined( ANAFESTICA_USE_STD_VARIANT )
-            std::get<StringCont>(
+        if ( auto* p = std::get_if<StringCont>( &Result ) ) {
 #else
-            boost::get<StringCont>(
+        if ( auto* p = boost::get<StringCont>( &Result ) ) {
 #endif
-                GetItemFrom( valueItems_, Id, Strs, Op )
+            Val.Clear();
+            std::copy(
+                std::begin( *p ), std::end( *p ),
+                System::back_inserter( &Val )
             );
-        Val.Clear();
-        std::copy(
-            std::begin( NewStrs ), std::end( NewStrs ),
-            System::back_inserter( &Val )
-        );
+        }
     }
 
     void GetItem( String Id, TStrings* const Val, Operation Op = Operation::None ) {
@@ -233,21 +232,23 @@ private:
 
     template<typename T>
     void GetItemAs( is_other_tag, String Id, T& Val, Operation Op ) {
-        Val =
+        auto& Result = GetItemFrom( valueItems_, Id, Val, Op );
 #if defined( ANAFESTICA_USE_STD_VARIANT )
-            std::get<std::remove_reference_t<T>>(
+        if ( auto* p = std::get_if<std::remove_reference_t<T>>( &Result ) ) {
+            Val = *p;
+        }
 #else
-            boost::get<std::remove_reference_t<T>>(
+        if ( auto* p = boost::get<std::remove_reference_t<T>>( &Result ) ) {
+            Val = *p;
+        }
 #endif
-                GetItemFrom( valueItems_, Id, Val, Op )
-            );
     }
 
     template<typename T>
     void GetItemAs( is_enum_tag, String Id, T& Val, Operation Op );
 
     template<typename T>
-    bool PutItem( String Id, T&& Val, is_other_tag, Operation Op = Operation::Write ) noexcept {
+    bool PutItem( String Id, T&& Val, is_other_tag, Operation Op = Operation::Write ) {
         return
             PutItemTo(
                 valueItems_, Id,
@@ -256,7 +257,7 @@ private:
     }
 
     template<typename T>
-    bool PutItem( String Id, T Val, is_enum_tag, Operation Op = Operation::Write ) noexcept;
+    bool PutItem( String Id, T Val, is_enum_tag, Operation Op = Operation::Write );
 
 };
 //---------------------------------------------------------------------------
@@ -265,47 +266,35 @@ template<typename T>
 void TConfigNode::GetItemAs( is_enum_tag, String Id, T& Val, Operation Op )
 {
     if ( auto Info = __delphirtti( decltype( Val ) ) ) {
-        Val =
-            static_cast<T>(
-                GetEnumValue(
-                    Info,
+        auto& Result = GetItemFrom(
+            valueItems_, Id,
+            GetEnumName( Info, static_cast<int>( Val ) ), Op
+        );
 #if defined( ANAFESTICA_USE_STD_VARIANT )
-                    std::get<String>(
+        if ( auto* p = std::get_if<String>( &Result ) ) {
 #else
-                    boost::get<String>(
+        if ( auto* p = boost::get<String>( &Result ) ) {
 #endif
-                        GetItemFrom(
-                            valueItems_,
-                            Id,
-                            GetEnumName( Info, static_cast<int>( Val ) ),
-                            Op
-                        )
-                    )
-                )
-            );
+            Val = static_cast<T>( GetEnumValue( Info, *p ) );
+        }
     }
     else {
-        Val =
-            static_cast<T>(
+        auto& Result = GetItemFrom(
+            valueItems_, Id, static_cast<int>( Val ), Op
+        );
 #if defined( ANAFESTICA_USE_STD_VARIANT )
-                std::get<int>(
+        if ( auto* p = std::get_if<int>( &Result ) ) {
 #else
-                boost::get<int>(
+        if ( auto* p = boost::get<int>( &Result ) ) {
 #endif
-                    GetItemFrom(
-                        valueItems_,
-                        Id,
-                        static_cast<int>( Val ),
-                        Op
-                    )
-                )
-            );
+            Val = static_cast<T>( *p );
+        }
     }
 }
 //---------------------------------------------------------------------------
 
 template<typename T>
-bool TConfigNode::PutItem( String Id, T Val, is_enum_tag, Operation Op ) noexcept
+bool TConfigNode::PutItem( String Id, T Val, is_enum_tag, Operation Op )
 {
     if ( auto Info = __delphirtti( decltype( Val ) ) ) {
         // save enum as text

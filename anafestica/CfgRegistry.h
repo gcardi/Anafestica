@@ -144,28 +144,34 @@ public:
         }
 
         TBytes Data;
-        Data.Length = Size;
+        if ( Size == 0 ) { return Data; }
 
-        if ( !CheckResult(
-               ::RegQueryValueEx(
-                 CurrentKey, Name.c_str(), nullptr, &Type,&Data[0], &Size
-               )
-             )
-        )
-        {
-            throw ERegistryException(
-                &_SRegGetDataFailed, ARRAYOFCONST(( Name ))
+        // Retry loop to handle TOCTOU: value may grow between
+        // the size query and the data read.
+        for ( int Attempt = 0 ; Attempt < 3 ; ++Attempt ) {
+            Data.Length = Size;
+            auto const Ret = ::RegQueryValueEx(
+                CurrentKey, Name.c_str(), nullptr, &Type,
+                &Data[0], &Size
             );
+            if ( Ret == ERROR_MORE_DATA ) { continue; }
+            if ( !CheckResult( Ret ) ) {
+                throw ERegistryException(
+                    &_SRegGetDataFailed, ARRAYOFCONST(( Name ))
+                );
+            }
+            // check again if the type has changed in the meantime
+            if ( Type != REG_BINARY ) {
+                throw ERegistryException(
+                    &_SInvalidRegType, ARRAYOFCONST(( Name ))
+                );
+            }
+            Data.Length = Size;
+            return Data;
         }
-
-        // check again if the type has changed in the meantime
-        if ( Type != REG_BINARY ) {
-            throw ERegistryException(
-                &_SInvalidRegType, ARRAYOFCONST(( Name ))
-            );
-        }
-
-        return Data;
+        throw ERegistryException(
+            &_SRegGetDataFailed, ARRAYOFCONST(( Name ))
+        );
     }
 
     void WriteQWORD( String Name, unsigned long long Value ) {
@@ -202,7 +208,8 @@ public:
         if ( !CheckResult(
                ::RegSetValueEx(
                  CurrentKey, Name.c_str(), 0, REG_BINARY,
-                 &Value[0], Value.Length
+                 Value.Length > 0 ? &Value[0] : nullptr,
+                 Value.Length
                )
              )
         )
@@ -274,8 +281,9 @@ public:
             Buffer.data(), Buffer.size()
         );
 
-        if ( Ret ) {
-            return String( Buffer.data(), Ret );
+        if ( Ret && Ret <= Buffer.size() ) {
+            // Ret includes the null terminator; exclude it
+            return String( Buffer.data(), Ret - 1 );
         }
 
         throw ERegistryException(
@@ -332,20 +340,30 @@ size_t TRegistry::ReadStringsTo( String Name, OutIt It )
     if ( Type != REG_MULTI_SZ ) {
         throw ERegistryException( &_SInvalidRegType, ARRAYOFCONST(( Name )) );
     }
-    std::vector<TCHAR> Data( Size / sizeof( TCHAR ) );
-    if ( !CheckResult(
-           ::RegQueryValueEx(
-             CurrentKey, Name.c_str(), nullptr, &Type,
-             reinterpret_cast<LPBYTE>( Data.data() ), &Size
-           )
-         )
-    )
-    {
-        throw ERegistryException( &_SRegGetDataFailed, ARRAYOFCONST(( Name )) );
+    if ( Size == 0 ) { return 0; }
+
+    // Retry loop to handle TOCTOU: value may grow between
+    // the size query and the data read.
+    std::vector<TCHAR> Data;
+    bool Success = false;
+    for ( int Attempt = 0 ; !Success && Attempt < 3 ; ++Attempt ) {
+        Data.resize( Size / sizeof( TCHAR ) );
+        auto const Ret = ::RegQueryValueEx(
+            CurrentKey, Name.c_str(), nullptr, &Type,
+            reinterpret_cast<LPBYTE>( Data.data() ), &Size
+        );
+        if ( Ret == ERROR_MORE_DATA ) { continue; }
+        if ( !CheckResult( Ret ) ) {
+            throw ERegistryException( &_SRegGetDataFailed, ARRAYOFCONST(( Name )) );
+        }
+        if ( Type != REG_MULTI_SZ ) {
+            throw ERegistryException( &_SInvalidRegType, ARRAYOFCONST(( Name )) );
+        }
+        Data.resize( Size / sizeof( TCHAR ) );
+        Success = true;
     }
-    // check again if the type has changed in the meantime
-    if ( Type != REG_MULTI_SZ ) {
-        throw ERegistryException( &_SInvalidRegType, ARRAYOFCONST(( Name )) );
+    if ( !Success ) {
+        throw ERegistryException( &_SRegGetDataFailed, ARRAYOFCONST(( Name )) );
     }
 
     size_t Cnt {};
@@ -413,17 +431,20 @@ TRegistry::ReadBinaryDataTo( String Name, OutIt It )
 template<typename InIt>
 void TRegistry::WriteStrings( String Name, InIt Begin, InIt End )
 {
-    auto SB = std::make_unique<TStringBuilder>();
+    // Build REG_MULTI_SZ buffer: each string terminated by \0,
+    // entire sequence terminated by an additional \0.
+    std::vector<TCHAR> Buffer;
     while ( Begin != End ) {
-        SB->Append( *Begin++ );
-        SB->Append( _D( '\0' ) );
+        String s = *Begin++;
+        Buffer.insert( Buffer.end(), s.c_str(), s.c_str() + s.Length() );
+        Buffer.push_back( _D( '\0' ) );
     }
-    SB->Append( _D( '\0' ) );
+    Buffer.push_back( _D( '\0' ) );
     if ( !CheckResult(
            ::RegSetValueEx(
              CurrentKey, Name.c_str(), 0, REG_MULTI_SZ,
-             reinterpret_cast<BYTE*>( SB->ToString().c_str() ),
-             SB->Length * sizeof _D( '\0' )
+             reinterpret_cast<BYTE*>( Buffer.data() ),
+             static_cast<DWORD>( Buffer.size() * sizeof( TCHAR ) )
            )
          )
     )
@@ -489,17 +510,17 @@ protected:
         regex_type re(
             _D( "" )
             "^(.*\?)(\?::(\\((\?:"
-                "(" cnv_xstr( TT_I )   ")|(" cnv_xstr( TT_U )   ")|"
-                "(" cnv_xstr( TT_L )   ")|(" cnv_xstr( TT_UL )  ")|"
-                "(" cnv_xstr( TT_C )   ")|(" cnv_xstr( TT_UC )  ")|"
-                "(" cnv_xstr( TT_S )   ")|(" cnv_xstr( TT_US )  ")|"
-                "(" cnv_xstr( TT_LL )  ")|(" cnv_xstr( TT_ULL ) ")|"
-                "(" cnv_xstr( TT_B )   ")|(" cnv_xstr( TT_SZ )  ")|"
-                "(" cnv_xstr( TT_DT )  ")|(" cnv_xstr( TT_FLT ) ")|"
-                "(" cnv_xstr( TT_DBL ) ")|(" cnv_xstr( TT_CUR ) ")|"
-                "(" cnv_xstr( TT_SV )   ")|(" cnv_xstr( TT_DAB )  ")|"
-                "(" cnv_xstr( TT_VB )   ")|(" cnv_xstr( TT_STR )  ")|"
-                "(" cnv_xstr( TT_WSTR ) ")"
+                "(" ana_cnv_xstr( ANA_TT_I )   ")|(" ana_cnv_xstr( ANA_TT_U )   ")|"
+                "(" ana_cnv_xstr( ANA_TT_L )   ")|(" ana_cnv_xstr( ANA_TT_UL )  ")|"
+                "(" ana_cnv_xstr( ANA_TT_C )   ")|(" ana_cnv_xstr( ANA_TT_UC )  ")|"
+                "(" ana_cnv_xstr( ANA_TT_S )   ")|(" ana_cnv_xstr( ANA_TT_US )  ")|"
+                "(" ana_cnv_xstr( ANA_TT_LL )  ")|(" ana_cnv_xstr( ANA_TT_ULL ) ")|"
+                "(" ana_cnv_xstr( ANA_TT_B )   ")|(" ana_cnv_xstr( ANA_TT_SZ )  ")|"
+                "(" ana_cnv_xstr( ANA_TT_DT )  ")|(" ana_cnv_xstr( ANA_TT_FLT ) ")|"
+                "(" ana_cnv_xstr( ANA_TT_DBL ) ")|(" ana_cnv_xstr( ANA_TT_CUR ) ")|"
+                "(" ana_cnv_xstr( ANA_TT_SV )   ")|(" ana_cnv_xstr( ANA_TT_DAB )  ")|"
+                "(" ana_cnv_xstr( ANA_TT_VB )   ")|(" ana_cnv_xstr( ANA_TT_STR )  ")|"
+                "(" ana_cnv_xstr( ANA_TT_WSTR ) ")"
             "))\\))\?$"
         );
 
@@ -674,6 +695,11 @@ protected:
                         );
                     if ( It != std::end( ms ) ) {
                         auto const Idx = distance( std::begin( ms ), It ) - 3;
+                        if ( Idx < 0 ||
+                             static_cast<size_t>( Idx ) >= Builders.size() )
+                        {
+                            continue; // skip malformed value names
+                        }
                         auto Val = Builders[Idx]( *registry_, ValueName );
                         PutItem{}( Values, Name, Val );
                     }
@@ -796,9 +822,24 @@ private:
     HKEY hKey_;
     std::unique_ptr<TRegistry> registry_;
 
+    static void ValidatePathComponent( String const & Component ) {
+        if ( Component.Pos( _D( "\\" ) ) > 0 ||
+             Component.Pos( _D( "/" ) ) > 0 ||
+             Component == _D( ".." ) )
+        {
+            throw ERegistryException(
+                Format(
+                    _D( "Invalid path component: '%s'" ),
+                    ARRAYOFCONST(( Component ))
+                )
+            );
+        }
+    }
+
     static String GetKeyName( TConfigPath const & Path, String Prefix = String{} ) {
         auto SB = std::make_unique<TStringBuilder>( Prefix );
         for ( auto const & Item : Path ) {
+            ValidatePathComponent( Item );
             SB->AppendFormat( _D( "\\%s" ), ARRAYOFCONST(( Item )) );
         }
         return SB->ToString();
@@ -806,7 +847,10 @@ private:
 
     void CreateRegistryObject() {
         registry_ =
-            std::move( std::make_unique<Anafestica::Registry::TRegistry>() );
+            GetReadOnlyFlag() ?
+              std::make_unique<Anafestica::Registry::TRegistry>( KEY_READ )
+            :
+              std::make_unique<Anafestica::Registry::TRegistry>();
         registry_->RootKey = hKey_;
     }
 
@@ -891,7 +935,7 @@ private:
                 [&Reg, &v]( unsigned int Val ) {
                     Reg.WriteInteger(
                         Format(
-                            _D( "%s:(" ) cnv_xstr( TT_U ) ")",
+                            _D( "%s:(" ) ana_cnv_xstr( ANA_TT_U ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -902,7 +946,7 @@ private:
                 [&Reg, &v]( long Val ) {
                     Reg.WriteInteger(
                         Format(
-                            _D( "%s:(" ) cnv_xstr( TT_L ) ")",
+                            _D( "%s:(" ) ana_cnv_xstr( ANA_TT_L ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -913,7 +957,7 @@ private:
                 [&Reg, &v]( unsigned long Val ) {
                     Reg.WriteInteger(
                         Format(
-                            _D( "%s:(" ) cnv_xstr( TT_UL ) ")",
+                            _D( "%s:(" ) ana_cnv_xstr( ANA_TT_UL ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -924,7 +968,7 @@ private:
                 [&Reg, &v]( char Val ) {
                     Reg.WriteInteger(
                         Format(
-                            _D( "%s:(" ) cnv_xstr( TT_C ) ")",
+                            _D( "%s:(" ) ana_cnv_xstr( ANA_TT_C ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -935,7 +979,7 @@ private:
                 [&Reg, &v]( unsigned char Val ) {
                     Reg.WriteInteger(
                         Format(
-                            _D( "%s:(" ) cnv_xstr( TT_UC ) ")",
+                            _D( "%s:(" ) ana_cnv_xstr( ANA_TT_UC ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -946,7 +990,7 @@ private:
                 [&Reg, &v]( short Val ) {
                     Reg.WriteInteger(
                         Format(
-                            _D( "%s:(" ) cnv_xstr( TT_S ) ")",
+                            _D( "%s:(" ) ana_cnv_xstr( ANA_TT_S ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -957,7 +1001,7 @@ private:
                 [&Reg, &v]( unsigned short Val ) {
                     Reg.WriteInteger(
                         Format(
-                            _D( "%s:(" ) cnv_xstr( TT_US ) ")",
+                            _D( "%s:(" ) ana_cnv_xstr( ANA_TT_US ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -973,7 +1017,7 @@ private:
                 [&Reg, &v]( unsigned long long Val ) {
                     Reg.WriteQWORD(
                         Format(
-                            _D( "%s:(" ) cnv_xstr( TT_ULL ) ")",
+                            _D( "%s:(" ) ana_cnv_xstr( ANA_TT_ULL ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -984,7 +1028,7 @@ private:
                 [&Reg, &v]( bool Val ) {
                     Reg.WriteInteger(
                         Format(
-                            _D( "%s:(" ) cnv_xstr( TT_B ) ")",
+                            _D( "%s:(" ) ana_cnv_xstr( ANA_TT_B ) ")",
                             ARRAYOFCONST(( v.first ))
                         ), Val
                     );
@@ -999,7 +1043,7 @@ private:
                 [&Reg, &v]( System::TDateTime Val ) {
                     Reg.WriteDateTime(
                         Format(
-                            _D( "%s:(" ) cnv_xstr( TT_DT ) ")",
+                            _D( "%s:(" ) ana_cnv_xstr( ANA_TT_DT ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -1010,7 +1054,7 @@ private:
                 [&Reg, &v]( float Val ) {
                     Reg.WriteFloat(
                         Format(
-                            _D( "%s:(" ) cnv_xstr( TT_FLT ) ")",
+                            _D( "%s:(" ) ana_cnv_xstr( ANA_TT_FLT ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -1021,7 +1065,7 @@ private:
                 [&Reg, &v]( double Val ) {
                     Reg.WriteFloat(
                         Format(
-                            _D( "%s:(" ) cnv_xstr( TT_DBL ) ")",
+                            _D( "%s:(" ) ana_cnv_xstr( ANA_TT_DBL ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -1032,7 +1076,7 @@ private:
                 [&Reg, &v]( System::Currency Val ) {
                     Reg.WriteCurrency(
                         Format(
-                            _D( "%s:(" ) cnv_xstr( TT_CUR ) ")",
+                            _D( "%s:(" ) ana_cnv_xstr( ANA_TT_CUR ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -1053,7 +1097,7 @@ private:
                 [&Reg, &v]( std::vector<Byte> const & Val ) {
                     Reg.WriteBinaryData(
                         Format(
-                            _D( "%s:(" ) cnv_xstr( TT_VB ) ")",
+                            _D( "%s:(" ) ana_cnv_xstr( ANA_TT_VB ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
@@ -1064,7 +1108,7 @@ private:
                 [&Reg, &v]( std::string const & Val ) {
                     Reg.WriteString(
                         Format(
-                            _D( "%s:(" ) cnv_xstr( TT_STR ) ")",
+                            _D( "%s:(" ) ana_cnv_xstr( ANA_TT_STR ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         UTF8ToString( Val.c_str() )
@@ -1075,7 +1119,7 @@ private:
                 [&Reg, &v]( std::wstring const & Val ) {
                     Reg.WriteString(
                         Format(
-                            _D( "%s:(" ) cnv_xstr( TT_WSTR ) ")",
+                            _D( "%s:(" ) ana_cnv_xstr( ANA_TT_WSTR ) ")",
                             ARRAYOFCONST(( v.first ))
                         ),
                         String( Val.c_str() )

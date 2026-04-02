@@ -77,29 +77,29 @@ using TConfigNodeValueType =
       , std::wstring                // TT_WSTR wstr (UTF-16)
     >;
 
-// Type identifiers
+// Type identifiers -- prefixed to avoid macro namespace pollution
 
-#define TT_I   i        // int
-#define TT_U   u        // unsigned int
-#define TT_L   l        // long
-#define TT_UL  ul       // unsigned long
-#define TT_C   c        // char
-#define TT_UC  uc       // unsigned char
-#define TT_S   s        // short
-#define TT_US  us       // unsigned short
-#define TT_LL  ll       // long long
-#define TT_ULL ull      // unsigned long long
-#define TT_B   b        // bool
-#define TT_SZ  sz       // System::String
-#define TT_DT  dt       // System::TDateTime
-#define TT_FLT flt      // float
-#define TT_DBL dbl      // double
-#define TT_CUR cur      // System::Currency
-#define TT_SV  sv       // StringCont aka std::vector<String>
-#define TT_DAB dab      // System::Sysutils::TBytes
-#define TT_VB  vb       // BytesCont aka std::vector<Byte>
-#define TT_STR str      // std::string  (UTF-8)
-#define TT_WSTR wstr    // std::wstring (UTF-16)
+#define ANA_TT_I    i        // int
+#define ANA_TT_U    u        // unsigned int
+#define ANA_TT_L    l        // long
+#define ANA_TT_UL   ul       // unsigned long
+#define ANA_TT_C    c        // char
+#define ANA_TT_UC   uc       // unsigned char
+#define ANA_TT_S    s        // short
+#define ANA_TT_US   us       // unsigned short
+#define ANA_TT_LL   ll       // long long
+#define ANA_TT_ULL  ull      // unsigned long long
+#define ANA_TT_B    b        // bool
+#define ANA_TT_SZ   sz       // System::String
+#define ANA_TT_DT   dt       // System::TDateTime
+#define ANA_TT_FLT  flt      // float
+#define ANA_TT_DBL  dbl      // double
+#define ANA_TT_CUR  cur      // System::Currency
+#define ANA_TT_SV   sv       // StringCont aka std::vector<String>
+#define ANA_TT_DAB  dab      // System::Sysutils::TBytes
+#define ANA_TT_VB   vb       // BytesCont aka std::vector<Byte>
+#define ANA_TT_STR  str      // std::string  (UTF-8)
+#define ANA_TT_WSTR wstr     // std::wstring (UTF-16)
 
 enum class TypeTag : size_t {
     TT_I,   // int
@@ -125,8 +125,8 @@ enum class TypeTag : size_t {
     TT_WSTR // std::wstring (UTF-16)
 };
 
-#define cnv_xstr( s ) cnv_str( s )
-#define cnv_str( s )  #s
+#define ana_cnv_xstr( s ) ana_cnv_str( s )
+#define ana_cnv_str( s )  #s
 
 inline
 std::optional<TypeTag> GetTypeTag( String Val )
@@ -144,27 +144,27 @@ std::optional<TypeTag> GetTypeTag( String Val )
     // Keys must be sorted because will be used with std::lower_bound
     // Alphabetical order: b c cur dab dbl dt flt i l ll s str sv sz u uc ul ull us vb wstr
     static constexpr Cont TypeIds {
-        std::make_pair( _D( "" ) cnv_xstr( TT_B ),    TypeTag::b    ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_C ),    TypeTag::c    ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_CUR ),  TypeTag::cur  ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_DAB ),  TypeTag::dab  ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_DBL ),  TypeTag::dbl  ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_DT ),   TypeTag::dt   ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_FLT ),  TypeTag::flt  ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_I ),    TypeTag::i    ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_L ),    TypeTag::l    ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_LL ),   TypeTag::ll   ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_S ),    TypeTag::s    ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_STR ),  TypeTag::str  ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_SV ),   TypeTag::sv   ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_SZ ),   TypeTag::sz   ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_U ),    TypeTag::u    ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_UC ),   TypeTag::uc   ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_UL ),   TypeTag::ul   ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_ULL ),  TypeTag::ull  ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_US ),   TypeTag::us   ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_VB ),   TypeTag::vb   ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_WSTR ), TypeTag::wstr ),
+        std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_B ),    TypeTag::b    ),
+        std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_C ),    TypeTag::c    ),
+        std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_CUR ),  TypeTag::cur  ),
+        std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_DAB ),  TypeTag::dab  ),
+        std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_DBL ),  TypeTag::dbl  ),
+        std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_DT ),   TypeTag::dt   ),
+        std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_FLT ),  TypeTag::flt  ),
+        std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_I ),    TypeTag::i    ),
+        std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_L ),    TypeTag::l    ),
+        std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_LL ),   TypeTag::ll   ),
+        std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_S ),    TypeTag::s    ),
+        std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_STR ),  TypeTag::str  ),
+        std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_SV ),   TypeTag::sv   ),
+        std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_SZ ),   TypeTag::sz   ),
+        std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_U ),    TypeTag::u    ),
+        std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_UC ),   TypeTag::uc   ),
+        std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_UL ),   TypeTag::ul   ),
+        std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_ULL ),  TypeTag::ull  ),
+        std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_US ),   TypeTag::us   ),
+        std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_VB ),   TypeTag::vb   ),
+        std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_WSTR ), TypeTag::wstr ),
     };
 
     auto TypeIdIt =

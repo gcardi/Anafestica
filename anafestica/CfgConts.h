@@ -30,7 +30,7 @@ using NodeContType = std::map<KeyType,TConfigNodePtr>;
 
 inline
 bool PutItemTo( ValueContType& Values, String Id,
-                ValuePairType const & Val ) noexcept
+                ValuePairType const & Val )
 {
     auto r = Values.insert( std::make_pair( Id, Val ) );
     if ( !r.second ) {

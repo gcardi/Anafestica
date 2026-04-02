@@ -29,7 +29,7 @@ public:
                                    NativeInt Dummy,
                                    StoreOpts StoreOptions = StoreOpts::All,
                                    TConfigNode* const RootNode = nullptr );
-    void __fastcall BeforeDestruction();
+    void __fastcall BeforeDestruction() override;
     TConfigNode& GetConfigNode() const { return configNode_; }
     static TConfigNode& GetConfigRootNode();
     void ReadValues();

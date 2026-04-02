@@ -79,6 +79,19 @@ private:
 
     void CreateXMLObject() {
         if ( TFile::Exists( fileName_ ) ) {
+            // Mitigate XXE injection and XML Bomb (billion laughs)
+            // attacks: reject documents containing DTD declarations
+            // before the XML parser processes them.
+            {
+                auto RawContent = TFile::ReadAllText( fileName_ );
+                if ( RawContent.Pos( _D( "<!DOCTYPE" ) ) > 0 ||
+                     RawContent.Pos( _D( "<!ENTITY" ) ) > 0 )
+                {
+                    throw EXMLDocError(
+                        _D( "XML document rejected: DTD declarations are not allowed" )
+                    );
+                }
+            }
             XMLDoc_ = LoadXMLDocument( fileName_ );
             CheckDocument();
             XMLDoc_->Options = XMLDoc_->Options << doNodeAutoIndent;
@@ -103,6 +116,18 @@ private:
                     _D( "The document should be encoded using \'%s\' encoding" ),
                     ARRAYOFCONST(( DocumentEncoding ))
                 )
+            );
+        }
+        if ( !XMLDoc_->DocumentElement ||
+             XMLDoc_->DocumentElement->NodeName != RootNodeName )
+        {
+            throw EXMLDocError(
+                _D( "Invalid document: missing or incorrect root element" )
+            );
+        }
+        if ( !XMLDoc_->DocumentElement->ChildNodes->FindNode( ConfigNodeName ) ) {
+            throw EXMLDocError(
+                _D( "Invalid document: missing config element" )
             );
         }
     }
@@ -252,61 +277,61 @@ private:
                 overload {
                     [this, &ValueNode]( int Val ) {
                         ValueNode->Attributes[TypeAttrName] =
-                            String( cnv_xstr( TT_I ) );
+                            String( ana_cnv_xstr( ANA_TT_I ) );
                         ValueNode->Text = Val;
                     },
 
                     [this, &ValueNode]( unsigned int Val ) {
                         ValueNode->Attributes[TypeAttrName] =
-                            String( cnv_xstr( TT_U ) );
+                            String( ana_cnv_xstr( ANA_TT_U ) );
                         ValueNode->Text = static_cast<__int64>( Val );
                     },
 
                     [this, &ValueNode]( long Val ) {
                         ValueNode->Attributes[TypeAttrName] =
-                            String( cnv_xstr( TT_L ) );
+                            String( ana_cnv_xstr( ANA_TT_L ) );
                         ValueNode->Text = Val;
                     },
 
                     [this, &ValueNode]( unsigned long Val ) {
                         ValueNode->Attributes[TypeAttrName] =
-                            String( cnv_xstr( TT_UL ) );
+                            String( ana_cnv_xstr( ANA_TT_UL ) );
                         ValueNode->Text = static_cast<__int64>( Val );
                     },
 
                     [this, &ValueNode]( char Val ) {
                         ValueNode->Attributes[TypeAttrName] =
-                            String( cnv_xstr( TT_C ) );
+                            String( ana_cnv_xstr( ANA_TT_C ) );
                         ValueNode->Text = static_cast<int>( Val );
                     },
 
                     [this, &ValueNode]( unsigned char Val ) {
                         ValueNode->Attributes[TypeAttrName] =
-                            String( cnv_xstr( TT_UC ) );
+                            String( ana_cnv_xstr( ANA_TT_UC ) );
                         ValueNode->Text = static_cast<int>( Val );
                     },
 
                     [this, &ValueNode]( short Val ) {
                         ValueNode->Attributes[TypeAttrName] =
-                            String( cnv_xstr( TT_S ) );
+                            String( ana_cnv_xstr( ANA_TT_S ) );
                         ValueNode->Text = static_cast<int>( Val );
                     },
 
                     [this, &ValueNode]( unsigned short Val ) {
                         ValueNode->Attributes[TypeAttrName] =
-                            String( cnv_xstr( TT_US ) );
+                            String( ana_cnv_xstr( ANA_TT_US ) );
                         ValueNode->Text = static_cast<int>( Val );
                     },
 
                     [this, &ValueNode]( long long Val ) {
                         ValueNode->Attributes[TypeAttrName] =
-                            String( cnv_xstr( TT_LL ) );
+                            String( ana_cnv_xstr( ANA_TT_LL ) );
                         ValueNode->Text = static_cast<__int64>( Val );
                     },
 
                     [this, &ValueNode]( unsigned long long Val ) {
                         ValueNode->Attributes[TypeAttrName] =
-                            String( cnv_xstr( TT_ULL ) );
+                            String( ana_cnv_xstr( ANA_TT_ULL ) );
                         ValueNode->Text =
 #if defined( _UNICODE )
                             std::to_wstring( Val ).c_str();
@@ -317,25 +342,25 @@ private:
 
                     [this, &ValueNode]( bool Val ) {
                         ValueNode->Attributes[TypeAttrName] =
-                            String( cnv_xstr( TT_B ) );
+                            String( ana_cnv_xstr( ANA_TT_B ) );
                         ValueNode->Text = BoolToStr( Val, true );
                     },
 
                     [this, &ValueNode]( System::UnicodeString Val ) {
                         ValueNode->Attributes[TypeAttrName] =
-                            String( cnv_xstr( TT_SZ ) );
+                            String( ana_cnv_xstr( ANA_TT_SZ ) );
                         ValueNode->Text = Val;
                     },
 
                     [this, &ValueNode]( System::TDateTime Val ) {
                         ValueNode->Attributes[TypeAttrName] =
-                            String( cnv_xstr( TT_DT ) );
+                            String( ana_cnv_xstr( ANA_TT_DT ) );
                         ValueNode->Text = DateToISO8601( Val, false );
                     },
 
                     [this, &ValueNode]( float Val ) {
                         ValueNode->Attributes[TypeAttrName] =
-                            String( cnv_xstr( TT_FLT ) );
+                            String( ana_cnv_xstr( ANA_TT_FLT ) );
                         TFormatSettings FS;
                         FS.DecimalSeparator = _D( '.' );
                         ValueNode->Text =
@@ -345,7 +370,7 @@ private:
 
                     [this, &ValueNode]( double Val ) {
                         ValueNode->Attributes[TypeAttrName] =
-                            String( cnv_xstr( TT_DBL ) );
+                            String( ana_cnv_xstr( ANA_TT_DBL ) );
                         TFormatSettings FS;
                         FS.DecimalSeparator = _D( '.' );
                         ValueNode->Text =
@@ -354,7 +379,7 @@ private:
 
                     [this, &ValueNode]( System::Currency Val ) {
                         ValueNode->Attributes[TypeAttrName] =
-                            String( cnv_xstr( TT_CUR ) );
+                            String( ana_cnv_xstr( ANA_TT_CUR ) );
                         TFormatSettings FS;
                         FS.DecimalSeparator = _D( '.' );
                         ValueNode->Text = CurrToStr( Val, FS );
@@ -362,7 +387,7 @@ private:
 
                     [this, &ValueNode]( StringCont const & Val ) {
                         ValueNode->Attributes[TypeAttrName] =
-                            String( cnv_xstr( TT_SV ) );
+                            String( ana_cnv_xstr( ANA_TT_SV ) );
                         auto SB = std::make_unique<TStringBuilder>();
                         for ( auto const & Item : Val ) {
                             SB->AppendLine( Item );
@@ -372,16 +397,19 @@ private:
 
                     [this, &ValueNode]( TBytes Val ) {
                         ValueNode->Attributes[TypeAttrName] =
-                            String( cnv_xstr( TT_DAB ) );
+                            String( ana_cnv_xstr( ANA_TT_DAB ) );
                         ValueNode->Text =
-                            TNetEncoding::Base64->EncodeBytesToString(
-                                &Val[0], Val.High
-                            );
+                            Val.Length == 0 ?
+                              String()
+                            :
+                              TNetEncoding::Base64->EncodeBytesToString(
+                                  &Val[0], Val.High
+                              );
                     },
 
                     [this, &ValueNode]( std::vector<Byte> const & Val ) {
                         ValueNode->Attributes[TypeAttrName] =
-                            String( cnv_xstr( TT_VB ) );
+                            String( ana_cnv_xstr( ANA_TT_VB ) );
                         ValueNode->Text =
                             Val.empty() ?
                               String()
@@ -393,13 +421,13 @@ private:
 
                     [this, &ValueNode]( std::string const & Val ) {
                         ValueNode->Attributes[TypeAttrName] =
-                            String( cnv_xstr( TT_STR ) );
+                            String( ana_cnv_xstr( ANA_TT_STR ) );
                         ValueNode->Text = UTF8ToString( Val.c_str() );
                     },
 
                     [this, &ValueNode]( std::wstring const & Val ) {
                         ValueNode->Attributes[TypeAttrName] =
-                            String( cnv_xstr( TT_WSTR ) );
+                            String( ana_cnv_xstr( ANA_TT_WSTR ) );
                         ValueNode->Text = String( Val.c_str() );
                     }
                 },

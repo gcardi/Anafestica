@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
 // TConfig roundtrip tests for all three backends (Registry, JSON, XML)
-// covering all 19 types in TConfigNodeValueType.
+// covering all 21 types in TConfigNodeValueType.
 //---------------------------------------------------------------------------
 
 #pragma hdrstop
@@ -12,6 +12,8 @@
 
 #include <memory>
 #include <vector>
+#include <string>
+#include <string_view>
 #include <cmath>
 
 #include <windows.h>
@@ -76,6 +78,10 @@ inline System::Sysutils::TBytes MakeDAB() {
 inline BytesCont MakeVB() {
     return { 0xFE, 0xCA, 0x39, 0x43 };
 }
+
+// std::string (UTF-8) and std::wstring (UTF-16) test values
+const std::string  kSTR  = "Hello Anafestica (UTF-8)";
+const std::wstring kWSTR = L"Hello Anafestica (Wide)";
 
 bool DABEqual( System::Sysutils::TBytes const& a,
                System::Sysutils::TBytes const& b ) noexcept
@@ -360,6 +366,39 @@ BOOST_AUTO_TEST_CASE( Registry_bytevec_roundtrip )
     BOOST_TEST( c.GetRootNode().GetItem<BytesCont>( L"val" ) == vb );
 }
 
+BOOST_AUTO_TEST_CASE( Registry_stdstring_roundtrip )
+{
+    const auto key = MakeRegCfgKey(); ScopedRegKey g( key );
+    { Anafestica::Registry::TConfig c( HKEY_CURRENT_USER, key );
+      c.GetRootNode().PutItem( L"val", kSTR ); }
+    Anafestica::Registry::TConfig c( HKEY_CURRENT_USER, key );
+    BOOST_TEST( c.GetRootNode().GetItem<std::string>( L"val" ) == kSTR );
+}
+
+BOOST_AUTO_TEST_CASE( Registry_wstring_roundtrip )
+{
+    const auto key = MakeRegCfgKey(); ScopedRegKey g( key );
+    { Anafestica::Registry::TConfig c( HKEY_CURRENT_USER, key );
+      c.GetRootNode().PutItem( L"val", kWSTR ); }
+    Anafestica::Registry::TConfig c( HKEY_CURRENT_USER, key );
+    BOOST_CHECK( c.GetRootNode().GetItem<std::wstring>( L"val" ) == kWSTR );
+}
+
+BOOST_AUTO_TEST_CASE( Registry_string_view_write )
+{
+    // string_view / wstring_view are materialised to string / wstring on write;
+    // read back confirms the stored value.
+    const auto key = MakeRegCfgKey(); ScopedRegKey g( key );
+    std::string_view  sv  = kSTR;
+    std::wstring_view wsv = kWSTR;
+    { Anafestica::Registry::TConfig c( HKEY_CURRENT_USER, key );
+      c.GetRootNode().PutItem( L"sv",  sv  );
+      c.GetRootNode().PutItem( L"wsv", wsv ); }
+    Anafestica::Registry::TConfig c( HKEY_CURRENT_USER, key );
+    BOOST_TEST( c.GetRootNode().GetItem<std::string> ( L"sv"  ) == kSTR  );
+    BOOST_CHECK( c.GetRootNode().GetItem<std::wstring>( L"wsv" ) == kWSTR );
+}
+
 BOOST_AUTO_TEST_CASE( Registry_subnode_roundtrip )
 {
     const auto key = MakeRegCfgKey(); ScopedRegKey g( key );
@@ -559,6 +598,37 @@ BOOST_AUTO_TEST_CASE( JSON_bytevec_roundtrip )
       c.GetRootNode().PutItem( L"val", vb ); }
     Anafestica::JSON::TConfig c( f );
     BOOST_TEST( c.GetRootNode().GetItem<BytesCont>( L"val" ) == vb );
+}
+
+BOOST_AUTO_TEST_CASE( JSON_stdstring_roundtrip )
+{
+    const auto f = MakeTempPath( L".json" ); TempFileGuard g( f );
+    { Anafestica::JSON::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kSTR ); }
+    Anafestica::JSON::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<std::string>( L"val" ) == kSTR );
+}
+
+BOOST_AUTO_TEST_CASE( JSON_wstring_roundtrip )
+{
+    const auto f = MakeTempPath( L".json" ); TempFileGuard g( f );
+    { Anafestica::JSON::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kWSTR ); }
+    Anafestica::JSON::TConfig c( f );
+    BOOST_CHECK( c.GetRootNode().GetItem<std::wstring>( L"val" ) == kWSTR );
+}
+
+BOOST_AUTO_TEST_CASE( JSON_string_view_write )
+{
+    const auto f = MakeTempPath( L".json" ); TempFileGuard g( f );
+    std::string_view  sv  = kSTR;
+    std::wstring_view wsv = kWSTR;
+    { Anafestica::JSON::TConfig c( f );
+      c.GetRootNode().PutItem( L"sv",  sv  );
+      c.GetRootNode().PutItem( L"wsv", wsv ); }
+    Anafestica::JSON::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<std::string> ( L"sv"  ) == kSTR  );
+    BOOST_CHECK( c.GetRootNode().GetItem<std::wstring>( L"wsv" ) == kWSTR );
 }
 
 BOOST_AUTO_TEST_CASE( JSON_subnode_roundtrip )
@@ -773,6 +843,37 @@ BOOST_AUTO_TEST_CASE( XML_bytevec_roundtrip )
       c.GetRootNode().PutItem( L"val", vb ); }
     Anafestica::XML::TConfig c( f );
     BOOST_TEST( c.GetRootNode().GetItem<BytesCont>( L"val" ) == vb );
+}
+
+BOOST_AUTO_TEST_CASE( XML_stdstring_roundtrip )
+{
+    const auto f = MakeTempPath( L".xml" ); TempFileGuard g( f );
+    { Anafestica::XML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kSTR ); }
+    Anafestica::XML::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<std::string>( L"val" ) == kSTR );
+}
+
+BOOST_AUTO_TEST_CASE( XML_wstring_roundtrip )
+{
+    const auto f = MakeTempPath( L".xml" ); TempFileGuard g( f );
+    { Anafestica::XML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kWSTR ); }
+    Anafestica::XML::TConfig c( f );
+    BOOST_CHECK( c.GetRootNode().GetItem<std::wstring>( L"val" ) == kWSTR );
+}
+
+BOOST_AUTO_TEST_CASE( XML_string_view_write )
+{
+    const auto f = MakeTempPath( L".xml" ); TempFileGuard g( f );
+    std::string_view  sv  = kSTR;
+    std::wstring_view wsv = kWSTR;
+    { Anafestica::XML::TConfig c( f );
+      c.GetRootNode().PutItem( L"sv",  sv  );
+      c.GetRootNode().PutItem( L"wsv", wsv ); }
+    Anafestica::XML::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<std::string> ( L"sv"  ) == kSTR  );
+    BOOST_CHECK( c.GetRootNode().GetItem<std::wstring>( L"wsv" ) == kWSTR );
 }
 
 BOOST_AUTO_TEST_CASE( XML_subnode_roundtrip )

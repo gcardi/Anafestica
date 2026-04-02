@@ -386,6 +386,24 @@ overload(Ts...) -> overload<Ts...>;
                               )
                         )
                     );
+                },
+
+                [&Obj, &v]( std::string const & Val ) {
+                    Write(
+                        Obj, cnv_xstr( TT_STR ), v.first,
+                        std::make_unique<TJSONString>(
+                            UTF8ToString( Val.c_str() )
+                        )
+                    );
+                },
+
+                [&Obj, &v]( std::wstring const & Val ) {
+                    Write(
+                        Obj, cnv_xstr( TT_WSTR ), v.first,
+                        std::make_unique<TJSONString>(
+                            String( Val.c_str() )
+                        )
+                    );
                 }
             },
             v.second.first
@@ -524,6 +542,19 @@ protected:
                     std::back_inserter( VBytes )
                 );
                 return VBytes;
+            },
+
+            // TT_STR  – JSON string decoded as UTF-8 std::string
+            []( TJSONValue& Value ) {
+                return std::string(
+                    UTF8Encode( Value.GetValue<String>() ).c_str()
+                );
+            },
+
+            // TT_WSTR – JSON string decoded as UTF-16 std::wstring
+            []( TJSONValue& Value ) {
+                auto s = Value.GetValue<String>();
+                return std::wstring( s.c_str() );
             },
         };
 

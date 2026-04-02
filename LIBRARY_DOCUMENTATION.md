@@ -133,15 +133,25 @@ public:
 
 **Supported Data Types:**
 The library supports the following data types through template specialization:
+
 - `int`, `unsigned int`, `long`, `unsigned long`
 - `char`, `unsigned char`, `short`, `unsigned short`
 - `long long`, `unsigned long long`
 - `bool`
-- `String` (System::String)
+- `String` (System::String — wide, UTF-16)
 - `TDateTime`
 - `float`, `double`, `Currency`
-- `StringCont` (std::vector<String>)
-- `TBytes`, `BytesCont` (std::vector<Byte>)
+- `StringCont` (std::vector\<String\>)
+- `TBytes`, `BytesCont` (std::vector\<Byte\>)
+- `std::string` (narrow, treated as UTF-8; type tag `str`)
+- `std::wstring` (wide UTF-16; type tag `wstr`)
+
+**Convenience write overloads for string views:**
+`std::string_view` and `std::wstring_view` are accepted by `PutItem` as a
+write-path convenience. They are materialised to `std::string` / `std::wstring`
+before being stored in the variant. Deserialization always returns owning
+`std::string` / `std::wstring`, never a view (a view cannot own the data it
+points to, so it cannot be safely stored in or returned from persistent storage).
 
 **Special Handling for Enums:**
 Enumerated types are automatically handled. If the enum has RTTI information, it's stored as a string; otherwise, as an integer.

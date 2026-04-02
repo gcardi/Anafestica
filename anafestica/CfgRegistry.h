@@ -497,8 +497,9 @@ protected:
                 "(" cnv_xstr( TT_B )   ")|(" cnv_xstr( TT_SZ )  ")|"
                 "(" cnv_xstr( TT_DT )  ")|(" cnv_xstr( TT_FLT ) ")|"
                 "(" cnv_xstr( TT_DBL ) ")|(" cnv_xstr( TT_CUR ) ")|"
-                "(" cnv_xstr( TT_SV )  ")|(" cnv_xstr( TT_DAB ) ")|"
-                "(" cnv_xstr( TT_VB )  ")"
+                "(" cnv_xstr( TT_SV )   ")|(" cnv_xstr( TT_DAB )  ")|"
+                "(" cnv_xstr( TT_VB )   ")|(" cnv_xstr( TT_STR )  ")|"
+                "(" cnv_xstr( TT_WSTR ) ")"
             "))\\))\?$"
         );
 
@@ -629,6 +630,17 @@ protected:
                 Bytes.reserve( Size );
                 Reg.ReadBinaryDataTo( KeyName, std::back_inserter( Bytes ) );
                 return std::move( Bytes );
+            },
+
+            // str    (TT_STR)    REG_SZ        ReadString → std::string (UTF-8)
+            []( RegObjType& Reg, String KeyName ) {
+                return std::string( UTF8Encode( Reg.ReadString( KeyName ) ).c_str() );
+            },
+
+            // wstr   (TT_WSTR)   REG_SZ        ReadString → std::wstring (UTF-16)
+            []( RegObjType& Reg, String KeyName ) {
+                auto s = Reg.ReadString( KeyName );
+                return std::wstring( s.c_str() );
             },
         };
 
@@ -1045,6 +1057,28 @@ private:
                             ARRAYOFCONST(( v.first ))
                         ),
                         Val
+                    );
+                },
+
+                // str    (TT_STR)   REG_SZ        WriteString (UTF-8 → UTF-16)
+                [&Reg, &v]( std::string const & Val ) {
+                    Reg.WriteString(
+                        Format(
+                            _D( "%s:(" ) cnv_xstr( TT_STR ) ")",
+                            ARRAYOFCONST(( v.first ))
+                        ),
+                        UTF8ToString( Val.c_str() )
+                    );
+                },
+
+                // wstr   (TT_WSTR)  REG_SZ        WriteString (UTF-16)
+                [&Reg, &v]( std::wstring const & Val ) {
+                    Reg.WriteString(
+                        Format(
+                            _D( "%s:(" ) cnv_xstr( TT_WSTR ) ")",
+                            ARRAYOFCONST(( v.first ))
+                        ),
+                        String( Val.c_str() )
                     );
                 }
             },

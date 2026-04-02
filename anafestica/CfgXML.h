@@ -389,6 +389,18 @@ private:
                               TNetEncoding::Base64->EncodeBytesToString(
                                   Val.data(), Val.size() - 1
                               );
+                    },
+
+                    [this, &ValueNode]( std::string const & Val ) {
+                        ValueNode->Attributes[TypeAttrName] =
+                            String( cnv_xstr( TT_STR ) );
+                        ValueNode->Text = UTF8ToString( Val.c_str() );
+                    },
+
+                    [this, &ValueNode]( std::wstring const & Val ) {
+                        ValueNode->Attributes[TypeAttrName] =
+                            String( cnv_xstr( TT_WSTR ) );
+                        ValueNode->Text = String( Val.c_str() );
                     }
                 },
                 v.second.first
@@ -519,6 +531,16 @@ protected:
                     std::back_inserter( VBytes )
                 );
                 return VBytes;
+            },
+
+            // TT_STR  – XML text decoded as UTF-8 std::string
+            []( String Value ) {
+                return std::string( UTF8Encode( Value ).c_str() );
+            },
+
+            // TT_WSTR – XML text decoded as UTF-16 std::wstring
+            []( String Value ) {
+                return std::wstring( Value.c_str() );
             },
         };
 

@@ -8,6 +8,7 @@
 
 #include <memory>
 #include <vector>
+#include <string>
 #include <cstddef>
 #include <optional>
 #include <utility>
@@ -72,6 +73,8 @@ using TConfigNodeValueType =
       , StringCont                  // TT_SV  sv
       , System::Sysutils::TBytes    // TT_DAB dab
       , BytesCont                   // TT_VB  vb
+      , std::string                 // TT_STR str  (UTF-8)
+      , std::wstring                // TT_WSTR wstr (UTF-16)
     >;
 
 // Type identifiers
@@ -95,6 +98,8 @@ using TConfigNodeValueType =
 #define TT_SV  sv       // StringCont aka std::vector<String>
 #define TT_DAB dab      // System::Sysutils::TBytes
 #define TT_VB  vb       // BytesCont aka std::vector<Byte>
+#define TT_STR str      // std::string  (UTF-8)
+#define TT_WSTR wstr    // std::wstring (UTF-16)
 
 enum class TypeTag : size_t {
     TT_I,   // int
@@ -115,7 +120,9 @@ enum class TypeTag : size_t {
     TT_CUR, // System::Currency
     TT_SV,  // StringCont aka std::vector<String>
     TT_DAB, // System::Sysutils::TBytes
-    TT_VB   // BytesCont aka std::vector<Byte>
+    TT_VB,  // BytesCont aka std::vector<Byte>
+    TT_STR, // std::string  (UTF-8)
+    TT_WSTR // std::wstring (UTF-16)
 };
 
 #define cnv_xstr( s ) cnv_str( s )
@@ -135,26 +142,29 @@ std::optional<TypeTag> GetTypeTag( String Val )
         >;
 
     // Keys must be sorted because will be used with std::lower_bound
+    // Alphabetical order: b c cur dab dbl dt flt i l ll s str sv sz u uc ul ull us vb wstr
     static constexpr Cont TypeIds {
-        std::make_pair( _D( "" ) cnv_xstr( TT_B ),   TypeTag::b   ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_C ),   TypeTag::c   ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_CUR ), TypeTag::cur ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_DAB ), TypeTag::dab ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_DBL ), TypeTag::dbl ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_DT ),  TypeTag::dt  ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_FLT ), TypeTag::flt ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_I ),   TypeTag::i   ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_L ),   TypeTag::l   ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_LL ),  TypeTag::ll  ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_S ),   TypeTag::s   ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_SV ),  TypeTag::sv  ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_SZ ),  TypeTag::sz  ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_U ),   TypeTag::u   ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_UC ),  TypeTag::uc  ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_UL ),  TypeTag::ul  ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_ULL ), TypeTag::ull ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_US ),  TypeTag::us  ),
-        std::make_pair( _D( "" ) cnv_xstr( TT_VB ),  TypeTag::vb  ),
+        std::make_pair( _D( "" ) cnv_xstr( TT_B ),    TypeTag::b    ),
+        std::make_pair( _D( "" ) cnv_xstr( TT_C ),    TypeTag::c    ),
+        std::make_pair( _D( "" ) cnv_xstr( TT_CUR ),  TypeTag::cur  ),
+        std::make_pair( _D( "" ) cnv_xstr( TT_DAB ),  TypeTag::dab  ),
+        std::make_pair( _D( "" ) cnv_xstr( TT_DBL ),  TypeTag::dbl  ),
+        std::make_pair( _D( "" ) cnv_xstr( TT_DT ),   TypeTag::dt   ),
+        std::make_pair( _D( "" ) cnv_xstr( TT_FLT ),  TypeTag::flt  ),
+        std::make_pair( _D( "" ) cnv_xstr( TT_I ),    TypeTag::i    ),
+        std::make_pair( _D( "" ) cnv_xstr( TT_L ),    TypeTag::l    ),
+        std::make_pair( _D( "" ) cnv_xstr( TT_LL ),   TypeTag::ll   ),
+        std::make_pair( _D( "" ) cnv_xstr( TT_S ),    TypeTag::s    ),
+        std::make_pair( _D( "" ) cnv_xstr( TT_STR ),  TypeTag::str  ),
+        std::make_pair( _D( "" ) cnv_xstr( TT_SV ),   TypeTag::sv   ),
+        std::make_pair( _D( "" ) cnv_xstr( TT_SZ ),   TypeTag::sz   ),
+        std::make_pair( _D( "" ) cnv_xstr( TT_U ),    TypeTag::u    ),
+        std::make_pair( _D( "" ) cnv_xstr( TT_UC ),   TypeTag::uc   ),
+        std::make_pair( _D( "" ) cnv_xstr( TT_UL ),   TypeTag::ul   ),
+        std::make_pair( _D( "" ) cnv_xstr( TT_ULL ),  TypeTag::ull  ),
+        std::make_pair( _D( "" ) cnv_xstr( TT_US ),   TypeTag::us   ),
+        std::make_pair( _D( "" ) cnv_xstr( TT_VB ),   TypeTag::vb   ),
+        std::make_pair( _D( "" ) cnv_xstr( TT_WSTR ), TypeTag::wstr ),
     };
 
     auto TypeIdIt =

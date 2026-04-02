@@ -11,7 +11,7 @@ mkdir build
 cd build
 ```
 
-2. Configure with CMake (Ninja):
+1. Configure with CMake (Ninja):
 
 ```powershell
 cmake -G Ninja ..
@@ -19,7 +19,7 @@ cmake -G Ninja ..
 cmake -G Ninja -DBOOST_ROOT="C:\\Program Files (x86)\\Embarcadero\\Studio\\37.0" ..
 ```
 
-3. Build:
+1. Build:
 
 ```powershell
 ninja
@@ -27,7 +27,7 @@ ninja
 cmake --build .
 ```
 
-4. Run tests:
+1. Run tests:
 
 ```powershell
 cd build
@@ -39,7 +39,7 @@ cd build
 > fault / access violation mid-run. The same binary runs correctly when launched
 > directly. Always invoke `anafestica_test.exe` directly.
 
-6. Clean:
+1. Clean:
 
 ```powershell
 cd ..
@@ -59,25 +59,51 @@ rd /S /Q build
 
 ## 3. Current coverage for `TConfigNodeValueType`
 
-`TConfigNodeValueType` is a variant that includes:
-- int, unsigned int, long, unsigned long, char, unsigned char, short, unsigned short
-- long long, unsigned long long, bool, System::String,
-- System::TDateTime, float, double, System::Currency,
-- StringCont (`std::vector<String>`), System::Sysutils::TBytes, BytesCont (`std::vector<Byte>`)
+`TConfigNodeValueType` is a variant that includes 21 alternatives:
 
-Existing tests in `Test/test_types.cpp` cover:
-- `TT_ULL` (`unsigned long long`): roundtrip and type mismatch behavior (QWORD)
-- `TT_SV` (`StringCont`): MultiSz roundtrip
-- `TT_DAB`, `TT_VB` (Sysutils::TBytes and vector<Byte>): roundtrip and mismatch behavior
-- `TT_SZ` (System::String): ExpandString semantics
+- int, unsigned int, long, unsigned long, char, unsigned char, short, unsigned short
+- long long, unsigned long long, bool, System::String
+- System::TDateTime, float, double, System::Currency
+- StringCont (`std::vector<String>`), System::Sysutils::TBytes, BytesCont (`std::vector<Byte>`)
+- **std::string** (UTF-8, tag `str`)
+- **std::wstring** (UTF-16, tag `wstr`)
+
+`Test/test_types.cpp` covers low-level registry primitives (QWORD, MultiSz, binary, expand-string).
+
+`Test/test_config.cpp` covers full roundtrip through all three backends for all 21 types:
+
+| Tag | Type | Registry | JSON | XML |
+| --- | ---- | :------: | :--: | :-: |
+| `i` | int | ✓ | ✓ | ✓ |
+| `u` | unsigned int | ✓ | ✓ | ✓ |
+| `l` | long | ✓ | ✓ | ✓ |
+| `ul` | unsigned long | ✓ | ✓ | ✓ |
+| `c` | char | ✓ | ✓ | ✓ |
+| `uc` | unsigned char | ✓ | ✓ | ✓ |
+| `s` | short | ✓ | ✓ | ✓ |
+| `us` | unsigned short | ✓ | ✓ | ✓ |
+| `ll` | long long | ✓ | ✓ | ✓ |
+| `ull` | unsigned long long | ✓ | ✓ | ✓ |
+| `b` | bool | ✓ | ✓ | ✓ |
+| `sz` | System::String | ✓ | ✓ | ✓ |
+| `dt` | System::TDateTime | ✓ | ✓ | ✓ |
+| `flt` | float | ✓ | ✓ | ✓ |
+| `dbl` | double | ✓ | ✓ | ✓ |
+| `cur` | System::Currency | ✓ | ✓ | ✓ |
+| `sv` | StringCont (vector\<String\>) | ✓ | ✓ | ✓ |
+| `dab` | TBytes | ✓ | ✓ | ✓ |
+| `vb` | BytesCont (vector\<Byte\>) | ✓ | ✓ | ✓ |
+| `str` | std::string (UTF-8) | ✓ | ✓ | ✓ |
+| `wstr` | std::wstring (UTF-16) | ✓ | ✓ | ✓ |
+
+`string_view` / `wstring_view` write-convenience overloads are also tested for all three backends.
 
 ## 4. Missing test cases to add
 
-- `TT_I`, `TT_U`, `TT_L`, `TT_UL`, `TT_C`, `TT_UC`, `TT_S`, `TT_US`, `TT_LL`, `TT_B`
-- `TT_DT` (System::TDateTime)
-- `TT_FLT`, `TT_DBL`, `TT_CUR`
-- `GetTypeTag` validation for all text-to-type tags
-- `TConfigNodeValueType` conversion/serialization in JSON/XML/Registry
+All 21 variant types are now covered across all three backends. Potential future additions:
+
+- `GetTypeTag` validation for all text-to-type tag round-trips
+- Error/exception path tests for malformed JSON/XML input
 
 ---
 
@@ -98,4 +124,4 @@ Existing tests in `Test/test_types.cpp` cover:
 - [x] Builds
 - [x] `anafestica_test.exe` passes directly
 - [ ] `ctest -V` — known crash (SEGFAULTs due to Embarcadero RTL + pipe redirection incompatibility)
-- [ ] Add tests covering all variant types
+- [x] All 21 variant types covered across Registry, JSON, and XML backends

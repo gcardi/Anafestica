@@ -11,6 +11,8 @@
 #include <map>
 #include <type_traits>
 #include <iterator>
+#include <string>
+#include <string_view>
 #include <vector>
 
 #include <anafestica/CfgConts.h>
@@ -128,6 +130,17 @@ public:
 
     bool PutItem( String Id, TStrings* const Val, Operation Op = Operation::Write ) {
         return PutItem( Id, *Val, Op );
+    }
+
+    // Convenience overloads: string_view/wstring_view are non-owning, so they
+    // are materialised to string/wstring before being stored in the variant.
+    // Deserialization always returns std::string or std::wstring, never a view.
+    bool PutItem( String Id, std::string_view Val, Operation Op = Operation::Write ) {
+        return PutItem( Id, std::string( Val ), Op );
+    }
+
+    bool PutItem( String Id, std::wstring_view Val, Operation Op = Operation::Write ) {
+        return PutItem( Id, std::wstring( Val ), Op );
     }
 
     size_t GetNodeCount() const noexcept { return nodeItems_.size(); }

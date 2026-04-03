@@ -29,7 +29,7 @@ The container uses a tree structure where each node can contain:
 
 The following class diagram illustrates the full architecture, including inheritance hierarchies, composition/aggregation relationships, and the design patterns used throughout the library (notation follows Gamma et al., *Design Patterns*, 1994):
 
-![Anafestica Class Diagram](docs/images/class_diagram.svg)
+![Anafestica Class Diagram](docs/assets/images/class_diagram.svg)
 
 ## Core Classes
 

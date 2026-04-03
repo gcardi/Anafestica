@@ -78,7 +78,7 @@ public:
     }
 
     template<typename T>
-    T GetItem( String Id, Operation Op = Operation::None ) {
+    [[nodiscard]] T GetItem( String Id, Operation Op = Operation::None ) {
         T Val {};
         GetItem( Id, Val, Op );
         return Val;
@@ -143,12 +143,12 @@ public:
         return PutItem( Id, std::wstring( Val ), Op );
     }
 
-    size_t GetNodeCount() const noexcept { return nodeItems_.size(); }
+    [[nodiscard]] size_t GetNodeCount() const noexcept { return nodeItems_.size(); }
 
     template<typename OutputIterator>
     void EnumerateNodes( OutputIterator Output ) const;
 
-    size_t GetValueCount() const noexcept {
+    [[nodiscard]] size_t GetValueCount() const noexcept {
         return std::count_if(
             std::begin( valueItems_ ), std::end( valueItems_ ),
             []( auto const & Val ) {
@@ -166,7 +166,7 @@ public:
     template<typename OutputIterator>
     void EnumerateValues( OutputIterator Out ) const;
 
-    void DeleteItem( String Id ) {
+    void DeleteItem( String Id ) noexcept {
         auto i = valueItems_.find( Id );
         if ( i != std::end( valueItems_ ) ) {
             i->second.second = Operation::Erase;
@@ -178,23 +178,23 @@ public:
         if ( i != std::end( nodeItems_ ) ) { i->second->Clear(); }
     }
 
-    bool IsDeleted() const noexcept { return deleted_; }
+    [[nodiscard]] bool IsDeleted() const noexcept { return deleted_; }
 
-    bool IsModified() const noexcept {
+    [[nodiscard]] bool IsModified() const noexcept {
         return IsDeleted() || ValueListModified() || NodesModified();
     }
 
-    void Clear() {
+    void Clear() noexcept {
         deleted_ = true;
         valueItems_.clear();
         for ( auto& v : nodeItems_ ) { v.second->Clear(); }
     }
 
-    bool ItemExists( String Id ) const noexcept {
+    [[nodiscard]] bool ItemExists( String Id ) const noexcept {
         return valueItems_.find( Id ) != std::end( valueItems_ );
     }
 
-    bool SubNodeExists( String Id ) const noexcept {
+    [[nodiscard]] bool SubNodeExists( String Id ) const noexcept {
         return nodeItems_.find( Id ) != std::end( nodeItems_ );
     }
 

@@ -29,8 +29,8 @@ public:
                                    NativeInt Dummy,
                                    StoreOpts StoreOptions = StoreOpts::All,
                                    TConfigNode* const RootNode = nullptr );
-    void __fastcall BeforeDestruction();
-    TConfigNode& GetConfigNode() const { return configNode_; }
+    void __fastcall BeforeDestruction() override;
+    [[nodiscard]] TConfigNode& GetConfigNode() const noexcept { return configNode_; }
     static TConfigNode& GetConfigRootNode();
     void ReadValues();
     void SaveValues();
@@ -46,9 +46,9 @@ private:
     StoreOpts storeOptions_;
 
     TConfigNode& GetOrCreateConfigNode( TConfigNode * const RootNode );
-    static bool HaveToSaveOrRestoreSize( StoreOpts Val ) noexcept;
-    static bool HaveToSaveOrRestoreState( StoreOpts Val ) noexcept;
-    static bool HaveToSaveOrRestorePos( StoreOpts Val ) noexcept;
+    [[nodiscard]] static bool HaveToSaveOrRestoreSize( StoreOpts Val ) noexcept;
+    [[nodiscard]] static bool HaveToSaveOrRestoreState( StoreOpts Val ) noexcept;
+    [[nodiscard]] static bool HaveToSaveOrRestorePos( StoreOpts Val ) noexcept;
 };
 
 //---------------------------------------------------------------------------

@@ -128,7 +128,7 @@ enum class TypeTag : size_t {
 #define cnv_xstr( s ) cnv_str( s )
 #define cnv_str( s )  #s
 
-inline
+[[nodiscard]] inline
 std::optional<TypeTag> GetTypeTag( String Val )
 {
     using Cont =

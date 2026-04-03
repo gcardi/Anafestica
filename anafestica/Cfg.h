@@ -34,8 +34,8 @@ public:
 
     void DeleteNode( TConfigPath const & Path ) { DoDeleteNode( Path ); }
 
-    bool GetReadOnlyFlag() const noexcept { return readOnly_; }
-    bool GetAlwaysFlushNodeFlag() const noexcept { return flushAllItems_; }
+    [[nodiscard]] bool GetReadOnlyFlag() const noexcept { return readOnly_; }
+    [[nodiscard]] bool GetAlwaysFlushNodeFlag() const noexcept { return flushAllItems_; }
 
 protected:
     virtual ValueContType DoCreateValueList( TConfigPath const & Path ) = 0;

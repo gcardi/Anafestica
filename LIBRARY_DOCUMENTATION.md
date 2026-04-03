@@ -27,13 +27,17 @@ The container uses a tree structure where each node can contain:
 - Named values of various types
 - Named sub-nodes (child nodes)
 
+The following class diagram illustrates the full architecture, including inheritance hierarchies, composition/aggregation relationships, and the design patterns used throughout the library (notation follows Gamma et al., *Design Patterns*, 1994):
+
+![Anafestica Class Diagram](docs/images/class_diagram.svg)
+
 ## Core Classes
 
 ### TConfig (Abstract Base Class)
 
 The base class for all configuration implementations. It provides the interface for configuration operations.
 
-#### Public Members
+#### Public Interface
 
 ```cpp
 class TConfig {
@@ -51,10 +55,12 @@ public:
 ```
 
 **Constructor Parameters:**
+
 - `ReadOnly`: If true, prevents writing changes back to storage
 - `FlushAllItems`: If true, flushes all items regardless of modification status
 
 **Key Methods:**
+
 - `GetRootNode()`: Returns the root configuration node
 - `Flush()`: Writes all pending changes to storage
 - `CreateValueList()`: Creates a list of values for a given path
@@ -66,7 +72,7 @@ public:
 
 The main class representing a node in the configuration tree. Each node can contain values and sub-nodes.
 
-#### Public Members
+#### Public Interface
 
 ```cpp
 class TConfigNode {
@@ -160,7 +166,7 @@ Enumerated types are automatically handled. If the enum has RTTI information, it
 
 A utility class for extracting version information from the VERSIONINFO resource of a compiled executable. This class provides access to all standard version information fields that can be embedded in Windows executables through the VERSIONINFO resource.
 
-#### Public Members
+#### Properties and Constructor
 
 ```cpp
 class TFileVersionInfo {

@@ -1,0 +1,361 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1520 1580" font-family="Segoe UI, Arial, sans-serif" font-size="12">
+  <defs>
+    <marker id="arrow-inherit" markerWidth="12" markerHeight="8" refX="12" refY="4" orient="auto">
+      <polygon points="0,0 12,4 0,8" fill="white" stroke="#333" stroke-width="1"/>
+    </marker>
+    <marker id="arrow-dep" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0,0 8,3 0,6" fill="#666" stroke="#666" stroke-width="0.5"/>
+    </marker>
+    <marker id="diamond-comp" markerWidth="12" markerHeight="8" refX="0" refY="4" orient="auto">
+      <polygon points="0,4 6,0 12,4 6,8" fill="#333" stroke="#333" stroke-width="1"/>
+    </marker>
+    <marker id="diamond-aggr" markerWidth="12" markerHeight="8" refX="0" refY="4" orient="auto">
+      <polygon points="0,4 6,0 12,4 6,8" fill="white" stroke="#333" stroke-width="1"/>
+    </marker>
+    <style>
+      .cls-box { fill: #FFFDE7; stroke: #333; stroke-width: 1.5; }
+      .cls-abstract { fill: #E3F2FD; stroke: #1565C0; stroke-width: 1.8; }
+      .cls-template { fill: #F3E5F5; stroke: #6A1B9A; stroke-width: 1.5; }
+      .cls-singleton { fill: #E8F5E9; stroke: #2E7D32; stroke-width: 1.5; }
+      .cls-utility { fill: #FFF3E0; stroke: #E65100; stroke-width: 1.5; }
+      .cls-external { fill: #F5F5F5; stroke: #999; stroke-width: 1; stroke-dasharray: 4,2; }
+      .cls-variant { fill: #FCE4EC; stroke: #AD1457; stroke-width: 1.5; }
+      .title { font-size: 13px; font-weight: bold; }
+      .stereotype { font-size: 10px; font-style: italic; fill: #555; }
+      .member { font-size: 11px; }
+      .section-line { stroke: #333; stroke-width: 1; }
+      .inherit-line { stroke: #333; stroke-width: 1.5; marker-end: url(#arrow-inherit); }
+      .comp-line { stroke: #333; stroke-width: 1.2; marker-start: url(#diamond-comp); }
+      .aggr-line { stroke: #333; stroke-width: 1.2; marker-start: url(#diamond-aggr); }
+      .dep-line { stroke: #666; stroke-width: 1; stroke-dasharray: 5,3; marker-end: url(#arrow-dep); }
+      .legend-box { fill: #FAFAFA; stroke: #CCC; stroke-width: 1; rx: 6; }
+    </style>
+  </defs>
+
+  <!-- Title -->
+  <text x="760" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#222">Anafestica Library — Class Diagram (GoF / OMT notation)</text>
+  <text x="760" y="48" text-anchor="middle" font-size="11" fill="#777">Configuration persistence framework for Embarcadero RAD Studio (C++17)</text>
+
+  <!-- =========================================================== -->
+  <!-- TConfigNodeValueType (variant)                                -->
+  <!-- =========================================================== -->
+  <rect x="20" y="70" width="260" height="100" rx="4" class="cls-variant"/>
+  <text x="150" y="87" text-anchor="middle" class="stereotype">«variant type»</text>
+  <text x="150" y="103" text-anchor="middle" class="title">TConfigNodeValueType</text>
+  <line x1="20" y1="110" x2="280" y2="110" class="section-line"/>
+  <text x="30" y="125" class="member">std::variant / boost::variant</text>
+  <text x="30" y="139" class="member">21 alternative types: int, String,</text>
+  <text x="30" y="153" class="member">TDateTime, double, std::string, ...</text>
+  <text x="30" y="167" class="member" fill="#888" font-size="10">(CfgNodeValueType.h)</text>
+
+  <!-- Operation enum -->
+  <rect x="310" y="70" width="200" height="68" rx="4" class="cls-box"/>
+  <text x="410" y="87" text-anchor="middle" class="stereotype">«enum»</text>
+  <text x="410" y="103" text-anchor="middle" class="title">Operation</text>
+  <line x1="310" y1="110" x2="510" y2="110" class="section-line"/>
+  <text x="320" y="125" class="member">None, Write, Erase</text>
+
+  <!-- TypeTag enum -->
+  <rect x="310" y="150" width="200" height="68" rx="4" class="cls-box"/>
+  <text x="410" y="167" text-anchor="middle" class="stereotype">«enum»</text>
+  <text x="410" y="183" text-anchor="middle" class="title">TypeTag</text>
+  <line x1="310" y1="190" x2="510" y2="190" class="section-line"/>
+  <text x="320" y="205" class="member">TT_I .. TT_WSTR  (21 tags)</text>
+
+  <!-- =========================================================== -->
+  <!-- TConfigNode                                                   -->
+  <!-- =========================================================== -->
+  <rect x="560" y="70" width="360" height="220" rx="4" class="cls-box"/>
+  <text x="740" y="88" text-anchor="middle" class="title">TConfigNode</text>
+  <line x1="560" y1="95" x2="920" y2="95" class="section-line"/>
+  <text x="570" y="111" class="member">- valueItems_ : ValueContType</text>
+  <text x="570" y="126" class="member">- nodeItems_  : NodeContType</text>
+  <text x="570" y="141" class="member">- deleted_    : bool</text>
+  <line x1="560" y1="148" x2="920" y2="148" class="section-line"/>
+  <text x="570" y="163" class="member">+ GetSubNode(Id) : TConfigNode&amp;</text>
+  <text x="570" y="178" class="member">+ GetItem&lt;T&gt;(Id, Val, Op)</text>
+  <text x="570" y="193" class="member">+ PutItem&lt;T&gt;(Id, Val, Op) : bool</text>
+  <text x="570" y="208" class="member">+ Read&lt;R&gt;(Reader, Path)</text>
+  <text x="570" y="223" class="member">+ Write&lt;W&gt;(Writer, Path)</text>
+  <text x="570" y="238" class="member">+ IsModified() / IsDeleted() / Clear()</text>
+  <text x="570" y="253" class="member">+ EnumerateNodes / Values / Pairs</text>
+  <text x="570" y="268" class="member" fill="#888" font-size="10">+ RestoreValue&lt;T&gt;() / SaveValue&lt;T&gt;()  (free fn)</text>
+  <text x="570" y="283" class="member" fill="#888" font-size="10">(CfgItems.h)</text>
+
+  <!-- Self-composition arrow (TConfigNode contains TConfigNode) -->
+  <path d="M920,140 L960,140 L960,100 L920,100" fill="none" class="comp-line"/>
+  <text x="965" y="124" font-size="10" fill="#555">nodeItems_</text>
+  <text x="965" y="136" font-size="10" fill="#555">(recursive)</text>
+
+  <!-- Dependency: TConfigNode uses TConfigNodeValueType -->
+  <line x1="560" y1="130" x2="280" y2="120" class="dep-line"/>
+
+  <!-- Dependency: TConfigNode uses Operation -->
+  <line x1="560" y1="160" x2="510" y2="105" class="dep-line"/>
+
+  <!-- =========================================================== -->
+  <!-- TConfig (abstract)                                            -->
+  <!-- =========================================================== -->
+  <rect x="530" y="350" width="400" height="240" rx="4" class="cls-abstract"/>
+  <text x="730" y="370" text-anchor="middle" class="stereotype">«abstract»</text>
+  <text x="730" y="388" text-anchor="middle" class="title" fill="#1565C0">TConfig</text>
+  <line x1="530" y1="395" x2="930" y2="395" stroke="#1565C0" stroke-width="1"/>
+  <text x="540" y="411" class="member">- readOnly_      : bool</text>
+  <text x="540" y="426" class="member">- flushAllItems_ : bool</text>
+  <text x="540" y="441" class="member">- root_          : unique_ptr&lt;TConfigNode&gt;</text>
+  <line x1="530" y1="450" x2="930" y2="450" stroke="#1565C0" stroke-width="1"/>
+  <text x="540" y="466" class="member">+ GetRootNode() : TConfigNode&amp;</text>
+  <text x="540" y="481" class="member">+ Flush()</text>
+  <text x="540" y="496" class="member">+ CreateValueList(Path) : ValueContType</text>
+  <text x="540" y="511" class="member">+ SaveValueList(Path, Values)</text>
+  <text x="540" y="526" class="member">+ DeleteNode(Path)</text>
+  <line x1="530" y1="533" x2="930" y2="533" stroke="#1565C0" stroke-width="0.8" stroke-dasharray="3,2"/>
+  <text x="540" y="548" class="member" font-style="italic"># DoCreateValueList() = 0</text>
+  <text x="540" y="563" class="member" font-style="italic"># DoCreateNodeList() = 0</text>
+  <text x="540" y="578" class="member" font-style="italic"># DoSaveValueList() = 0  /  DoFlush() = 0</text>
+  <text x="540" y="585" class="member" fill="#888" font-size="10">(Cfg.h)</text>
+
+  <!-- Composition: TConfig ◆── TConfigNode -->
+  <line x1="730" y1="350" x2="730" y2="290" class="comp-line"/>
+  <text x="737" y="325" font-size="10" fill="#555">root_ (owns)</text>
+
+  <!-- =========================================================== -->
+  <!-- JSON::TConfig                                                 -->
+  <!-- =========================================================== -->
+  <rect x="60" y="700" width="310" height="200" rx="4" class="cls-box"/>
+  <text x="215" y="718" text-anchor="middle" class="stereotype">«concrete»</text>
+  <text x="215" y="736" text-anchor="middle" class="title">JSON::TConfig</text>
+  <line x1="60" y1="743" x2="370" y2="743" class="section-line"/>
+  <text x="70" y="758" class="member">- document_ : unique_ptr&lt;TJSONValue&gt;</text>
+  <text x="70" y="773" class="member">- fileName_ : String</text>
+  <text x="70" y="788" class="member">- compact_  : bool</text>
+  <text x="70" y="803" class="member">- explicitTypes_ : bool</text>
+  <line x1="60" y1="810" x2="370" y2="810" class="section-line"/>
+  <text x="70" y="826" class="member"># DoCreateValueList() override</text>
+  <text x="70" y="841" class="member"># DoCreateNodeList()  override</text>
+  <text x="70" y="856" class="member"># DoSaveValueList()   override</text>
+  <text x="70" y="871" class="member"># DoFlush()           override</text>
+  <text x="70" y="893" class="member" fill="#888" font-size="10">(CfgJSON.h) — nested: JSONObjRAII</text>
+
+  <!-- Inheritance: JSON::TConfig -> TConfig -->
+  <line x1="215" y1="700" x2="630" y2="590" class="inherit-line"/>
+
+  <!-- =========================================================== -->
+  <!-- XML::TConfig                                                  -->
+  <!-- =========================================================== -->
+  <rect x="410" y="700" width="310" height="185" rx="4" class="cls-box"/>
+  <text x="565" y="718" text-anchor="middle" class="stereotype">«concrete»</text>
+  <text x="565" y="736" text-anchor="middle" class="title">XML::TConfig</text>
+  <line x1="410" y1="743" x2="720" y2="743" class="section-line"/>
+  <text x="420" y="758" class="member">- XMLDoc_   : _di_IXMLDocument</text>
+  <text x="420" y="773" class="member">- fileName_ : String</text>
+  <line x1="410" y1="780" x2="720" y2="780" class="section-line"/>
+  <text x="420" y="796" class="member"># DoCreateValueList() override</text>
+  <text x="420" y="811" class="member"># DoCreateNodeList()  override</text>
+  <text x="420" y="826" class="member"># DoSaveValueList()   override</text>
+  <text x="420" y="841" class="member"># DoFlush()           override</text>
+  <text x="420" y="876" class="member" fill="#888" font-size="10">(CfgXML.h) — nested: XMLObjRAII</text>
+
+  <!-- Inheritance: XML::TConfig -> TConfig -->
+  <line x1="565" y1="700" x2="700" y2="590" class="inherit-line"/>
+
+  <!-- =========================================================== -->
+  <!-- Registry::TConfig                                             -->
+  <!-- =========================================================== -->
+  <rect x="760" y="700" width="310" height="185" rx="4" class="cls-box"/>
+  <text x="915" y="718" text-anchor="middle" class="stereotype">«concrete»</text>
+  <text x="915" y="736" text-anchor="middle" class="title">Registry::TConfig</text>
+  <line x1="760" y1="743" x2="1070" y2="743" class="section-line"/>
+  <text x="770" y="758" class="member">- rootPath_ : String</text>
+  <text x="770" y="773" class="member">- hKey_     : HKEY</text>
+  <line x1="760" y1="780" x2="1070" y2="780" class="section-line"/>
+  <text x="770" y="796" class="member"># DoCreateValueList() override</text>
+  <text x="770" y="811" class="member"># DoCreateNodeList()  override</text>
+  <text x="770" y="826" class="member"># DoSaveValueList()   override</text>
+  <text x="770" y="841" class="member"># DoFlush()           override</text>
+  <text x="770" y="876" class="member" fill="#888" font-size="10">(CfgRegistry.h) — nested: RegObjRAII</text>
+
+  <!-- Inheritance: Registry::TConfig -> TConfig -->
+  <line x1="915" y1="700" x2="780" y2="590" class="inherit-line"/>
+
+  <!-- =========================================================== -->
+  <!-- Singleton classes                                             -->
+  <!-- =========================================================== -->
+  <rect x="60" y="960" width="240" height="72" rx="4" class="cls-singleton"/>
+  <text x="180" y="978" text-anchor="middle" class="stereotype">«Singleton»</text>
+  <text x="180" y="996" text-anchor="middle" class="title" fill="#2E7D32">JSON::TConfigSingleton</text>
+  <line x1="60" y1="1003" x2="300" y2="1003" stroke="#2E7D32" stroke-width="1"/>
+  <text x="70" y="1018" class="member">+ GetConfig() : TConfig&amp;  (static)</text>
+  <text x="70" y="1028" class="member" fill="#888" font-size="10">(CfgJSONSingleton.h)</text>
+
+  <rect x="340" y="960" width="240" height="72" rx="4" class="cls-singleton"/>
+  <text x="460" y="978" text-anchor="middle" class="stereotype">«Singleton»</text>
+  <text x="460" y="996" text-anchor="middle" class="title" fill="#2E7D32">XML::TConfigSingleton</text>
+  <line x1="340" y1="1003" x2="580" y2="1003" stroke="#2E7D32" stroke-width="1"/>
+  <text x="350" y="1018" class="member">+ GetConfig() : TConfig&amp;  (static)</text>
+  <text x="350" y="1028" class="member" fill="#888" font-size="10">(CfgXMLSingleton.h)</text>
+
+  <rect x="620" y="960" width="270" height="72" rx="4" class="cls-singleton"/>
+  <text x="755" y="978" text-anchor="middle" class="stereotype">«Singleton»</text>
+  <text x="755" y="996" text-anchor="middle" class="title" fill="#2E7D32">Registry::TConfigSingleton</text>
+  <line x1="620" y1="1003" x2="890" y2="1003" stroke="#2E7D32" stroke-width="1"/>
+  <text x="630" y="1018" class="member">+ GetConfig() : TConfig&amp;  (static)</text>
+  <text x="630" y="1028" class="member" fill="#888" font-size="10">(CfgRegistrySingleton.h)</text>
+
+  <!-- Dependency: Singletons -> concrete TConfigs -->
+  <line x1="180" y1="960" x2="215" y2="900" class="dep-line"/>
+  <text x="145" y="940" font-size="9" fill="#666">«creates»</text>
+  <line x1="460" y1="960" x2="540" y2="885" class="dep-line"/>
+  <text x="435" y="940" font-size="9" fill="#666">«creates»</text>
+  <line x1="755" y1="960" x2="870" y2="885" class="dep-line"/>
+  <text x="730" y="940" font-size="9" fill="#666">«creates»</text>
+
+  <!-- =========================================================== -->
+  <!-- TPersistFormVCL                                               -->
+  <!-- =========================================================== -->
+  <rect x="110" y="1120" width="370" height="195" rx="4" class="cls-template"/>
+  <text x="295" y="1138" text-anchor="middle" class="stereotype">«template» CfgSingleton</text>
+  <text x="295" y="1156" text-anchor="middle" class="title" fill="#6A1B9A">TPersistFormVCL&lt;CfgSingleton&gt;</text>
+  <line x1="110" y1="1163" x2="480" y2="1163" stroke="#6A1B9A" stroke-width="1"/>
+  <text x="120" y="1178" class="member">- configNode_   : TConfigNode&amp;</text>
+  <text x="120" y="1193" class="member">- storeOptions_ : StoreOpts</text>
+  <line x1="110" y1="1200" x2="480" y2="1200" stroke="#6A1B9A" stroke-width="1"/>
+  <text x="120" y="1215" class="member">+ ReadValues() / SaveValues()</text>
+  <text x="120" y="1230" class="member">+ BeforeDestruction() override</text>
+  <text x="120" y="1245" class="member">+ GetConfigNode() : TConfigNode&amp;</text>
+  <text x="120" y="1260" class="member">+ GetConfigRootNode() (static)</text>
+  <text x="120" y="1275" class="member"># DoRestoreState() (virtual)</text>
+  <text x="120" y="1290" class="member" fill="#888" font-size="10">enum StoreOpts { None..All }</text>
+  <text x="120" y="1308" class="member" fill="#888" font-size="10">(PersistFormVCL.h)</text>
+
+  <!-- =========================================================== -->
+  <!-- TPersistFormWinFMX                                            -->
+  <!-- =========================================================== -->
+  <rect x="530" y="1120" width="380" height="180" rx="4" class="cls-template"/>
+  <text x="720" y="1138" text-anchor="middle" class="stereotype">«template» CfgSingleton</text>
+  <text x="720" y="1156" text-anchor="middle" class="title" fill="#6A1B9A">TPersistFormWinFMX&lt;CfgSingleton&gt;</text>
+  <line x1="530" y1="1163" x2="910" y2="1163" stroke="#6A1B9A" stroke-width="1"/>
+  <text x="540" y="1178" class="member">- configNode_   : TConfigNode&amp;</text>
+  <text x="540" y="1193" class="member">- storeOptions_ : StoreOpts</text>
+  <line x1="530" y1="1200" x2="910" y2="1200" stroke="#6A1B9A" stroke-width="1"/>
+  <text x="540" y="1215" class="member">+ ReadValues() / SaveValues()</text>
+  <text x="540" y="1230" class="member">+ BeforeDestruction() override</text>
+  <text x="540" y="1245" class="member">+ GetConfigNode() : TConfigNode&amp;</text>
+  <text x="540" y="1260" class="member">+ GetConfigRootNode() (static)</text>
+  <text x="540" y="1275" class="member" fill="#888" font-size="10">enum StoreOpts { None..All }</text>
+  <text x="540" y="1293" class="member" fill="#888" font-size="10">(PersistFormWinFMX.h)</text>
+
+  <!-- Aggregation: PersistForm -> TConfigNode (reference, not owning) -->
+  <line x1="295" y1="1120" x2="700" y2="290" class="aggr-line"/>
+  <text x="420" y="1110" font-size="10" fill="#555">configNode_ (ref)</text>
+
+  <line x1="720" y1="1120" x2="760" y2="290" class="aggr-line"/>
+
+  <!-- Dependency: PersistForm templates use Singletons -->
+  <line x1="295" y1="1120" x2="200" y2="1032" class="dep-line"/>
+  <text x="200" y="1080" font-size="9" fill="#666">«binds CfgSingleton»</text>
+
+  <line x1="720" y1="1120" x2="755" y2="1032" class="dep-line"/>
+  <text x="748" y="1080" font-size="9" fill="#666">«binds CfgSingleton»</text>
+
+  <!-- External base classes -->
+  <rect x="140" y="1380" width="200" height="40" rx="4" class="cls-external"/>
+  <text x="240" y="1405" text-anchor="middle" class="member" fill="#777">Vcl::Forms::TForm</text>
+
+  <rect x="590" y="1380" width="200" height="40" rx="4" class="cls-external"/>
+  <text x="690" y="1405" text-anchor="middle" class="member" fill="#777">Fmx::Forms::TForm</text>
+
+  <!-- Inheritance: PersistFormVCL -> TForm (VCL) -->
+  <line x1="295" y1="1315" x2="240" y2="1380" class="inherit-line"/>
+
+  <!-- Inheritance: PersistFormWinFMX -> TForm (FMX) -->
+  <line x1="720" y1="1300" x2="690" y2="1380" class="inherit-line"/>
+
+  <!-- =========================================================== -->
+  <!-- TFileVersionInfo                                              -->
+  <!-- =========================================================== -->
+  <rect x="1100" y="700" width="290" height="170" rx="4" class="cls-utility"/>
+  <text x="1245" y="718" text-anchor="middle" class="stereotype">«utility»</text>
+  <text x="1245" y="736" text-anchor="middle" class="title" fill="#E65100">TFileVersionInfo</text>
+  <line x1="1100" y1="743" x2="1390" y2="743" stroke="#E65100" stroke-width="1"/>
+  <text x="1110" y="758" class="member">- info_         : vector&lt;char&gt;</text>
+  <text x="1110" y="773" class="member">- langCharset_  : String</text>
+  <line x1="1100" y1="780" x2="1390" y2="780" stroke="#E65100" stroke-width="1"/>
+  <text x="1110" y="796" class="member">+ CompanyName  : String (property)</text>
+  <text x="1110" y="811" class="member">+ ProductName  : String (property)</text>
+  <text x="1110" y="826" class="member">+ FileVersion  : String (property)</text>
+  <text x="1110" y="841" class="member">+ ProductVersion : String (property)</text>
+  <text x="1110" y="856" class="member">+ ...</text>
+  <text x="1110" y="865" class="member" fill="#888" font-size="10">(FileVersionInfo.h)</text>
+
+  <!-- Dependency: Singletons use TFileVersionInfo -->
+  <line x1="300" y1="980" x2="1100" y2="780" class="dep-line"/>
+  <line x1="580" y1="980" x2="1100" y2="790" class="dep-line"/>
+  <line x1="890" y1="980" x2="1100" y2="800" class="dep-line"/>
+  <text x="1020" y="940" font-size="9" fill="#666">«uses»</text>
+
+  <!-- =========================================================== -->
+  <!-- LEGEND                                                        -->
+  <!-- =========================================================== -->
+  <rect x="1100" y="70" width="400" height="280" class="legend-box"/>
+  <text x="1300" y="95" text-anchor="middle" font-size="14" font-weight="bold" fill="#333">Legend</text>
+
+  <!-- Color legend -->
+  <rect x="1120" y="110" width="20" height="14" rx="2" class="cls-abstract"/>
+  <text x="1150" y="122" class="member">Abstract class</text>
+
+  <rect x="1120" y="130" width="20" height="14" rx="2" class="cls-box"/>
+  <text x="1150" y="142" class="member">Concrete class</text>
+
+  <rect x="1120" y="150" width="20" height="14" rx="2" class="cls-template"/>
+  <text x="1150" y="162" class="member">Template class</text>
+
+  <rect x="1120" y="170" width="20" height="14" rx="2" class="cls-singleton"/>
+  <text x="1150" y="182" class="member">Singleton</text>
+
+  <rect x="1120" y="190" width="20" height="14" rx="2" class="cls-utility"/>
+  <text x="1150" y="202" class="member">Utility class</text>
+
+  <rect x="1120" y="210" width="20" height="14" rx="2" class="cls-variant"/>
+  <text x="1150" y="222" class="member">Variant type</text>
+
+  <rect x="1120" y="230" width="20" height="14" rx="2" class="cls-external"/>
+  <text x="1150" y="242" class="member">External (Delphi RTL)</text>
+
+  <!-- Relationship legend -->
+  <line x1="1300" y1="120" x2="1370" y2="120" class="inherit-line"/>
+  <text x="1380" y="124" class="member">Inheritance</text>
+
+  <line x1="1300" y1="145" x2="1370" y2="145" class="comp-line"/>
+  <text x="1380" y="149" class="member">Composition</text>
+
+  <line x1="1300" y1="170" x2="1370" y2="170" class="aggr-line"/>
+  <text x="1380" y="174" class="member">Aggregation</text>
+
+  <line x1="1300" y1="195" x2="1370" y2="195" class="dep-line"/>
+  <text x="1380" y="199" class="member">Dependency</text>
+
+  <!-- Design patterns -->
+  <line x1="1110" y1="260" x2="1490" y2="260" stroke="#DDD" stroke-width="0.5"/>
+  <text x="1300" y="278" text-anchor="middle" font-size="11" font-weight="bold" fill="#555">Design Patterns</text>
+  <text x="1120" y="295" font-size="10" fill="#666">Template Method · Strategy · Singleton</text>
+  <text x="1120" y="310" font-size="10" fill="#666">Composite · RAII · Adapter</text>
+  <text x="1120" y="330" font-size="10" fill="#999">+ visibility   - private   # protected</text>
+
+  <!-- Pattern annotations -->
+  <!-- Template Method annotation -->
+  <rect x="960" y="480" width="140" height="32" rx="10" fill="#E3F2FD" stroke="#90CAF9" stroke-width="1"/>
+  <text x="1030" y="500" text-anchor="middle" font-size="10" font-style="italic" fill="#1565C0">Template Method</text>
+  <line x1="930" y1="496" x2="960" y2="496" stroke="#90CAF9" stroke-width="1" stroke-dasharray="3,2"/>
+
+  <!-- Strategy annotation -->
+  <rect x="960" y="640" width="110" height="32" rx="10" fill="#E3F2FD" stroke="#90CAF9" stroke-width="1"/>
+  <text x="1015" y="660" text-anchor="middle" font-size="10" font-style="italic" fill="#1565C0">Strategy</text>
+  <line x1="860" y1="656" x2="960" y2="656" stroke="#90CAF9" stroke-width="1" stroke-dasharray="3,2"/>
+
+  <!-- Composite annotation -->
+  <rect x="1020" y="130" width="100" height="28" rx="10" fill="#FFFDE7" stroke="#FFD54F" stroke-width="1"/>
+  <text x="1070" y="149" text-anchor="middle" font-size="10" font-style="italic" fill="#F57F17">Composite</text>
+  <line x1="1020" y1="144" x2="965" y2="120" stroke="#FFD54F" stroke-width="1" stroke-dasharray="3,2"/>
+
+</svg>

@@ -47,14 +47,14 @@ bool PutItemTo( ValueContType& Values, String Id,
 //---------------------------------------------------------------------------
 
 inline
-ValueType GetItemFrom( ValueContType& Values, String Id, ValueType DefVal,
-                       Operation Op )
+ValueType& GetItemFrom( ValueContType& Values, String Id, ValueType DefVal,
+                        Operation Op )
 {
     auto r =
         Values.insert(
             std::make_pair( Id, std::make_pair( DefVal, Op ) )
         );
-    return r.second ? DefVal : r.first->second.first;
+    return r.first->second.first;
 }
 
 //---------------------------------------------------------------------------

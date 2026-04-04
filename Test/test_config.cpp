@@ -84,6 +84,14 @@ inline BytesCont MakeVB() {
 const std::string  kSTR  = "Hello Anafestica (UTF-8)";
 const std::wstring kWSTR = L"Hello Anafestica (Wide)";
 
+enum class ETestMode {
+  Alpha = 1,
+  Beta  = 7,
+  Gamma = 11
+};
+
+constexpr ETestMode kEnum = ETestMode::Gamma;
+
 bool DABEqual( System::Sysutils::TBytes const& a,
                System::Sysutils::TBytes const& b ) noexcept
 {
@@ -400,6 +408,16 @@ BOOST_AUTO_TEST_CASE( Registry_string_view_write )
     BOOST_CHECK( c.GetRootNode().GetItem<std::wstring>( L"wsv" ) == kWSTR );
 }
 
+BOOST_AUTO_TEST_CASE( Registry_enum_roundtrip )
+{
+    const auto key = MakeRegCfgKey(); ScopedRegKey g( key );
+    { Anafestica::Registry::TConfig c( HKEY_CURRENT_USER, key );
+      c.GetRootNode().PutItem( L"mode", kEnum ); }
+    Anafestica::Registry::TConfig c( HKEY_CURRENT_USER, key );
+    BOOST_TEST( static_cast<int>( c.GetRootNode().GetItem<ETestMode>( L"mode" ) ) ==
+                static_cast<int>( kEnum ) );
+}
+
 BOOST_AUTO_TEST_CASE( Registry_subnode_roundtrip )
 {
     const auto key = MakeRegCfgKey(); ScopedRegKey g( key );
@@ -630,6 +648,16 @@ BOOST_AUTO_TEST_CASE( JSON_string_view_write )
     Anafestica::JSON::TConfig c( f );
     BOOST_TEST( c.GetRootNode().GetItem<std::string> ( L"sv"  ) == kSTR  );
     BOOST_CHECK( c.GetRootNode().GetItem<std::wstring>( L"wsv" ) == kWSTR );
+}
+
+BOOST_AUTO_TEST_CASE( JSON_enum_roundtrip )
+{
+    const auto f = MakeTempPath( L".json" ); TempFileGuard g( f );
+    { Anafestica::JSON::TConfig c( f );
+      c.GetRootNode().PutItem( L"mode", kEnum ); }
+    Anafestica::JSON::TConfig c( f );
+    BOOST_TEST( static_cast<int>( c.GetRootNode().GetItem<ETestMode>( L"mode" ) ) ==
+                static_cast<int>( kEnum ) );
 }
 
 BOOST_AUTO_TEST_CASE( JSON_subnode_roundtrip )
@@ -878,6 +906,16 @@ BOOST_AUTO_TEST_CASE( INIFile_string_view_write )
     BOOST_CHECK( c.GetRootNode().GetItem<std::wstring>( L"wsv" ) == kWSTR );
 }
 
+BOOST_AUTO_TEST_CASE( INIFile_enum_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"mode", kEnum ); }
+    Anafestica::INIFile::TConfig c( f );
+    BOOST_TEST( static_cast<int>( c.GetRootNode().GetItem<ETestMode>( L"mode" ) ) ==
+                static_cast<int>( kEnum ) );
+}
+
 BOOST_AUTO_TEST_CASE( INIFile_subnode_roundtrip )
 {
     const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
@@ -1106,6 +1144,16 @@ BOOST_AUTO_TEST_CASE( XML_string_view_write )
     Anafestica::XML::TConfig c( f );
     BOOST_TEST( c.GetRootNode().GetItem<std::string> ( L"sv"  ) == kSTR  );
     BOOST_CHECK( c.GetRootNode().GetItem<std::wstring>( L"wsv" ) == kWSTR );
+}
+
+BOOST_AUTO_TEST_CASE( XML_enum_roundtrip )
+{
+    const auto f = MakeTempPath( L".xml" ); TempFileGuard g( f );
+    { Anafestica::XML::TConfig c( f );
+      c.GetRootNode().PutItem( L"mode", kEnum ); }
+    Anafestica::XML::TConfig c( f );
+    BOOST_TEST( static_cast<int>( c.GetRootNode().GetItem<ETestMode>( L"mode" ) ) ==
+                static_cast<int>( kEnum ) );
 }
 
 BOOST_AUTO_TEST_CASE( XML_subnode_roundtrip )

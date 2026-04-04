@@ -93,6 +93,14 @@ rd /S /Q build
 | `str` | std::string (UTF-8) | ✓ | ✓ | ✓ | ✓ |
 | `wstr` | std::wstring (UTF-16) | ✓ | ✓ | ✓ | ✓ |
 
+`Test/test_config.cpp` also includes explicit enum roundtrip tests for all
+four backends:
+
+- `Registry_enum_roundtrip`
+- `JSON_enum_roundtrip`
+- `INIFile_enum_roundtrip`
+- `XML_enum_roundtrip`
+
 `string_view` / `wstring_view` write-convenience overloads are also tested for all four backends.
 
 ## 4. Missing test cases to add
@@ -121,3 +129,4 @@ All 21 variant types are now covered across all four backends (Registry, JSON, X
 - [x] `ctest -V` passes
 - [x] `anafestica_test.exe` passes directly
 - [x] All 21 variant types covered across Registry, JSON, XML, and INI backends
+- [x] Enum roundtrip covered across Registry, JSON, XML, and INI backends

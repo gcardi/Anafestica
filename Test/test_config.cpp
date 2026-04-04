@@ -22,6 +22,7 @@
 #include <anafestica/CfgRegistry.h>
 #include <anafestica/CfgJSON.h>
 #include <anafestica/CfgXML.h>
+#include <anafestica/CfgIniFile.h>
 #include <anafestica/CfgNodeValueType.h>
 
 #include <System.Classes.hpp>
@@ -659,9 +660,240 @@ BOOST_AUTO_TEST_SUITE_END()
 
 
 //---------------------------------------------------------------------------
+// *** INIFile::TConfig tests ***
+//---------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_SUITE( TConfig_INIFile )
+
+BOOST_AUTO_TEST_CASE( INIFile_int_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kI ); }
+    Anafestica::INIFile::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<int>( L"val" ) == kI );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_uint_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kU ); }
+    Anafestica::INIFile::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<unsigned int>( L"val" ) == kU );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_long_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kL ); }
+    Anafestica::INIFile::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<long>( L"val" ) == kL );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_ulong_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kUL ); }
+    Anafestica::INIFile::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<unsigned long>( L"val" ) == kUL );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_char_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kC ); }
+    Anafestica::INIFile::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<char>( L"val" ) == kC );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_uchar_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kUC ); }
+    Anafestica::INIFile::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<unsigned char>( L"val" ) == kUC );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_short_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kS ); }
+    Anafestica::INIFile::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<short>( L"val" ) == kS );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_ushort_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kUS ); }
+    Anafestica::INIFile::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<unsigned short>( L"val" ) == kUS );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_longlong_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kLL ); }
+    Anafestica::INIFile::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<long long>( L"val" ) == kLL );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_ulonglong_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kULL ); }
+    Anafestica::INIFile::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<unsigned long long>( L"val" ) == kULL );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_bool_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kB ); }
+    Anafestica::INIFile::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<bool>( L"val" ) == kB );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_string_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", String( kSZ ) ); }
+    Anafestica::INIFile::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<String>( L"val" ) == String( kSZ ) );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_datetime_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    const auto dt = kDT();
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", dt ); }
+    Anafestica::INIFile::TConfig c( f );
+    // ISO-8601 roundtrip – compare date portion only.
+    const auto got = c.GetRootNode().GetItem<System::TDateTime>( L"val" );
+    BOOST_TEST( DateOf( got ) == DateOf( dt ) );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_float_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kFLT ); }
+    Anafestica::INIFile::TConfig c( f );
+    // FloatToStrF with 9 significant digits; tolerate last-bit rounding.
+    const float got = c.GetRootNode().GetItem<float>( L"val" );
+    BOOST_TEST( std::abs( got - kFLT ) < 1e-3F );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_double_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kDBL ); }
+    Anafestica::INIFile::TConfig c( f );
+    // FloatToStrF with 17 significant digits; tolerate last-bit rounding.
+    const double got = c.GetRootNode().GetItem<double>( L"val" );
+    BOOST_TEST( std::abs( got - kDBL ) < 1e-12 );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_currency_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    const auto cur = kCUR();
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", cur ); }
+    Anafestica::INIFile::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<System::Currency>( L"val" ) == cur );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_stringvec_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    const auto sv = MakeSV();
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", sv ); }
+    Anafestica::INIFile::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<StringCont>( L"val" ) == sv );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_tbytes_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    const auto dab = MakeDAB();
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", dab ); }
+    Anafestica::INIFile::TConfig c( f );
+    BOOST_TEST( DABEqual( c.GetRootNode().GetItem<System::Sysutils::TBytes>( L"val" ), dab ) );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_bytevec_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    const auto vb = MakeVB();
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", vb ); }
+    Anafestica::INIFile::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<BytesCont>( L"val" ) == vb );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_stdstring_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kSTR ); }
+    Anafestica::INIFile::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<std::string>( L"val" ) == kSTR );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_wstring_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kWSTR ); }
+    Anafestica::INIFile::TConfig c( f );
+    BOOST_CHECK( c.GetRootNode().GetItem<std::wstring>( L"val" ) == kWSTR );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_string_view_write )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    std::string_view  sv  = kSTR;
+    std::wstring_view wsv = kWSTR;
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode().PutItem( L"sv",  sv  );
+      c.GetRootNode().PutItem( L"wsv", wsv ); }
+    Anafestica::INIFile::TConfig c( f );
+    BOOST_TEST(  c.GetRootNode().GetItem<std::string> ( L"sv"  ) == kSTR  );
+    BOOST_CHECK( c.GetRootNode().GetItem<std::wstring>( L"wsv" ) == kWSTR );
+}
+
+BOOST_AUTO_TEST_CASE( INIFile_subnode_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
+    { Anafestica::INIFile::TConfig c( f );
+      c.GetRootNode()[L"Child"][L"GrandChild"].PutItem( L"n", kI ); }
+    Anafestica::INIFile::TConfig c( f );
+    BOOST_TEST( c.GetRootNode()[L"Child"][L"GrandChild"].GetItem<int>( L"n" ) == kI );
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+//---------------------------------------------------------------------------
 // *** XML::TConfig tests ***
 //---------------------------------------------------------------------------
 
+#if 1
 BOOST_FIXTURE_TEST_SUITE( TConfig_XML, XMLCOMFixture )
 
 BOOST_AUTO_TEST_CASE( XML_int_roundtrip )
@@ -886,5 +1118,7 @@ BOOST_AUTO_TEST_CASE( XML_subnode_roundtrip )
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+#endif
 
 } // namespace

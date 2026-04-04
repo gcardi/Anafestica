@@ -163,9 +163,13 @@ private:
             if ( _di_IXMLNode Current = RootNode->ChildNodes->FindNode( ConfigNodeName ) ) {
                 for ( auto const & AttrName : Path ) {
                     if ( (Current = Current->ChildNodes->FindNode( NodesNodeName )) ) {
-                        if ( (Current = FindNodeByNameAndAttrValue( Current, NodeNodeName, NameAttrName, AttrName )) ) {
-                            return Current;
+                        Current = FindNodeByNameAndAttrValue( Current, NodeNodeName, NameAttrName, AttrName );
+                        if ( !Current ) {
+                            break;
                         }
+                    }
+                    else {
+                        break;
                     }
                 }
                 return Current;

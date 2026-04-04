@@ -1,5 +1,5 @@
 # Anafestica
-A header-only library for the persistence of application settings in the Windows Registry or other media (JSON, XML, etc.)
+A header-only library for the persistence of application settings in the Windows Registry or other media (JSON, XML, INI, etc.)
 
 ## Rationale
 
@@ -11,7 +11,7 @@ The library consists of two main parts: a container part (which is generalized) 
 
 Windows applications' persistent data is typically stored in the Registry, following conventions based on the application's nature (whether it's a normal application, service, or other application type). By changing the serialization part via a template parameter (i.e., it's a Policy), you can specify both the data format and storage medium. It is also possible to use several different storage media and formats within the same application. Each serialization format is associated with a specific container, meaning each container is bound to a serializer that can have its own format and storage medium.
 
-The current library version includes serializers for Windows Registry, JSON, and XML files.
+The current library version includes serializers for Windows Registry, JSON, XML, and INI files.
 
 ## Getting Started
 

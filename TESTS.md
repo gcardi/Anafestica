@@ -70,37 +70,37 @@ rd /S /Q build
 
 `Test/test_types.cpp` covers low-level registry primitives (QWORD, MultiSz, binary, expand-string).
 
-`Test/test_config.cpp` covers full roundtrip through all three backends for all 21 types:
+`Test/test_config.cpp` covers full roundtrip through all four backends for all 21 types:
 
-| Tag | Type | Registry | JSON | XML |
-| --- | ---- | :------: | :--: | :-: |
-| `i` | int | ✓ | ✓ | ✓ |
-| `u` | unsigned int | ✓ | ✓ | ✓ |
-| `l` | long | ✓ | ✓ | ✓ |
-| `ul` | unsigned long | ✓ | ✓ | ✓ |
-| `c` | char | ✓ | ✓ | ✓ |
-| `uc` | unsigned char | ✓ | ✓ | ✓ |
-| `s` | short | ✓ | ✓ | ✓ |
-| `us` | unsigned short | ✓ | ✓ | ✓ |
-| `ll` | long long | ✓ | ✓ | ✓ |
-| `ull` | unsigned long long | ✓ | ✓ | ✓ |
-| `b` | bool | ✓ | ✓ | ✓ |
-| `sz` | System::String | ✓ | ✓ | ✓ |
-| `dt` | System::TDateTime | ✓ | ✓ | ✓ |
-| `flt` | float | ✓ | ✓ | ✓ |
-| `dbl` | double | ✓ | ✓ | ✓ |
-| `cur` | System::Currency | ✓ | ✓ | ✓ |
-| `sv` | StringCont (vector\<String\>) | ✓ | ✓ | ✓ |
-| `dab` | TBytes | ✓ | ✓ | ✓ |
-| `vb` | BytesCont (vector\<Byte\>) | ✓ | ✓ | ✓ |
-| `str` | std::string (UTF-8) | ✓ | ✓ | ✓ |
-| `wstr` | std::wstring (UTF-16) | ✓ | ✓ | ✓ |
+| Tag | Type | Registry | JSON | XML | INI |
+| --- | ---- | :------: | :--: | :-: | :-: |
+| `i` | int | ✓ | ✓ | ✓ | ✓ |
+| `u` | unsigned int | ✓ | ✓ | ✓ | ✓ |
+| `l` | long | ✓ | ✓ | ✓ | ✓ |
+| `ul` | unsigned long | ✓ | ✓ | ✓ | ✓ |
+| `c` | char | ✓ | ✓ | ✓ | ✓ |
+| `uc` | unsigned char | ✓ | ✓ | ✓ | ✓ |
+| `s` | short | ✓ | ✓ | ✓ | ✓ |
+| `us` | unsigned short | ✓ | ✓ | ✓ | ✓ |
+| `ll` | long long | ✓ | ✓ | ✓ | ✓ |
+| `ull` | unsigned long long | ✓ | ✓ | ✓ | ✓ |
+| `b` | bool | ✓ | ✓ | ✓ | ✓ |
+| `sz` | System::String | ✓ | ✓ | ✓ | ✓ |
+| `dt` | System::TDateTime | ✓ | ✓ | ✓ | ✓ |
+| `flt` | float | ✓ | ✓ | ✓ | ✓ |
+| `dbl` | double | ✓ | ✓ | ✓ | ✓ |
+| `cur` | System::Currency | ✓ | ✓ | ✓ | ✓ |
+| `sv` | StringCont (vector\<String\>) | ✓ | ✓ | ✓ | ✓ |
+| `dab` | TBytes | ✓ | ✓ | ✓ | ✓ |
+| `vb` | BytesCont (vector\<Byte\>) | ✓ | ✓ | ✓ | ✓ |
+| `str` | std::string (UTF-8) | ✓ | ✓ | ✓ | ✓ |
+| `wstr` | std::wstring (UTF-16) | ✓ | ✓ | ✓ | ✓ |
 
-`string_view` / `wstring_view` write-convenience overloads are also tested for all three backends.
+`string_view` / `wstring_view` write-convenience overloads are also tested for all four backends.
 
 ## 4. Missing test cases to add
 
-All 21 variant types are now covered across all three backends. Potential future additions:
+All 21 variant types are now covered across all four backends (Registry, JSON, XML, INI). Potential future additions:
 
 - `GetTypeTag` validation for all text-to-type tag round-trips
 - Error/exception path tests for malformed JSON/XML input
@@ -124,4 +124,4 @@ All 21 variant types are now covered across all three backends. Potential future
 - [x] Builds
 - [x] `anafestica_test.exe` passes directly
 - [ ] `ctest -V` — known crash (SEGFAULTs due to Embarcadero RTL + pipe redirection incompatibility)
-- [x] All 21 variant types covered across Registry, JSON, and XML backends
+- [x] All 21 variant types covered across Registry, JSON, XML, and INI backends

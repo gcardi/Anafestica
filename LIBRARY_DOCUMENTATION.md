@@ -2,14 +2,14 @@
 
 ## Overview
 
-Anafestica is a header-only C++ library designed for the persistence of application settings in various storage media, including the Windows Registry, JSON files, and XML files. It provides a hierarchical, heterogeneous container that mimics the Windows Registry structure but operates in application memory, allowing seamless saving and loading of configuration data.
+Anafestica is a header-only C++ library designed for the persistence of application settings in various storage media, including the Windows Registry, JSON files, XML files, and INI files. It provides a hierarchical, heterogeneous container that mimics the Windows Registry structure but operates in application memory, allowing seamless saving and loading of configuration data.
 
 The library is particularly well-suited for GUI applications (FMX, VCL, and others) where it simplifies the management of persistent attributes such as form positions, sizes, states, and custom application settings. It requires minimal code changes to existing applications and supports multiple storage formats through a policy-based design.
 
 ## Key Features
 
 - **Header-only library**: No compilation required, just include the necessary headers
-- **Multiple storage backends**: Windows Registry, JSON files, XML files
+- **Multiple storage backends**: Windows Registry, JSON files, XML files, INI files
 - **Hierarchical data structure**: Tree-like organization similar to Windows Registry
 - **Type-safe operations**: Supports various data types including primitives, strings, dates, and collections
 - **Singleton pattern support**: Easy access through singleton classes
@@ -303,6 +303,35 @@ public:
 - `FileName`: Path to the XML file
 - `ReadOnly`, `FlushAllItems`: Same as base class
 
+### INIFile::TConfig
+
+Implements configuration storage in classic Windows INI files using `TMemIniFile`.
+
+```cpp
+namespace INIFile {
+class TConfig : public Anafestica::TConfig {
+public:
+    TConfig(String FileName, bool ReadOnly = false, bool FlushAllItems = false);
+};
+}
+```
+
+**Constructor Parameters:**
+- `FileName`: Path to the INI file (UTF-8 encoding)
+- `ReadOnly`, `FlushAllItems`: Same as base class
+
+**Storage layout:**  
+The INI file is structured around sections and key/value pairs. The root node maps to the section `config`; nested paths are flattened into section names using a backslash separator, e.g. `config\Database\Primary`. Each value's key name encodes the type tag using the `Name::(TypeTag)` convention (e.g., `port::(i)=5432`, `host::(sz)=localhost`). This lets the serializer reconstruct the correct C++ type unambiguously when reading back, since all INI values are stored as plain text.
+
+**Type encoding details:**
+- Integer and floating-point types use their decimal representation.
+- `bool` is stored as `1` or `0`.
+- `TDateTime` is stored in ISO-8601 format.
+- `StringCont` (vector\<String\>) is pipe-separated with `\` and `|` backslash-escaped.
+- `TBytes` and `BytesCont` are Base64-encoded (same scheme as the XML/JSON backends).
+- `std::string` is stored as UTF-8; `std::wstring` is stored as UTF-16 transcoded to UTF-8 in the file.
+- The file itself is written in UTF-8 via `TEncoding::UTF8`.
+
 ## Singleton Classes
 
 For convenience, the library provides singleton classes that automatically determine the registry path from the application's version information.
@@ -319,6 +348,41 @@ public:
 This singleton creates a registry-based configuration using the path: `HKCU\Software\CompanyName\ProductName\ProductVersion`
 
 The CompanyName, ProductName, and ProductVersion are read from the application's version info resource.
+
+### TConfigJSONSingleton
+
+```cpp
+class TConfigJSONSingleton {
+public:
+    static Anafestica::TConfig& GetConfig();
+};
+```
+
+This singleton creates a JSON-based configuration. The file path is derived from the application's version info: `$(HOME)\CompanyName\ProductName\ProductVersion\AppName.json`.
+
+### TConfigXMLSingleton
+
+```cpp
+class TConfigXMLSingleton {
+public:
+    static Anafestica::TConfig& GetConfig();
+};
+```
+
+This singleton creates an XML-based configuration. The file path is derived from the application's version info: `$(HOME)\CompanyName\ProductName\ProductVersion\AppName.xml`.
+
+### TConfigINIFileSingleton
+
+```cpp
+class TConfigINIFileSingleton {
+public:
+    static Anafestica::TConfig& GetConfig();
+};
+```
+
+This singleton creates an INI-file-based configuration. The file path is derived from the application's version info: `$(HOME)\CompanyName\ProductName\ProductVersion\AppName.ini`.
+
+Include `<anafestica/CfgIniFileSingleton.h>` to use this singleton.
 
 ## Form Persistence Classes
 
@@ -577,6 +641,28 @@ root.PutItem(_D("AppName"), _D("MyApplication"));
 root.PutItem(_D("Version"), _D("1.0"));
 
 // Configuration is automatically saved on destruction
+```
+
+### INI File Configuration
+
+```cpp
+#include <anafestica/CfgIniFile.h>
+
+Anafestica::INIFile::TConfig config(_D("settings.ini"));
+auto& root = config.GetRootNode();
+
+root.PutItem(_D("AppName"), _D("MyApplication"));
+root.PutItem(_D("Port"), 5432);
+
+// Configuration is automatically saved on destruction
+```
+
+The resulting INI file will look like:
+
+```ini
+[config]
+AppName::(sz)=MyApplication
+Port::(i)=5432
 ```
 
 ### Using Collection Data Types

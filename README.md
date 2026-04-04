@@ -85,12 +85,10 @@ ninja
 4. Run tests:
 
 ```powershell
-.\anafestica_test.exe
+ctest -V
 ```
 
-> **Note:** Do not use `ctest` / `ctest -V`. The Embarcadero RTL crashes with a
-> segmentation fault when ctest redirects stdout to a pipe. Run the executable
-> directly instead.
+> **Note:** Use `ctest -V` for verbose test output and easier diagnostics.
 
 The CMakeLists file now sets `CTEST_OUTPUT_ON_FAILURE` by default:
 

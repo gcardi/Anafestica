@@ -30,14 +30,11 @@ cmake --build .
 1. Run tests:
 
 ```powershell
-cd build
-.\anafestica_test.exe
+ctest -V
 ```
 
-> **Note:** Do not use `ctest` or `ctest -V` to run the tests. Due to how ctest
-> redirects stdout to a pipe, the Embarcadero RTL crashes with a segmentation
-> fault / access violation mid-run. The same binary runs correctly when launched
-> directly. Always invoke `anafestica_test.exe` directly.
+> **Note:** `ctest -V` is the recommended command because it provides verbose
+> per-test output, which is helpful when diagnosing failures.
 
 1. Clean:
 
@@ -109,19 +106,18 @@ All 21 variant types are now covered across all four backends (Registry, JSON, X
 
 ## 5. CTest integration notes
 
-- `CMakeLists.txt` registers the test via `add_test()` for potential CI/CDash
-  integration, but **ctest cannot be used to run tests locally**.
-- Running via ctest causes a segmentation fault / access violation mid-run.
-  The root cause is that ctest redirects the child process stdout to a pipe;
-  the Embarcadero RTL then switches to full block-buffering and crashes before
-  flushing any output, making the failure impossible to diagnose through ctest.
-- **Always run `anafestica_test.exe` directly.**
+- `CMakeLists.txt` registers the test via `add_test()` for local use and
+  CI/CDash integration.
+- Use `ctest -V` as the default test runner so each test case and failure
+  context is printed verbosely.
+- Running `anafestica_test.exe` directly is still possible for targeted
+  debugging, but `ctest -V` is the recommended command for normal runs.
 
 ---
 
 ## 6. Quick checklist
 
 - [x] Builds
+- [x] `ctest -V` passes
 - [x] `anafestica_test.exe` passes directly
-- [ ] `ctest -V` — known crash (SEGFAULTs due to Embarcadero RTL + pipe redirection incompatibility)
 - [x] All 21 variant types covered across Registry, JSON, XML, and INI backends

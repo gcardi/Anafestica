@@ -114,6 +114,7 @@ set(ANAFESTICA_TEST_SOURCES
   Test/runner.cpp
   Test/test_types.cpp
   Test/test_config.cpp
+  Test/test_type_mismatch.cpp
 )
 
 add_executable(anafestica_test ${ANAFESTICA_TEST_SOURCES})

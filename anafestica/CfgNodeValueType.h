@@ -48,6 +48,17 @@ namespace Anafestica {
 using StringCont = std::vector<String>;
 using BytesCont = std::vector<Byte>;
 
+/// Heterogeneous variant holding any single configuration value.
+///
+/// Each alternative corresponds to a unique type tag (see @ref TypeTag).
+/// Backends encode the tag into the storage format (e.g. a suffix in the
+/// value name for Registry/INI, a "type" attribute for XML, a nested key
+/// for JSON) so that the correct alternative can be reconstructed on read.
+///
+/// Because every C++ type occupies a distinct alternative, reading a value
+/// with a type that differs from the one stored will cause @c std::get_if
+/// (or @c boost::get) to return @c nullptr, and @ref TConfigNode::GetItem
+/// will silently return @c T{}.
 using TConfigNodeValueType =
 #if defined( ANAFESTICA_USE_STD_VARIANT )
     std::variant<
@@ -101,6 +112,12 @@ using TConfigNodeValueType =
 #define ANA_TT_STR  str      // std::string  (UTF-8)
 #define ANA_TT_WSTR wstr     // std::wstring (UTF-16)
 
+/// Identifies the variant alternative stored in @ref TConfigNodeValueType.
+///
+/// Each enumerator maps 1:1 to an alternative in the variant and to a
+/// short text tag (e.g. @c "i", @c "sz", @c "dbl") used by backends to
+/// encode the type in the storage format.  See @ref GetTypeTag for the
+/// reverse mapping from text to enumerator.
 enum class TypeTag : size_t {
     TT_I,   // int
     TT_U,   // unsigned int
@@ -128,6 +145,12 @@ enum class TypeTag : size_t {
 #define ana_cnv_xstr( s ) ana_cnv_str( s )
 #define ana_cnv_str( s )  #s
 
+/// Maps a type-tag string (e.g. @c "i", @c "sz", @c "dbl") to its
+/// @ref TypeTag enumerator.
+///
+/// Uses binary search over a sorted @c constexpr array of all 21 tag
+/// strings.  Returns @c std::nullopt when @p Val does not match any
+/// known tag, which backends use to skip unrecognised entries.
 [[nodiscard]] inline
 std::optional<TypeTag> GetTypeTag( String Val )
 {

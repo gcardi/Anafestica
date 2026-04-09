@@ -14,6 +14,11 @@ namespace Anafestica {
 
 class TConfigNode;
 
+/// Tracks the dirty state of a value in the in-memory container.
+///
+/// - @c None  — value was loaded from storage and has not been modified.
+/// - @c Write — value has been created or changed; will be flushed on save.
+/// - @c Erase — value is marked for deletion; backends remove it on flush.
 enum class Operation { None, Write, Erase };
 
 using KeyType = String;
@@ -28,6 +33,13 @@ using NodeContType = std::map<KeyType,TConfigNodePtr>;
 
 //---------------------------------------------------------------------------
 
+/// Inserts or updates a value in the container.
+///
+/// If @p Id does not exist, inserts the pair as-is and returns @c true.
+/// If @p Id already exists and the stored variant differs from @p Val,
+/// overwrites it and marks the entry as @c Operation::Write.
+/// Returns @c false when the key was already present (regardless of
+/// whether the value changed).
 inline
 bool PutItemTo( ValueContType& Values, String Id,
                 ValuePairType const & Val )
@@ -46,6 +58,13 @@ bool PutItemTo( ValueContType& Values, String Id,
 }
 //---------------------------------------------------------------------------
 
+/// Retrieves (or lazily creates) a value entry by key.
+///
+/// Attempts to insert @p DefVal under @p Id.  If the key already exists
+/// the insert is a no-op and the *existing* variant is returned — this
+/// is how values loaded from storage survive a subsequent @c GetItem
+/// call with a different default.  The returned reference points into
+/// the map and remains valid until the map is modified.
 inline
 ValueType& GetItemFrom( ValueContType& Values, String Id, ValueType DefVal,
                         Operation Op )

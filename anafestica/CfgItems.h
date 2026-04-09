@@ -23,6 +23,25 @@ namespace Anafestica {
 
 using TConfigPath = std::vector<String>;
 
+/// In-memory hierarchical node that stores typed configuration values.
+///
+/// Mirrors a registry key (or an XML/JSON/INI section): it owns a map of
+/// named values (@ref ValueContType) and a map of named child nodes
+/// (@ref NodeContType).  Values are stored as @ref TConfigNodeValueType
+/// variants; the variant alternative is chosen at write time and checked
+/// at read time via @c std::get_if / @c boost::get.
+///
+/// @par Type dispatch
+/// @c GetItem and @c PutItem use a compile-time tag dispatch
+/// (@c is_other_tag / @c is_enum_tag) to route enum types through
+/// Delphi RTTI serialisation and all other types through the variant
+/// directly.
+///
+/// @par Type-mismatch behaviour
+/// If @c GetItem<T> is called but the stored variant alternative is not
+/// @c T, the @c get_if probe returns @c nullptr, the assignment is
+/// skipped, and the caller receives @c T{} (the default-initialised
+/// value).  This is by design — no exception is thrown.
 class TConfigNode
 {
 private:
@@ -50,6 +69,11 @@ public:
     TConfigNode( TConfigNode const & ) = delete;
     TConfigNode& operator=( TConfigNode const & ) = delete;
 
+    /// Returns (or creates) a child node by name.
+    ///
+    /// If a child named @p Id does not exist yet, a new empty node is
+    /// inserted and returned.  Subsequent calls with the same @p Id
+    /// return the same node.
     TConfigNode& GetSubNode( String Id ) {
         auto p =
             nodeItems_.insert( NodeContType::value_type( Id, TConfigNodePtr{} ) );
@@ -69,6 +93,13 @@ public:
     template<typename W>
     void Write( W& Writer, TConfigPath const & Path ) const;
 
+    /// Reads a value by key, writing the result into @p Val.
+    ///
+    /// Dispatches to @c GetItemAs with either @c is_other_tag or
+    /// @c is_enum_tag depending on whether @c T is an enum type.
+    /// If the stored variant alternative does not match @c T, @p Val is
+    /// left at its incoming value (typically @c T{} when called from the
+    /// single-argument overload).
     template<typename T>
     void GetItem( String Id, T& Val, Operation Op = Operation::None ) {
         GetItemAs(
@@ -77,6 +108,12 @@ public:
         );
     }
 
+    /// Reads a value by key, returning @c T{} on type mismatch or absence.
+    ///
+    /// Convenience overload that default-constructs @c T, calls the
+    /// two-argument form, and returns the result.  Because @c Val starts
+    /// as @c T{}, a type mismatch (stored variant alternative != @c T)
+    /// produces the default value with no exception.
     template<typename T>
     [[nodiscard]] T GetItem( String Id, Operation Op = Operation::None ) {
         T Val {};
@@ -108,6 +145,12 @@ public:
         GetItem( Id, *Val, Op );
     }
 
+    /// Stores a value under the given key.
+    ///
+    /// The variant alternative is determined by @c T at compile time;
+    /// backends will encode the corresponding type tag when flushing.
+    /// Enum types are routed through Delphi RTTI (stored as @c String
+    /// name when RTTI is available, otherwise as @c int).
     template<typename T>
     bool PutItem( String Id, T&& Val, Operation Op = Operation::Write ) {
         return PutItem(
@@ -230,6 +273,11 @@ private:
         return Val.second.second == Operation::Erase;
     }
 
+    /// Non-enum read path: probes the variant with @c get_if<T>.
+    ///
+    /// If the stored alternative matches @c T, @p Val is overwritten.
+    /// Otherwise @c get_if returns @c nullptr and @p Val is left
+    /// unchanged — this is the silent-default-on-mismatch contract.
     template<typename T>
     void GetItemAs( is_other_tag, String Id, T& Val, Operation Op ) {
         auto& Result = GetItemFrom( valueItems_, Id, Val, Op );
@@ -244,6 +292,12 @@ private:
 #endif
     }
 
+    /// Enum read path: uses Delphi RTTI when available.
+    ///
+    /// If @c __delphirtti(T) returns a valid type-info pointer the
+    /// stored @c String name is converted back via @c GetEnumValue.
+    /// Otherwise the enum is read as a plain @c int and @c static_cast
+    /// to @c T.  In both cases the same @c get_if mismatch rule applies.
     template<typename T>
     void GetItemAs( is_enum_tag, String Id, T& Val, Operation Op );
 
@@ -353,6 +407,12 @@ void TConfigNode::EnumerateValues( OutputIterator Out ) const
 }
 //---------------------------------------------------------------------------
 
+/// Recursively populates this node and all descendants from storage.
+///
+/// Calls @c Reader.CreateValueList to deserialise the values at @p Path,
+/// then @c Reader.CreateNodeList to discover child nodes, and recurses
+/// into each child with an extended path.  This is the read half of the
+/// two-phase RAII lifecycle: construction loads, destruction flushes.
 template<typename R>
 void TConfigNode::Read( R& Reader, TConfigPath const & Path )
 {
@@ -369,6 +429,12 @@ void TConfigNode::Read( R& Reader, TConfigPath const & Path )
 }
 //---------------------------------------------------------------------------
 
+/// Recursively flushes this node and all descendants to storage.
+///
+/// Deleted nodes are removed first.  Modified value lists are saved via
+/// @c Writer.SaveValueList.  When @c GetAlwaysFlushNodeFlag() is set
+/// (used by backends that rewrite the entire file), every node is saved
+/// regardless of its dirty state.
 template<typename W>
 void TConfigNode::Write( W& Writer, TConfigPath const & Path ) const
 {
@@ -391,6 +457,12 @@ void TConfigNode::Write( W& Writer, TConfigPath const & Path ) const
 }
 //---------------------------------------------------------------------------
 
+/// Convenience: reads a value from @p Node into @p Value.
+///
+/// Makes a temporary copy of the current value, calls @c GetItem to
+/// fill it from the node, and assigns back.  This avoids modifying
+/// @p Value if the key does not exist (the temporary keeps the old
+/// value, and @c GetItem leaves it unchanged on mismatch/absence).
 template<typename T>
 void RestoreValue( TConfigNode& Node, String KeyName, T& Value )
 {

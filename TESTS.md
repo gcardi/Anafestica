@@ -103,16 +103,25 @@ four backends:
 
 `string_view` / `wstring_view` write-convenience overloads are also tested for all four backends.
 
-## 4. Missing test cases to add
+### Type-mismatch tests
 
-All 21 variant types are now covered across all four backends (Registry, JSON, XML, INI). Potential future additions:
+`Test/test_type_mismatch.cpp` verifies that reading a value with a C++ type
+that differs from the type tag stored by the backend silently returns the
+default-initialised value (`T{}`).  The variant alternative written by
+`PutItem<A>()` does not match the `std::get_if<B>()` performed by
+`GetItem<B>()`, so the assignment is skipped and the caller gets `T{}`.
 
-- `GetTypeTag` validation for all text-to-type tag round-trips
-- Error/exception path tests for malformed JSON/XML input
+Five representative mismatch pairs are tested across all four backends:
 
----
+| Stored as | Read as | Why |
+| --------- | ------- | --- |
+| `int` (−42) | `double` | Two numeric types that users can confuse, but they are distinct variant alternatives |
+| `String` ("Hello") | `int` | String-to-numeric: common real-world mistake (value has tag `sz`, code reads as `i`) |
+| `int` (−42) | `String` | Reverse direction: numeric stored, code expects a string |
+| `bool` (true) | `int` | C++ converts bool↔int implicitly, but the variant treats them as separate alternatives |
+| `double` (3.14…) | `float` | Closely related FP types, easy to mix up, yet distinct in the variant |
 
-## 5. CTest integration notes
+## 4. CTest integration notes
 
 - `CMakeLists.txt` registers the test via `add_test()` for local use and
   CI/CDash integration.
@@ -123,10 +132,11 @@ All 21 variant types are now covered across all four backends (Registry, JSON, X
 
 ---
 
-## 6. Quick checklist
+## 5. Quick checklist
 
 - [x] Builds
 - [x] `ctest -V` passes
 - [x] `anafestica_test.exe` passes directly
 - [x] All 21 variant types covered across Registry, JSON, XML, and INI backends
 - [x] Enum roundtrip covered across Registry, JSON, XML, and INI backends
+- [x] Type-mismatch silent-default behaviour covered across all four backends

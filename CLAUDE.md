@@ -49,13 +49,11 @@ ctest -V
 
 Follow **Conventional Commits** format as used in recent history:
 
-```
+```text
 type(scope): short description
 ```
 
 Examples: `feat(ini):`, `fix(xml):`, `test(config):`, `docs(tests):`, `docs:`
-
-## Branching
 
 - `main` — stable branch
 - `develop` — active development branch (default working branch)

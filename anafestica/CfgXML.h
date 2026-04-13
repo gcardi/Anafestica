@@ -423,6 +423,7 @@ private:
                               );
                     },
 
+#if defined( ANAFESTICA_USE_STD_VARIANT )
                     [this, &ValueNode]( std::string const & Val ) {
                         ValueNode->Attributes[TypeAttrName] =
                             String( ana_cnv_xstr( ANA_TT_STR ) );
@@ -434,12 +435,10 @@ private:
                             String( ana_cnv_xstr( ANA_TT_WSTR ) );
                         ValueNode->Text = String( Val.c_str() );
                     }
+#endif
                 },
                 v.second.first
             );
-#if defined( ANAFESTICA_USE_STD_VARIANT )
-#else
-#endif
         }
     }
 
@@ -565,15 +564,17 @@ protected:
                 return VBytes;
             },
 
-            // TT_STR  – XML text decoded as UTF-8 std::string
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+            // TT_STR  – XML text decoded as UTF-8 std::string (bcc64x only)
             []( String Value ) {
                 return std::string( UTF8Encode( Value ).c_str() );
             },
 
-            // TT_WSTR – XML text decoded as UTF-16 std::wstring
+            // TT_WSTR – XML text decoded as UTF-16 std::wstring (bcc64x only)
             []( String Value ) {
                 return std::wstring( Value.c_str() );
             },
+#endif
         };
 
         ValueContType Values;

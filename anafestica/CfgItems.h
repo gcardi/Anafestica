@@ -174,9 +174,11 @@ public:
         return PutItem( Id, *Val, Op );
     }
 
+#if defined( ANAFESTICA_USE_STD_VARIANT )
     // Convenience overloads: string_view/wstring_view are non-owning, so they
     // are materialised to string/wstring before being stored in the variant.
-    // Deserialization always returns std::string or std::wstring, never a view.
+    // Only available on bcc64x: boost::variant on bcc64/bcc32c does not carry
+    // std::string or std::wstring as alternatives (Boost 1.70 mpl::list limit).
     bool PutItem( String Id, std::string_view Val, Operation Op = Operation::Write ) {
         return PutItem( Id, std::string( Val ), Op );
     }
@@ -184,6 +186,7 @@ public:
     bool PutItem( String Id, std::wstring_view Val, Operation Op = Operation::Write ) {
         return PutItem( Id, std::wstring( Val ), Op );
     }
+#endif
 
     [[nodiscard]] size_t GetNodeCount() const noexcept { return nodeItems_.size(); }
 

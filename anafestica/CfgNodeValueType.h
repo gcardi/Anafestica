@@ -14,30 +14,31 @@
 #include <utility>
 #include <algorithm>
 
-// Compiler-specific configuration for variant usage
-#if defined(__BORLANDC__) && !defined(__clang__)
-  // Old BCC32: not supported, emit error
-  #error "Old BCC32 compiler is not supported. Please use bcc32c, bcc64, or bcc64x compilers."
+// Compiler detection for variant selection.
+//
+//   bcc64x  (_WIN64, Clang >= 15): std::variant works correctly — selected automatically.
+//   bcc64   (_WIN64, Clang <  15): std::variant has an assignment bug (RSP-27418); boost::variant used.
+//   bcc32c  (_WIN32, Clang       ): boost::variant used.
+//   BCC32   (non-Clang           ): not supported.
+//
+// ANAFESTICA_USE_STD_VARIANT is the internal flag that switches between the two;
+// it is set here automatically and should not need to be defined manually.
+#if !defined(__clang__)
+  #error "Old legacy BCC32 is not supported. Use bcc32c, bcc64, or bcc64x."
+#elif defined(_WIN64)
+  #if __clang_major__ >= 15
+    // bcc64x: std::variant is fully functional
+    #define ANAFESTICA_USE_STD_VARIANT
+  #endif
+  // bcc64 (Clang < 15): falls through — boost::variant is used below
 #endif
-
-#if defined(__clang__) && defined(_WIN32) && !defined(__WIN64__)
-  // bcc32c: use boost::variant (do not define ANAFESTICA_USE_STD_VARIANT)
-  // ANAFESTICA_USE_STD_VARIANT is not defined here
-#endif
-
-#if defined(__clang__) && defined(__WIN64__) && defined(__BORLANDC__)
-  // bcc64: use boost::variant (do not define ANAFESTICA_USE_STD_VARIANT)
-  // ANAFESTICA_USE_STD_VARIANT is not defined here
-#endif
-
-#if defined(__clang__) && defined(__WIN64__) && !defined(__BORLANDC__)
-  // bcc64x: use std::variant (define ANAFESTICA_USE_STD_VARIANT)
-  #define ANAFESTICA_USE_STD_VARIANT
-#endif
+// bcc32c (_WIN32 + Clang): falls through — boost::variant is used below
 
 #if defined( ANAFESTICA_USE_STD_VARIANT )
 # include <variant>
 #else
+  // boost::variant path (bcc64/bcc32c): 19 types, within Boost 1.70's
+  // hardcoded mpl::list limit of 20. No limit overrides needed.
 # include <boost/variant.hpp>
 #endif
 
@@ -84,8 +85,13 @@ using TConfigNodeValueType =
       , StringCont                  // TT_SV  sv
       , System::Sysutils::TBytes    // TT_DAB dab
       , BytesCont                   // TT_VB  vb
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+      // std::string and std::wstring require std::variant (bcc64x only).
+      // Boost 1.70's mpl::list is hardcoded to 20 types, and we already
+      // use 19 above, so adding two more would exceed the limit on bcc64/bcc32c.
       , std::string                 // TT_STR str  (UTF-8)
       , std::wstring                // TT_WSTR wstr (UTF-16)
+#endif
     >;
 
 // Type identifiers -- prefixed to avoid macro namespace pollution
@@ -109,8 +115,12 @@ using TConfigNodeValueType =
 #define ANA_TT_SV   sv       // StringCont aka std::vector<String>
 #define ANA_TT_DAB  dab      // System::Sysutils::TBytes
 #define ANA_TT_VB   vb       // BytesCont aka std::vector<Byte>
+// ANA_TT_STR and ANA_TT_WSTR are only available on bcc64x (std::variant path).
+// On bcc64/bcc32c, std::string and std::wstring are not variant alternatives.
+#if defined( ANAFESTICA_USE_STD_VARIANT )
 #define ANA_TT_STR  str      // std::string  (UTF-8)
 #define ANA_TT_WSTR wstr     // std::wstring (UTF-16)
+#endif
 
 /// Identifies the variant alternative stored in @ref TConfigNodeValueType.
 ///
@@ -138,8 +148,10 @@ enum class TypeTag : size_t {
     TT_SV,  // StringCont aka std::vector<String>
     TT_DAB, // System::Sysutils::TBytes
     TT_VB,  // BytesCont aka std::vector<Byte>
-    TT_STR, // std::string  (UTF-8)
-    TT_WSTR // std::wstring (UTF-16)
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+    TT_STR, // std::string  (UTF-8)  — bcc64x only
+    TT_WSTR // std::wstring (UTF-16) — bcc64x only
+#endif
 };
 
 #define ana_cnv_xstr( s ) ana_cnv_str( s )
@@ -148,9 +160,12 @@ enum class TypeTag : size_t {
 /// Maps a type-tag string (e.g. @c "i", @c "sz", @c "dbl") to its
 /// @ref TypeTag enumerator.
 ///
-/// Uses binary search over a sorted @c constexpr array of all 21 tag
-/// strings.  Returns @c std::nullopt when @p Val does not match any
-/// known tag, which backends use to skip unrecognised entries.
+/// Uses binary search over a sorted @c constexpr array of tag strings.
+/// On bcc64x (std::variant path) the array has 21 entries including
+/// @c "str" and @c "wstr".  On bcc64/bcc32c (boost::variant path) those
+/// two tags are absent and the array has 19 entries.
+/// Returns @c std::nullopt when @p Val does not match any known tag,
+/// which backends use to skip unrecognised entries.
 [[nodiscard]] inline
 std::optional<TypeTag> GetTypeTag( String Val )
 {
@@ -164,8 +179,9 @@ std::optional<TypeTag> GetTypeTag( String Val )
 #endif
         >;
 
-    // Keys must be sorted because will be used with std::lower_bound
-    // Alphabetical order: b c cur dab dbl dt flt i l ll s str sv sz u uc ul ull us vb wstr
+    // Keys must be sorted for std::lower_bound.
+    // bcc64x  (21 entries): b c cur dab dbl dt flt i l ll s str sv sz u uc ul ull us vb wstr
+    // bcc64/bcc32c (19 entries): b c cur dab dbl dt flt i l ll s sv sz u uc ul ull us vb
     static constexpr Cont TypeIds {
         std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_B ),    TypeTag::TT_B    ),
         std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_C ),    TypeTag::TT_C    ),
@@ -178,7 +194,9 @@ std::optional<TypeTag> GetTypeTag( String Val )
         std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_L ),    TypeTag::TT_L    ),
         std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_LL ),   TypeTag::TT_LL   ),
         std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_S ),    TypeTag::TT_S    ),
+#if defined( ANAFESTICA_USE_STD_VARIANT )
         std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_STR ),  TypeTag::TT_STR  ),
+#endif
         std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_SV ),   TypeTag::TT_SV   ),
         std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_SZ ),   TypeTag::TT_SZ   ),
         std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_U ),    TypeTag::TT_U    ),
@@ -187,7 +205,9 @@ std::optional<TypeTag> GetTypeTag( String Val )
         std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_ULL ),  TypeTag::TT_ULL  ),
         std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_US ),   TypeTag::TT_US   ),
         std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_VB ),   TypeTag::TT_VB   ),
+#if defined( ANAFESTICA_USE_STD_VARIANT )
         std::make_pair( _D( "" ) ana_cnv_xstr( ANA_TT_WSTR ), TypeTag::TT_WSTR ),
+#endif
     };
 
     auto TypeIdIt =

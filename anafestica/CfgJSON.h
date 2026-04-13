@@ -390,6 +390,7 @@ overload(Ts...) -> overload<Ts...>;
                     );
                 },
 
+#if defined( ANAFESTICA_USE_STD_VARIANT )
                 [&Obj, &v]( std::string const & Val ) {
                     Write(
                         Obj, ana_cnv_xstr( ANA_TT_STR ), v.first,
@@ -407,6 +408,7 @@ overload(Ts...) -> overload<Ts...>;
                         )
                     );
                 }
+#endif
             },
             v.second.first
         );
@@ -546,18 +548,20 @@ protected:
                 return VBytes;
             },
 
-            // TT_STR  – JSON string decoded as UTF-8 std::string
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+            // TT_STR  – JSON string decoded as UTF-8 std::string (bcc64x only)
             []( TJSONValue& Value ) {
                 return std::string(
                     UTF8Encode( Value.GetValue<String>() ).c_str()
                 );
             },
 
-            // TT_WSTR – JSON string decoded as UTF-16 std::wstring
+            // TT_WSTR – JSON string decoded as UTF-16 std::wstring (bcc64x only)
             []( TJSONValue& Value ) {
                 auto s = Value.GetValue<String>();
                 return std::wstring( s.c_str() );
             },
+#endif
         };
 
         ValueContType Values;

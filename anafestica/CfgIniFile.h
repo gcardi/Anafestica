@@ -245,8 +245,10 @@ private:
                 []( StringCont const&            ) -> String { return String( ana_cnv_xstr( ANA_TT_SV   ) ); },
                 []( TBytes                       ) -> String { return String( ana_cnv_xstr( ANA_TT_DAB  ) ); },
                 []( std::vector<Byte> const&     ) -> String { return String( ana_cnv_xstr( ANA_TT_VB   ) ); },
+#if defined( ANAFESTICA_USE_STD_VARIANT )
                 []( std::string const&           ) -> String { return String( ana_cnv_xstr( ANA_TT_STR  ) ); },
                 []( std::wstring const&          ) -> String { return String( ana_cnv_xstr( ANA_TT_WSTR ) ); },
+#endif
             },
             Val
         );
@@ -361,12 +363,14 @@ private:
                             )
                     );
                 },
+#if defined( ANAFESTICA_USE_STD_VARIANT )
                 [&]( std::string const & Val ) {
                     ini_->WriteString( Section, Key, UTF8ToString( Val.c_str() ) );
                 },
                 [&]( std::wstring const & Val ) {
                     ini_->WriteString( Section, Key, String( Val.c_str() ) );
                 },
+#endif
             },
             v.second.first
         );
@@ -471,14 +475,16 @@ protected:
                 );
                 return VBytes;
             },
-            // TT_STR  (UTF-8 std::string)
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+            // TT_STR  (UTF-8 std::string)  — bcc64x only
             []( String Value ) -> TConfigNodeValueType {
                 return std::string( UTF8Encode( Value ).c_str() );
             },
-            // TT_WSTR (UTF-16 std::wstring)
+            // TT_WSTR (UTF-16 std::wstring) — bcc64x only
             []( String Value ) -> TConfigNodeValueType {
                 return std::wstring( Value.c_str() );
             },
+#endif
         };
 
         ValueContType Values;

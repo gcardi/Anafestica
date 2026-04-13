@@ -3,7 +3,7 @@
 #ifndef CfgXMLSingletonH
 #define CfgXMLSingletonH
 
-#include <anafestica/FileVersionInfo.h>
+#include <anafestica/CfgSingletonVersionInfo.h>
 #include <anafestica/CfgXML.h>
 
 //---------------------------------------------------------------------------
@@ -14,7 +14,7 @@ namespace XML {
 
 inline String GetFileName( String FileName )
 {
-    TFileVersionInfo const Info( FileName );
+    auto const Info = GetSingletonFileVersionInfo( FileName );
     return
         TPath::ChangeExtension(
             TPath::Combine(

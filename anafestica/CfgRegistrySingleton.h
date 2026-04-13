@@ -3,7 +3,7 @@
 #ifndef CfgRegistrySingletonH
 #define CfgRegistrySingletonH
 
-#include <anafestica/FileVersionInfo.h>
+#include <anafestica/CfgSingletonVersionInfo.h>
 #include <anafestica/CfgRegistry.h>
 
 //---------------------------------------------------------------------------
@@ -14,7 +14,7 @@ namespace Registry {
 
 inline String GetProductPath( String FileName )
 {
-    TFileVersionInfo const Info( FileName );
+    auto const Info = GetSingletonFileVersionInfo( FileName );
 
     return Format(
         _D( "%s\\%s\\%s" ),

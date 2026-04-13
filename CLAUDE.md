@@ -10,7 +10,7 @@ It targets **C++Builder** (Embarcadero RAD Studio) and its Clang-based compilers
 
 ## Repository layout
 
-```
+```text
 anafestica/       — Public header files (the library itself)
 App/              — Demo / sample application
 Demo/             — Additional demo code
@@ -39,7 +39,7 @@ ctest -V
 
 - **Header-only** — all library code lives in `anafestica/*.h`; do not add `.cpp` files to the library
 - **C++17** standard; no C++20 features
-- Uses `boost::variant` by default; `std::variant` is enabled via `ANAFESTICA_USE_STD_VARIANT` (for `bcc64x`)
+- Variant selection is auto-detected in `CfgNodeValueType.h` via `__clang_major__`: `std::variant` for bcc64x (Clang ≥ 15), `boost::variant` for bcc64/bcc32c — no manual `ANAFESTICA_USE_STD_VARIANT` definition needed
 - NVI (Non-Virtual Interface) pattern on `TConfig` — public non-virtual methods delegate to `protected virtual Do*` hooks
 - RAII lifecycle: constructors load from storage, destructors flush back
 - Embarcadero types are used throughout: `System::String`, `System::TDateTime`, `System::Currency`, `System::Sysutils::TBytes`

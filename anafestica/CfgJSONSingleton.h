@@ -3,7 +3,7 @@
 #ifndef CfgJSONSingletonH
 #define CfgJSONSingletonH
 
-#include <anafestica/FileVersionInfo.h>
+#include <anafestica/CfgSingletonVersionInfo.h>
 #include <anafestica/CfgJSON.h>
 
 
@@ -15,7 +15,7 @@ namespace JSON {
 
 inline String GetFileName( String FileName )
 {
-    TFileVersionInfo const Info( FileName );
+    auto const Info = GetSingletonFileVersionInfo( FileName );
     return
         TPath::ChangeExtension(
             TPath::Combine(

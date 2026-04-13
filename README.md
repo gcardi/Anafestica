@@ -25,9 +25,14 @@ For detailed API documentation, see [Library Documentation](LIBRARY_DOCUMENTATIO
 
 ### Prerequisites / Dependencies
 
-Anafestica uses `boost::variant` instead of `std::variant` due to an unresolved bug in C++Builder's standard library that prevents direct assignment of values to `std::variant` (see https://quality.embarcadero.com/browse/RSP-27418 on the Embarcadero Quality Portal). However, the `bcc64x` compiler (which uses Clang 20) supports `std::variant` properly, so you can optionally use standard library variants by defining `ANAFESTICA_USE_STD_VARIANT` as a project-wide preprocessor definition when using this compiler.
+The library selects the variant implementation automatically based on the compiler:
 
-When using `bcc32c` or `bcc64` compilers, the Boost libraries are required. The `boost::variant` class is part of the Boost project libraries. You must first obtain the Boost libraries. Fortunately, you can use the IDE's GetIt tool to install them seamlessly (e.g., version 1.68.0 for RAD Studio 10.3 or 1.70.0 for RAD Studio 10.4).
+- **bcc64x** (Clang ≥ 15, 64-bit): `std::variant` is used. No preprocessor definitions are needed.
+- **bcc64** (Clang < 15, 64-bit) and **bcc32c** (32-bit Clang): `boost::variant` is used, because `std::variant` has an unresolved assignment bug in those toolchains (see [RSP-27418](https://quality.embarcadero.com/browse/RSP-27418)).
+
+The selection is performed inside `CfgNodeValueType.h` via the `__clang_major__` predefined macro; no manual `ANAFESTICA_USE_STD_VARIANT` definition is required.
+
+When `boost::variant` is selected (`bcc64` or `bcc32c`), the Boost libraries are required. You can install them via the IDE's GetIt tool (e.g., version 1.68.0 for RAD Studio 10.3 or 1.70.0 for RAD Studio 10.4).
 
 <img src="docs/assets/images/1.png" alt="Figure 1">
 

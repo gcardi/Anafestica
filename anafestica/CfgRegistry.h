@@ -519,8 +519,11 @@ protected:
                 "(" ana_cnv_xstr( ANA_TT_DT )  ")|(" ana_cnv_xstr( ANA_TT_FLT ) ")|"
                 "(" ana_cnv_xstr( ANA_TT_DBL ) ")|(" ana_cnv_xstr( ANA_TT_CUR ) ")|"
                 "(" ana_cnv_xstr( ANA_TT_SV )   ")|(" ana_cnv_xstr( ANA_TT_DAB )  ")|"
-                "(" ana_cnv_xstr( ANA_TT_VB )   ")|(" ana_cnv_xstr( ANA_TT_STR )  ")|"
-                "(" ana_cnv_xstr( ANA_TT_WSTR ) ")"
+                "(" ana_cnv_xstr( ANA_TT_VB )   ")"
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+                "|(" ana_cnv_xstr( ANA_TT_STR )  ")"
+                "|(" ana_cnv_xstr( ANA_TT_WSTR ) ")"
+#endif
             "))\\))\?$"
         );
 
@@ -653,16 +656,18 @@ protected:
                 return std::move( Bytes );
             },
 
-            // str    (TT_STR)    REG_SZ        ReadString → std::string (UTF-8)
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+            // str    (TT_STR)    REG_SZ        ReadString → std::string (UTF-8)  bcc64x only
             []( RegObjType& Reg, String KeyName ) {
                 return std::string( UTF8Encode( Reg.ReadString( KeyName ) ).c_str() );
             },
 
-            // wstr   (TT_WSTR)   REG_SZ        ReadString → std::wstring (UTF-16)
+            // wstr   (TT_WSTR)   REG_SZ        ReadString → std::wstring (UTF-16) bcc64x only
             []( RegObjType& Reg, String KeyName ) {
                 auto s = Reg.ReadString( KeyName );
                 return std::wstring( s.c_str() );
             },
+#endif
         };
 
         struct PutItem {
@@ -1104,7 +1109,8 @@ private:
                     );
                 },
 
-                // str    (TT_STR)   REG_SZ        WriteString (UTF-8 → UTF-16)
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+                // str    (TT_STR)   REG_SZ        WriteString (UTF-8 → UTF-16) bcc64x only
                 [&Reg, &v]( std::string const & Val ) {
                     Reg.WriteString(
                         Format(
@@ -1115,7 +1121,7 @@ private:
                     );
                 },
 
-                // wstr   (TT_WSTR)  REG_SZ        WriteString (UTF-16)
+                // wstr   (TT_WSTR)  REG_SZ        WriteString (UTF-16) bcc64x only
                 [&Reg, &v]( std::wstring const & Val ) {
                     Reg.WriteString(
                         Format(
@@ -1125,6 +1131,7 @@ private:
                         String( Val.c_str() )
                     );
                 }
+#endif
             },
             v.second.first
         );

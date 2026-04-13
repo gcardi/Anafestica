@@ -3,7 +3,7 @@
 #ifndef CfgIniFileSingletonH
 #define CfgIniFileSingletonH
 
-#include <anafestica/FileVersionInfo.h>
+#include <anafestica/CfgSingletonVersionInfo.h>
 #include <anafestica/CfgIniFile.h>
 
 //---------------------------------------------------------------------------
@@ -16,7 +16,7 @@ namespace INIFile {
 //   $(HOME)\$(CompanyName)\$(ProductName)\$(ProductVersion)\AppName.ini
 inline String GetFileName( String FileName )
 {
-    TFileVersionInfo const Info( FileName );
+    auto const Info = GetSingletonFileVersionInfo( FileName );
     return
         TPath::ChangeExtension(
             TPath::Combine(

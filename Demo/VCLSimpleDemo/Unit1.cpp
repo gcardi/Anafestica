@@ -46,7 +46,7 @@ __fastcall TForm1::~TForm1()
 
 String TForm1::GetModuleFileName()
 {
-    return GetModuleName( reinterpret_cast<unsigned>( HInstance ) );
+    return GetModuleName( reinterpret_cast<NativeUInt>( HInstance ) );
 }
 //---------------------------------------------------------------------------
 
@@ -54,7 +54,7 @@ void TForm1::SetupCaption()
 {
     Caption =
         Format(
-            _T( "%s, Ver %s" ),
+            _D( "%s, Ver %s" ),
             ARRAYOFCONST( (
                 Application->Title,
                 TFileVersionInfo{ GetModuleFileName() }.ProductVersion
@@ -93,7 +93,7 @@ void __fastcall TForm1::comboboxFontNameChange(TObject *Sender)
 
 void __fastcall TForm1::Timer1Timer(TObject *Sender)
 {
-    lblClock->Caption = Now().FormatString( _T( "hh.nn.ss") );
+    lblClock->Caption = Now().FormatString( _D( "hh.nn.ss") );
 }
 //---------------------------------------------------------------------------
 

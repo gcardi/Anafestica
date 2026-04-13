@@ -136,12 +136,15 @@
         <VerInfo_Locale>1033</VerInfo_Locale>
     </PropertyGroup>
     <ItemGroup>
-        <CppCompile Include="runner.cpp">
+        <CppCompile Include="TestBcc64x\runner.cpp">
             <BuildOrder>1</BuildOrder>
         </CppCompile>
-        <CppCompile Include="test_types.cpp">
-            <DependentOn>test_types.h</DependentOn>
+        <CppCompile Include="TestBcc64x\test_types.cpp">
+            <DependentOn>TestBcc64x\test_types.h</DependentOn>
             <BuildOrder>2</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="TestBcc64x\test_singleton_version_info.cpp">
+            <BuildOrder>3</BuildOrder>
         </CppCompile>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>

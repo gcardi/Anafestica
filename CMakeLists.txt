@@ -109,44 +109,66 @@ if(NOT Boost_FOUND)
   message(FATAL_ERROR "Boost unit_test_framework required")
 endif()
 
-# Source files
-set(ANAFESTICA_TEST_SOURCES
-  Test/runner.cpp
-  Test/test_types.cpp
-  Test/test_config.cpp
-  Test/test_type_mismatch.cpp
+set(ANAFESTICA_TEST_COMMON_SOURCES
+  Test/TestBcc64x/runner.cpp
 )
 
-add_executable(anafestica_test ${ANAFESTICA_TEST_SOURCES})
-
-target_compile_definitions(anafestica_test PRIVATE UNICODE _UNICODE)
-
-# Define ANAFESTICA_USE_STD_VARIANT for bcc64x compiler
-if(CMAKE_CXX_COMPILER MATCHES "bcc64x")
-  target_compile_definitions(anafestica_test PRIVATE ANAFESTICA_USE_STD_VARIANT)
-endif()
-
-target_include_directories(anafestica_test PRIVATE
-  ${CMAKE_SOURCE_DIR}
-  ${CMAKE_SOURCE_DIR}/anafestica
-  ${Boost_INCLUDE_DIRS}
+set(ANAFESTICA_TEST_BCC64X_SOURCES
+  Test/TestBcc64x/test_types.cpp
+  Test/TestBcc64x/test_config.cpp
+  Test/TestBcc64x/test_type_mismatch.cpp
+  Test/TestBcc64x/test_singleton_version_info.cpp
 )
 
-target_link_libraries(anafestica_test PRIVATE
-  ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+set(ANAFESTICA_TEST_BCC64_SOURCES
+  Test/TestBcc64/test_bcc64_variant_compat.cpp
 )
 
-if(WIN32)
-  # Registry, XML and Windows wrapper support
-  target_link_libraries(anafestica_test PRIVATE advapi32 rtl xmlrtl)
-  if(DEFINED BOOST_ROOT)
-    target_link_libraries(anafestica_test PRIVATE
-      "${BOOST_ROOT}/lib/win64x/release/SysInit.o"
-    )
+function(configure_anafestica_test_target target_name)
+  target_compile_definitions(${target_name} PRIVATE UNICODE _UNICODE)
+
+  # Define ANAFESTICA_USE_STD_VARIANT for bcc64x compiler
+  if(CMAKE_CXX_COMPILER MATCHES "bcc64x")
+    target_compile_definitions(${target_name} PRIVATE ANAFESTICA_USE_STD_VARIANT)
   endif()
-endif()
+
+  target_include_directories(${target_name} PRIVATE
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/anafestica
+    ${Boost_INCLUDE_DIRS}
+  )
+
+  target_link_libraries(${target_name} PRIVATE
+    ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+  )
+
+  if(WIN32)
+    # Registry, XML and Windows wrapper support
+    target_link_libraries(${target_name} PRIVATE advapi32 rtl xmlrtl)
+    if(DEFINED BOOST_ROOT)
+      target_link_libraries(${target_name} PRIVATE
+        "${BOOST_ROOT}/lib/win64x/release/SysInit.o"
+      )
+    endif()
+  endif()
+endfunction()
+
+add_executable(
+  anafestica_test_bcc64x
+  ${ANAFESTICA_TEST_COMMON_SOURCES}
+  ${ANAFESTICA_TEST_BCC64X_SOURCES}
+)
+configure_anafestica_test_target(anafestica_test_bcc64x)
+
+add_executable(
+  anafestica_test_bcc64
+  ${ANAFESTICA_TEST_COMMON_SOURCES}
+  ${ANAFESTICA_TEST_BCC64_SOURCES}
+)
+configure_anafestica_test_target(anafestica_test_bcc64)
 
 # Optional test runner federation
 enable_testing()
 set(CTEST_OUTPUT_ON_FAILURE TRUE CACHE INTERNAL "Show output when test fails")
-add_test(NAME ana COMMAND anafestica_test)
+add_test(NAME ana_bcc64x COMMAND anafestica_test_bcc64x)
+add_test(NAME ana_bcc64 COMMAND anafestica_test_bcc64)

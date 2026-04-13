@@ -4,6 +4,7 @@ __recovery/
 Test/Obsolete/
 Win32/
 Win64/
+Win64x/
 *.bak
 *.dcp
 *.dcu

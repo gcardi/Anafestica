@@ -56,18 +56,21 @@ rd /S /Q build
 
 ## 3. Current coverage for `TConfigNodeValueType`
 
-`TConfigNodeValueType` is a variant that includes 21 alternatives:
+`TConfigNodeValueType` holds **21 alternatives on bcc64x** (std::variant path, Clang ≥ 15)
+and **19 alternatives on bcc64/bcc32c** (boost::variant path) — the two C++ string types
+are absent there because Boost 1.70's `mpl::list` is hardcoded to a 20-type limit:
 
 - int, unsigned int, long, unsigned long, char, unsigned char, short, unsigned short
 - long long, unsigned long long, bool, System::String
 - System::TDateTime, float, double, System::Currency
 - StringCont (`std::vector<String>`), System::Sysutils::TBytes, BytesCont (`std::vector<Byte>`)
-- **std::string** (UTF-8, tag `str`)
-- **std::wstring** (UTF-16, tag `wstr`)
+- **std::string** (UTF-8, tag `str`) — bcc64x only
+- **std::wstring** (UTF-16, tag `wstr`) — bcc64x only
 
-`Test/test_types.cpp` covers low-level registry primitives (QWORD, MultiSz, binary, expand-string).
+`Test/TestBcc64x/test_types.cpp` covers low-level registry primitives (QWORD, MultiSz, binary, expand-string).
 
-`Test/test_config.cpp` covers full roundtrip through all four backends for all 21 types:
+`Test/TestBcc64x/test_config.cpp` covers full roundtrip through all four backends for all 21 types (bcc64x).
+`Test/TestBcc64/test_config.cpp` covers the same four backends for the 19 common types (bcc64).
 
 | Tag | Type | Registry | JSON | XML | INI |
 | --- | ---- | :------: | :--: | :-: | :-: |
@@ -90,10 +93,10 @@ rd /S /Q build
 | `sv` | StringCont (vector\<String\>) | ✓ | ✓ | ✓ | ✓ |
 | `dab` | TBytes | ✓ | ✓ | ✓ | ✓ |
 | `vb` | BytesCont (vector\<Byte\>) | ✓ | ✓ | ✓ | ✓ |
-| `str` | std::string (UTF-8) | ✓ | ✓ | ✓ | ✓ |
-| `wstr` | std::wstring (UTF-16) | ✓ | ✓ | ✓ | ✓ |
+| `str` | std::string (UTF-8) — bcc64x only | ✓ | ✓ | ✓ | ✓ |
+| `wstr` | std::wstring (UTF-16) — bcc64x only | ✓ | ✓ | ✓ | ✓ |
 
-`Test/test_config.cpp` also includes explicit enum roundtrip tests for all
+`Test/TestBcc64x/test_config.cpp` also includes explicit enum roundtrip tests for all
 four backends:
 
 - `Registry_enum_roundtrip`
@@ -101,11 +104,11 @@ four backends:
 - `INIFile_enum_roundtrip`
 - `XML_enum_roundtrip`
 
-`string_view` / `wstring_view` write-convenience overloads are also tested for all four backends.
+`string_view` / `wstring_view` write-convenience overloads are also tested for all four backends (bcc64x only).
 
 ### Type-mismatch tests
 
-`Test/test_type_mismatch.cpp` verifies that reading a value with a C++ type
+`Test/TestBcc64x/test_type_mismatch.cpp` (shared with the bcc64 target) verifies that reading a value with a C++ type
 that differs from the type tag stored by the backend silently returns the
 default-initialised value (`T{}`).  The variant alternative written by
 `PutItem<A>()` does not match the `std::get_if<B>()` performed by
@@ -127,8 +130,9 @@ Five representative mismatch pairs are tested across all four backends:
   CI/CDash integration.
 - Use `ctest -V` as the default test runner so each test case and failure
   context is printed verbosely.
-- Running `anafestica_test.exe` directly is still possible for targeted
-  debugging, but `ctest -V` is the recommended command for normal runs.
+- Running `anafestica_test_bcc64x.exe` or `anafestica_test_bcc64.exe` directly
+  is still possible for targeted debugging, but `ctest -V` is the recommended
+  command for normal runs.
 
 ---
 
@@ -137,6 +141,6 @@ Five representative mismatch pairs are tested across all four backends:
 - [x] Builds
 - [x] `ctest -V` passes
 - [x] `anafestica_test.exe` passes directly
-- [x] All 21 variant types covered across Registry, JSON, XML, and INI backends
+- [x] All 21 variant types covered (bcc64x) / 19 variant types (bcc64) across Registry, JSON, XML, and INI backends
 - [x] Enum roundtrip covered across Registry, JSON, XML, and INI backends
 - [x] Type-mismatch silent-default behaviour covered across all four backends

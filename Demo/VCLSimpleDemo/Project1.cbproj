@@ -7,7 +7,7 @@
         <MainSource>Project1.cpp</MainSource>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
-        <Platform Condition="'$(Platform)'==''">Win64x</Platform>
+        <Platform Condition="'$(Platform)'==''">Win64</Platform>
         <TargetedPlatforms>1048579</TargetedPlatforms>
         <ProjectName Condition="'$(ProjectName)'==''">Project1</ProjectName>
     </PropertyGroup>
@@ -124,7 +124,6 @@
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
         <BCC_EnableBatchCompilation>true</BCC_EnableBatchCompilation>
         <BCC_PCHName_Clang>CfgJSONSingleton.h</BCC_PCHName_Clang>
-        <Defines>ANAFESTICA_USE_STD_VARIANT;$(Defines)</Defines>
         <AppDPIAwarenessMode>none</AppDPIAwarenessMode>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">

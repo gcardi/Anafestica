@@ -178,6 +178,9 @@
         <CppCompile Include="test_type_mismatch.cpp">
             <BuildOrder>4</BuildOrder>
         </CppCompile>
+        <CppCompile Include="test_node_ops.cpp">
+            <BuildOrder>6</BuildOrder>
+        </CppCompile>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

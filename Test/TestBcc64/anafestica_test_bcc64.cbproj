@@ -169,6 +169,9 @@
         <CppCompile Include="test_type_mismatch.cpp">
             <BuildOrder>6</BuildOrder>
         </CppCompile>
+        <CppCompile Include="test_node_ops.cpp">
+            <BuildOrder>8</BuildOrder>
+        </CppCompile>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

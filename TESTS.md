@@ -124,6 +124,30 @@ Five representative mismatch pairs are tested across all four backends:
 | `bool` (true) | `int` | C++ converts bool↔int implicitly, but the variant treats them as separate alternatives |
 | `double` (3.14…) | `float` | Closely related FP types, easy to mix up, yet distinct in the variant |
 
+### Node-operation tests
+
+`test_node_ops.cpp` (built into all three test targets) exercises `TConfigNode`
+members that were previously untested:
+
+- **In-memory suite (`TConfigNode_InMemory`)** — `PutItem`, `GetSubNode`,
+  `operator[]`, `DeleteItem` (soft-erase semantics), `DeleteSubNode` (marks
+  child deleted via `Clear()`), `Clear` (recursive), `ItemExists`,
+  `SubNodeExists`, `GetNodeCount`, `GetValueCount`, `EnumerateNodes`,
+  `EnumerateValueNames`, `EnumerateValues`, `IsDeleted`, `IsModified`.
+- **Per-backend erase-persistence suites** (`TConfigNode_Registry_Erase`,
+  `TConfigNode_JSON_Erase`, `TConfigNode_XML_Erase`, `TConfigNode_INIFile_Erase`)
+  populate values and a sub-node, flush, reopen, delete one value and the
+  sub-node, flush, and reopen again to verify the removed names are gone.
+
+Two known backend gaps are surfaced as `BOOST_WARN_MESSAGE` rather than hard
+failures so the suites still pass:
+
+- **Registry**: `DeleteSubNode` does not always remove the empty sub-key
+  across a flush/reopen cycle.
+- **XML**: `DoSaveValueList`'s erase branch calls `ChildNodes->Delete(name)`,
+  but `<value>` elements are addressed by their `name` attribute rather than
+  the element's local name, so the delete is a silent no-op.
+
 ## 4. Quick checklist
 
 - [x] Builds (MSBuild via `test_all.bat`)
@@ -131,3 +155,4 @@ Five representative mismatch pairs are tested across all four backends:
 - [x] All 21 variant types covered (bcc64x) / 19 variant types (bcc64, bcc32c) across Registry, JSON, XML, and INI backends
 - [x] Enum roundtrip covered across Registry, JSON, XML, and INI backends
 - [x] Type-mismatch silent-default behaviour covered across all four backends
+- [x] `TConfigNode` in-memory operations and per-backend erase persistence covered

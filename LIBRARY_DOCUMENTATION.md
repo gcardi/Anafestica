@@ -245,6 +245,44 @@ void ShowVersionInfo() {
 
 This class is commonly used to dynamically display version information in application captions, About dialogs, or for configuration purposes (as seen in the singleton classes that use version info to determine registry paths). The VERSIONINFO resource is typically set in your project's version information settings in the IDE.
 
+## Type Encoding Conventions
+
+Every value stored by Anafestica is tagged with one of 21 (or 19 on non-`bcc64x` compilers) C++ types drawn from the `TConfigNodeValueType` variant. Because none of the four backends natively distinguishes all of these types, the library uses a small set of **type tags** that are persisted alongside the data so the correct C++ type can be reconstructed on read.
+
+The same tags are shared by every backend. What differs is **where** the tag is written (in the value's name, in a separate attribute, as a nested JSON key, …) and which types — if any — are allowed to be written without a tag because the storage format itself is unambiguous for them.
+
+This section documents these conventions so that you can read, hand-edit, or hand-author persisted configurations without reverse-engineering them from the code.
+
+### Shared Type Tags
+
+The canonical definitions live in `anafestica/CfgNodeValueType.h` (macros `ANA_TT_*` and enum `TypeTag`). The table below lists each C++ type, its tag spelling as it appears on disk / in the registry, and notes on encoding.
+
+| C++ type                    | Tag    | Notes                                                                    |
+| --------------------------- | ------ | ------------------------------------------------------------------------ |
+| `int`                       | `i`    | Decimal integer                                                          |
+| `unsigned int`              | `u`    | Decimal integer                                                          |
+| `long`                      | `l`    | Decimal integer                                                          |
+| `unsigned long`             | `ul`   | Decimal integer                                                          |
+| `char`                      | `c`    | Decimal integer (not a character glyph)                                  |
+| `unsigned char`             | `uc`   | Decimal integer                                                          |
+| `short`                     | `s`    | Decimal integer                                                          |
+| `unsigned short`            | `us`   | Decimal integer                                                          |
+| `long long`                 | `ll`   | Decimal integer                                                          |
+| `unsigned long long`        | `ull`  | Decimal integer (stringified in text backends to preserve precision)     |
+| `bool`                      | `b`    | Stored as `1` / `0` (INI, JSON number) or `True` / `False` (XML text)    |
+| `System::String`            | `sz`   | UTF-16 string, stored as UTF-8 on disk                                   |
+| `System::TDateTime`         | `dt`   | ISO-8601 text (`DateToISO8601(..., false)`)                              |
+| `float`                     | `flt`  | Decimal with `.` separator, 9 significant digits                         |
+| `double`                    | `dbl`  | Decimal with `.` separator, 17 significant digits                        |
+| `System::Currency`          | `cur`  | Decimal with `.` separator (`CurrToStr`)                                 |
+| `StringCont` (`vec<String>`)| `sv`   | Multi-string; backend-specific serialization (see each section)          |
+| `System::Sysutils::TBytes`  | `dab`  | Base-64 in text backends; native `REG_BINARY` in the registry            |
+| `BytesCont` (`vec<Byte>`)   | `vb`   | Base-64 in text backends; native `REG_BINARY` in the registry            |
+| `std::string` (bcc64x only) | `str`  | UTF-8                                                                    |
+| `std::wstring` (bcc64x only)| `wstr` | UTF-16, stored as UTF-8 on disk                                          |
+
+The `std::string` / `std::wstring` alternatives exist only when the `std::variant` path is active (bcc64x / Clang ≥ 15). On `bcc32c` / `bcc64` those tags are neither written nor parsed.
+
 ## Concrete Implementations
 
 ### Registry::TConfig
@@ -265,8 +303,33 @@ public:
 - `KeyPath`: Path within the registry
 - `ReadOnly`, `FlushAllItems`: Same as base class
 
-**Data Type Handling:**  
-The registry serializer maps configuration data types to native Windows Registry value types where possible. For data types that do not have direct registry equivalents (such as `unsigned int`, `long`, `char`, `bool`, `float`, `double`, `System::Currency`, `StringCont`, and `std::vector<Byte>`), type information is encoded into the registry key name using a colon-separated suffix syntax: `KeyName:(TypeTag)`. For example, an `unsigned int` value named "Count" would be stored under the registry key "Count:(u)". During reading, the serializer parses these encoded key names to reconstruct the correct data types. This approach ensures type safety while working within the constraints of the Windows Registry's native value types.
+**Type encoding:**
+The registry backend uses native Windows Registry value types (`REG_DWORD`, `REG_QWORD`, `REG_SZ`, `REG_MULTI_SZ`, `REG_BINARY`) as the *first* layer of typing. Because several C++ types collapse onto the same `REG_*` kind (for example, `int`, `unsigned int`, `long`, `unsigned long`, `short`, `unsigned short`, `char`, `unsigned char`, and `bool` all serialize as `REG_DWORD`), a second layer is needed to tell them apart on read. That second layer is a **tag suffix** appended to the value *name*, written in the form:
+
+```text
+ValueName:(TypeTag)
+```
+
+Note the single colon (the INI backend uses a double colon; see below). When the suffix is **absent**, the reader treats the value as the "canonical" C++ type for that `REG_*` kind (see table below).
+
+| `REG_*` kind  | Canonical C++ type (no tag) | Tagged alternatives                                                         |
+| ------------- | --------------------------- | --------------------------------------------------------------------------- |
+| `REG_DWORD`   | `int`                       | `:(u)`, `:(l)`, `:(ul)`, `:(c)`, `:(uc)`, `:(s)`, `:(us)`, `:(b)`           |
+| `REG_QWORD`   | `long long`                 | `:(ull)`                                                                    |
+| `REG_SZ`      | `System::String`            | `:(str)` (UTF-8, bcc64x only), `:(wstr)` (UTF-16, bcc64x only)              |
+| `REG_BINARY`  | `TBytes`                    | `:(dt)` (TDateTime), `:(flt)`, `:(dbl)`, `:(cur)`, `:(vb)` (BytesCont)      |
+| `REG_MULTI_SZ`| `StringCont`                | — (no tagged alternatives)                                                  |
+
+So, for example:
+
+- A value named `Port` written as `REG_DWORD = 5432` round-trips as `int`.
+- A value named `Port:(u)` written as `REG_DWORD = 5432` round-trips as `unsigned int`.
+- A value named `LastRun:(dt)` written as `REG_BINARY` is read back as `TDateTime` via `TRegistry::ReadDateTime`.
+- A value named `Enabled:(b)` written as `REG_DWORD = 1` round-trips as `bool`.
+
+Binary values for `TDateTime`, `float`, `double`, and `Currency` are stored in `TRegistry`'s native binary layout (`WriteDateTime`, `WriteFloat`, `WriteCurrency`) — they are *not* text-encoded, so manually composing them requires producing the exact byte layout that those APIs expect.
+
+When you edit the registry by hand, adding or removing the `:(TypeTag)` suffix is what controls which C++ alternative the library will load.
 
 ### JSON::TConfig
 
@@ -285,8 +348,47 @@ public:
 **Constructor Parameters:**
 - `FileName`: Path to the JSON file
 - `Compact`: If true, outputs compact JSON; if false, pretty-printed
-- `ExplicitTypes`: If true, includes type information in JSON
+- `ExplicitTypes`: If true, every value is tagged (see below)
 - `ReadOnly`, `FlushAllItems`: Same as base class
+
+**Storage layout:**
+Nested `TConfigPath` components become nested JSON objects. Each group of values lives under a `values` child object, and each value is **either** a plain key/value pair **or** a one-entry object that carries the type tag as its inner key:
+
+```json
+{
+  "node": {
+    "values": {
+      "Port":     5432,
+      "Count":    { "u":   42 },
+      "LastRun":  { "dt":  "2026-04-15T12:00:00.000" },
+      "Payload":  { "dab": "SGVsbG8=" }
+    }
+  }
+}
+```
+
+**Type encoding:**
+The JSON backend, like the registry backend, recognizes a handful of "canonical" C++ types whose values can be written **bare** (without any wrapping object) because the JSON type is already unambiguous. The remaining variant alternatives are always wrapped as `{ "TypeTag": value }`.
+
+| C++ type          | Bare form          | Tagged form (always acceptable on read) |
+| ----------------- | ------------------ | --------------------------------------- |
+| `int`             | `"Name": 42`       | `"Name": { "i": 42 }`                   |
+| `bool`            | `"Name": true`     | `"Name": { "b": true }`                 |
+| `System::String`  | `"Name": "hello"`  | `"Name": { "sz": "hello" }`             |
+
+The constructor's `ExplicitTypes` flag controls **writing** only: when `true`, even `int`, `bool`, and `String` are written in the tagged form. When `false` (the default), they are written bare. Reading accepts either form regardless of the flag.
+
+All other types are *always* written tagged. In particular:
+
+- Integer types other than `int` are stored as JSON numbers (`{ "u": 42 }`, `{ "l": 42 }`, …).
+- `unsigned long long` is stored as a JSON **string** (`{ "ull": "18446744073709551615" }`) to avoid the JSON-number precision cliff at 2⁵³.
+- `TDateTime` is a JSON string in ISO-8601 form: `{ "dt": "2026-04-15T12:00:00.000" }`.
+- `float`, `double` are JSON numbers; `Currency` is a JSON string using `.` as the decimal separator.
+- `StringCont` is a JSON array of strings wrapped with the `sv` tag: `{ "sv": ["one","two"] }`.
+- `TBytes` / `BytesCont` are Base-64 JSON strings: `{ "dab": "SGVsbG8=" }`, `{ "vb": "…" }`.
+- On `bcc64x`, `std::string` uses `str` (UTF-8 string) and `std::wstring` uses `wstr` (UTF-16 string, transcoded to UTF-8 on disk).
+
+When editing a JSON file by hand, you can freely switch between the bare and tagged forms for the three canonical types. For every other alternative you must keep (or add) the wrapping `{ "TypeTag": value }` object — otherwise the reader will fall back to the canonical bare-form interpretation for the matching JSON type.
 
 ### XML::TConfig
 
@@ -305,6 +407,35 @@ public:
 - `FileName`: Path to the XML file
 - `ReadOnly`, `FlushAllItems`: Same as base class
 
+**Storage layout:**
+The XML backend builds a tree of `<node name="…">` elements mirroring the `TConfigPath` hierarchy. Each group of values lives under a `<values>` child, and each value is emitted as a `<value>` element whose `name` attribute carries the key and whose `type` attribute carries the tag:
+
+```xml
+<node name="Database">
+  <values>
+    <value name="Port"    type="i">5432</value>
+    <value name="Host"    type="sz">localhost</value>
+    <value name="LastRun" type="dt">2026-04-15T12:00:00.000</value>
+    <value name="Items"   type="sv">one&#10;two&#10;three&#10;</value>
+    <value name="Blob"    type="dab">SGVsbG8=</value>
+  </values>
+</node>
+```
+
+**Type encoding:**
+Every `<value>` element **must** carry a `type` attribute; there is no "bare" shorthand. The attribute value is exactly one of the tag strings from the [Shared Type Tags](#shared-type-tags) table (e.g. `i`, `u`, `sz`, `dt`, `flt`, `dbl`, `cur`, `sv`, `dab`, `vb`, `str`, `wstr`, …). A `<value>` element without a recognized `type` attribute is silently ignored on read.
+
+The element's text content is the value, using these conventions:
+
+- Integer, floating-point, and `Currency` text follows the conventions in the shared table; `unsigned long long` is emitted as a plain decimal string rather than a bounded number.
+- `bool` text is `True` / `False` (produced by `BoolToStr(Val, true)`).
+- `TDateTime` uses ISO-8601 (`DateToISO8601`).
+- `StringCont` items are joined with `\n` line terminators (one item per line) in the text node.
+- `TBytes` and `BytesCont` are Base-64 encoded text; an empty collection is stored as an empty text node.
+- `std::string` / `std::wstring` (bcc64x only) carry `type="str"` / `type="wstr"` and are stored as plain text.
+
+When hand-editing, you must keep the `type` attribute in sync with the text content. Changing only the text while leaving, say, `type="i"` in place will cause the reader to `std::stoi` the new content.
+
 ### INIFile::TConfig
 
 Implements configuration storage in classic Windows INI files using `TMemIniFile`.
@@ -322,17 +453,39 @@ public:
 - `FileName`: Path to the INI file (UTF-8 encoding)
 - `ReadOnly`, `FlushAllItems`: Same as base class
 
-**Storage layout:**  
-The INI file is structured around sections and key/value pairs. The root node maps to the section `config`; nested paths are flattened into section names using a backslash separator, e.g. `config\Database\Primary`. Each value's key name encodes the type tag using the `Name::(TypeTag)` convention (e.g., `port::(i)=5432`, `host::(sz)=localhost`). This lets the serializer reconstruct the correct C++ type unambiguously when reading back, since all INI values are stored as plain text.
+**Storage layout:**
+The INI file is structured around sections and key/value pairs. The root node maps to the section `[config]`; nested paths are flattened into section names using a backslash separator, e.g. `[config\Database\Primary]`. The file itself is written in UTF-8 via `TEncoding::UTF8`.
 
-**Type encoding details:**
-- Integer and floating-point types use their decimal representation.
-- `bool` is stored as `1` or `0`.
-- `TDateTime` is stored in ISO-8601 format.
-- `StringCont` (vector\<String\>) is pipe-separated with `\` and `|` backslash-escaped.
-- `TBytes` and `BytesCont` are Base64-encoded (same scheme as the XML/JSON backends).
-- `std::string` is stored as UTF-8; `std::wstring` is stored as UTF-16 transcoded to UTF-8 in the file.
-- The file itself is written in UTF-8 via `TEncoding::UTF8`.
+```ini
+[config]
+port::(i)=5432
+host::(sz)=localhost
+debug::(b)=1
+
+[config\Database\Primary]
+last_run::(dt)=2026-04-15T12:00:00.000
+items::(sv)=one|two|three
+```
+
+**Type encoding:**
+Because INI has no notion of value types (every value is plain text), the INI backend is the **only** backend in which *every* value must carry its tag — there is no canonical / bare form. The tag is appended to the key using the double-colon convention:
+
+```text
+Name::(TypeTag)=Value
+```
+
+Note the **double** colon and the parentheses around the tag — this is what distinguishes the INI convention from the registry's single-colon `Name:(TypeTag)` form. Keys without a valid `::(TypeTag)` suffix are silently ignored on read. The `Name` part may contain any character except a trailing `::(...)` sequence; the decoder scans from the right to find the last `::(` that closes at the end of the line with `)`.
+
+Per-type text encoding:
+
+- Integer, floating-point, and `Currency` text follows the conventions in the shared table; `unsigned long long` is emitted as a plain decimal string.
+- `bool` is stored as `1` / `0` (not `True` / `False`).
+- `TDateTime` uses ISO-8601.
+- `StringCont` items are joined with `|`, with `\` → `\\` and `|` → `\|` backslash-escaping applied to each item. An empty string and a single-item `StringCont{""}` both round-trip to `StringCont{}`.
+- `TBytes` and `BytesCont` are Base-64 encoded (same scheme as the XML and JSON backends).
+- `std::string` (tag `str`, bcc64x only) is stored as UTF-8; `std::wstring` (tag `wstr`, bcc64x only) is UTF-16 transcoded to UTF-8 in the file.
+
+When hand-editing, changing the tag is how you change the C++ type the loader will produce: for instance, rewriting `port::(i)=5432` as `port::(u)=5432` switches the variant alternative from `int` to `unsigned int` without touching the numeric text.
 
 ## Singleton Classes
 
@@ -1030,7 +1183,8 @@ This pattern demonstrates:
 
 ## Dependencies
 
-- **Boost Libraries**: Required for `boost::variant` when using `bcc32c` or `bcc64` compilers (unless `ANAFESTICA_USE_STD_VARIANT` is defined). With the modern `bcc64x` compiler (Clang 20), you must define `ANAFESTICA_USE_STD_VARIANT`; otherwise, compilation fails because of incompatibilities with `boost::variant` in this toolchain.
+- **Variant back-end (auto-detected)**: `anafestica/CfgNodeValueType.h` selects the variant implementation automatically based on the toolchain's predefined macros — you do **not** need to define anything by hand. `bcc64x` (Clang ≥ 15, `_WIN64`) uses `std::variant` with 21 alternatives (including `std::string` / `std::wstring`); `bcc64` (Clang < 15, affected by RSP-27418) and `bcc32c` fall back to `boost::variant` with 19 alternatives. The internal flag `ANAFESTICA_USE_STD_VARIANT` is defined inside the header on the `bcc64x` path — it is not a user-facing switch, and overriding it manually is unsupported. Legacy non-Clang `BCC32` produces a hard `#error`.
+- **Boost Libraries**: Required on the `boost::variant` path only (i.e. `bcc32c` and `bcc64`). Not needed when compiling with `bcc64x`.
 - **Embarcadero C++ Compiler**: Only clang-based compilers (bcc32c, bcc64, bcc64x) are supported
 - **RAD Studio**: Compatible with RAD Studio 10.3+ (earlier versions may work but are untested)
 
@@ -1039,11 +1193,30 @@ This pattern demonstrates:
 1. Clone or download the library headers
 2. Add the library path to your project's include directories
 3. For Registry usage, ensure your project has proper version info set (CompanyName, ProductName, ProductVersion)
-4. Install Boost libraries via GetIt or manually
+4. Install Boost libraries via GetIt or manually (for bcc64 and bcc32c)
 
 ## Thread Safety
 
-The library is not thread-safe. Access to configuration objects should be serialized if used from multiple threads.
+The library performs no internal locking: there are no mutexes, critical sections, or atomics anywhere in `anafestica/`. Any `TConfig` or `TConfigNode` shared between threads must be externally synchronized.
+
+**In practice this is rarely needed.** The library's intended use case is a standard VCL or FMX application in which configuration is handled exclusively on the **main (UI) thread** — the form-persistence classes (`TPersistFormVCL`, `TPersistFormFMX`) and the typical read-at-startup / write-at-shutdown pattern all run there. As long as your application follows that convention — no worker thread reads, writes, or even navigates the `TConfig` tree — the absence of internal locking is not a problem and you do not need to add any synchronization of your own. The rest of this section applies only when you deliberately choose to share a `TConfig` across threads.
+
+**Why it is not thread-safe.** The unsafety is in the shared `TConfigNode` graph, not in the singleton mechanism. Singletons under C++11 guarantee thread-safe *construction* of the `static` instance (see [CfgRegistrySingleton.h:32](anafestica/CfgRegistrySingleton.h#L32)), so two threads calling `GetConfig()` concurrently will not double-construct. What singletons *do* is hand every thread a reference to the same `TConfig`, which routes all calls through the same root `TConfigNode` — but you would get the identical race by manually sharing a non-singleton `TConfig` instance.
+
+The actual hazards are in `TConfigNode` itself:
+
+- Operations that look like reads can mutate the node. `GetSubNode` lazily inserts a new child on miss, and `GetItem` goes through `GetItemFrom`, which inserts a default entry when the key is absent. So even "read-only" navigation writes to the underlying `std::map`s.
+- `PutItem`, `DeleteItem`, `Clear`, `Read`, and `Write` all mutate `valueItems_` / `nodeItems_` or walk the subtree without locks.
+- Backends hold non-thread-safe resources (`TRegistry`, `TMemIniFile`, `_di_IXMLDocument`, `TJSONObject`) and reuse them across calls.
+- The RAII lifecycle flushes the *entire* tree in the owning `TConfig`'s destructor; this must not overlap with any other thread's access to any part of the tree.
+
+**Working with disjoint subtrees.** Two `TConfigNode` objects that share no ancestor-path in the live graph can be driven by two threads concurrently, because each node owns its own `valueItems_` and `nodeItems_` maps — there is no hidden shared state inside `TConfigNode`. To use this safely:
+
+1. Navigate from the root on a single thread and obtain the two `TConfigNode&` references you want to hand off.
+2. After that point, no thread may touch any common ancestor (including the root) — remember that `GetSubNode` / `GetItem` on an ancestor can silently mutate it.
+3. The owning `TConfig`'s construction (which reads the full tree from storage) and destruction (which flushes it back) must not overlap with any concurrent access, even to disjoint subtrees.
+
+In practice, the simplest safe pattern is still to serialize all access to the `TConfig` with an external mutex; disjoint-subtree concurrency is an option when contention on the root becomes a measured problem.
 
 ## Error Handling
 

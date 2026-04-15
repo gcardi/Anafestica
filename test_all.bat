@@ -24,16 +24,14 @@ exit /b 1
 :args_done
 
 REM --- Set up the Embarcadero environment -------------------------
-if defined BDS (
-    set "RSVARS=%BDS%\bin\rsvars.bat"
-) else (
-    set "RSVARS=%ProgramFiles(x86)%\Embarcadero\Studio\37.0\bin\rsvars.bat"
-)
-if not exist "%RSVARS%" (
-    echo [FATAL] rsvars.bat not found: %RSVARS%
+set "RSVARS="
+if defined BDS set "RSVARS=!BDS!\bin\rsvars.bat"
+if not defined RSVARS set "RSVARS=!ProgramFiles(x86)!\Embarcadero\Studio\37.0\bin\rsvars.bat"
+if not exist "!RSVARS!" (
+    echo [FATAL] rsvars.bat not found: !RSVARS!
     exit /b 1
 )
-call "%RSVARS%"
+call "!RSVARS!"
 if errorlevel 1 (
     echo [FATAL] rsvars.bat failed
     exit /b 1

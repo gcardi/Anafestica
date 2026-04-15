@@ -30,6 +30,36 @@ tests only if all builds succeeded:
 At the end it prints a summary with pass/fail/skip counts and exits with
 a non-zero code if any test suite failed.
 
+### Test-case counts per toolchain
+
+The three suites do not run exactly the same set of cases. Per-file case counts:
+
+| File | bcc32c | bcc64 | bcc64x |
+| ---- | :----: | :---: | :----: |
+| `test_config.cpp` | 85 | 85 | 97 |
+| `test_config_simplified.cpp` | 19 | 19 | — |
+| `test_node_ops.cpp` | 17 | 17 | 17 |
+| `test_type_mismatch.cpp` | 20 | 20 | 20 |
+| `test_types.cpp` | 7 | 7 | 7 |
+| `test_singleton_version_info.cpp` | 2 | 2 | 2 |
+| `test_bccXX_variant_compat.cpp` | 2 | 2 | — |
+| **Total** | **152** | **152** | **143** |
+
+Despite having two additional variant alternatives (`std::string`, `std::wstring`),
+bcc64x reports **fewer** cases than the two boost-variant toolchains. The net
+−9 delta breaks down as:
+
+- **+12** in `test_config.cpp` — extra roundtrip cases for `str` and `wstr`
+  across the four backends, plus enum and `string_view`/`wstring_view`
+  write-convenience tests that only compile on the `std::variant` path.
+- **−19** — `test_config_simplified.cpp` is not present under
+  [Test/TestBcc64x/](Test/TestBcc64x/). This looks like an oversight rather
+  than an intentional exclusion; porting it over would restore parity.
+- **−2** — no `test_bcc64x_variant_compat.cpp` exists. This one **is**
+  intentional: the `variant_compat` files pin down `boost::variant` quirks
+  that are specific to the pre-Clang-15 toolchains and do not apply on the
+  `std::variant` path used by bcc64x.
+
 ### Cleaning build artifacts
 
 To remove all test build output directories, use the `clear_tests.bat` script:

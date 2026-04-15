@@ -8,13 +8,18 @@ The three C++Builder `.cbproj` test projects are built and run with MSBuild
 using the provided `test_all.bat` script.
 
 ```powershell
-test_all.bat                # build all three projects and run their tests
-test_all.bat --no-build     # skip build, run existing executables only
-test_all.bat --stop-on-error  # abort on first failure
+test_all.bat                        # build + run all three compilers
+test_all.bat bcc64x                 # build + run bcc64x only
+test_all.bat bcc32c bcc64           # build + run two toolchains
+test_all.bat --rebuild              # force full recompile for all three
+test_all.bat --no-build             # skip build, run existing executables only
+test_all.bat --stop-on-error        # abort on first failure
 ```
 
-The script calls `rsvars.bat` to set up the Embarcadero environment, then
-invokes MSBuild for each project in Release configuration:
+The build is incremental by default (MSBuild `/t:Build`); use `--rebuild` to
+force a full recompile (`/t:Rebuild`). The script calls `rsvars.bat` to set up
+the Embarcadero environment, builds all selected targets first, then runs the
+tests only if all builds succeeded:
 
 | Project | Platform | Compiler | Executable |
 | ------- | -------- | -------- | ---------- |

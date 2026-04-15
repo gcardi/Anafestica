@@ -22,9 +22,11 @@ test_all.bat      — Build and run all three test suites via MSBuild
 ## Building and running tests
 
 ```powershell
-test_all.bat                # build + run all three compilers
-test_all.bat --no-build     # run existing executables only
-test_all.bat --stop-on-error  # abort on first failure
+test_all.bat                        # build + run all three compilers
+test_all.bat bcc64x                 # build + run bcc64x only
+test_all.bat --rebuild bcc32c bcc64 # force full recompile for two toolchains
+test_all.bat --no-build             # run existing executables only
+test_all.bat --stop-on-error        # abort on first failure
 ```
 
 - Compilers: `bcc32c`, `bcc64`, `bcc64x` (C++Builder)

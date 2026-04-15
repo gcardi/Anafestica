@@ -69,20 +69,35 @@ provided `test_all.bat` script.
 test_all.bat
 ```
 
-2. Run only existing executables (skip build):
+2. Run a single toolchain (or a subset):
+
+```powershell
+test_all.bat bcc64x                 # build + run bcc64x only
+test_all.bat bcc32c bcc64           # build + run two toolchains
+```
+
+3. Force a full recompile:
+
+```powershell
+test_all.bat --rebuild              # rebuild all three from scratch
+```
+
+4. Run only existing executables (skip build):
 
 ```powershell
 test_all.bat --no-build
 ```
 
-3. Stop at first failure:
+5. Stop at first failure:
 
 ```powershell
 test_all.bat --stop-on-error
 ```
 
+The build is incremental by default — only changed files are recompiled.
 The script calls `rsvars.bat` to set up the Embarcadero environment, then
-builds and runs the test executables for each compiler:
+builds all selected targets first, and runs the tests only if all builds
+succeeded:
 
 | Project | Platform | Executable |
 | ------- | -------- | ---------- |

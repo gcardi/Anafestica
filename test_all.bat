@@ -76,8 +76,12 @@ echo ===============================================================
 REM --- Build (optional) -------------------------------------------
 if !BUILD! equ 1 (
     echo --- MSBuild: !CBPROJ! [!PLAT!^|Release] ---
-    msbuild "!ROOT!\!CBPROJ!" /p:Config=Release /p:Platform=!PLAT! /t:Build /v:minimal /nologo
-    if errorlevel 1 (
+    set "MSBUILD_LOG=!TEMP!\anafestica_msbuild_!PLAT!.log"
+    msbuild "!ROOT!\!CBPROJ!" /p:Config=Release /p:Platform=!PLAT! /t:Build /v:minimal /nologo > "!MSBUILD_LOG!" 2>&1
+    set "MSBUILD_ERR=!ERRORLEVEL!"
+    findstr /v /c:"MSB4056" "!MSBUILD_LOG!"
+    del "!MSBUILD_LOG!" >nul 2>&1
+    if !MSBUILD_ERR! neq 0 (
         echo [FAIL] Build failed for !LABEL!
         set /a FAILED+=1
         if !STOP_ON_ERROR! equ 1 (

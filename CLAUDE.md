@@ -17,6 +17,7 @@ Demo/             — Additional demo code
 Test/             — Boost.Test unit tests
 docs/             — Documentation assets (images, diagrams)
 test_all.bat      — Build and run all three test suites via MSBuild
+clear_tests.bat   — Remove test build artifacts (selective or all)
 ```
 
 ## Building and running tests
@@ -27,6 +28,9 @@ test_all.bat bcc64x                 # build + run bcc64x only
 test_all.bat --rebuild bcc32c bcc64 # force full recompile for two toolchains
 test_all.bat --no-build             # run existing executables only
 test_all.bat --stop-on-error        # abort on first failure
+
+clear_tests.bat                     # remove build artifacts for all three
+clear_tests.bat bcc64x              # remove bcc64x artifacts only
 ```
 
 - Compilers: `bcc32c`, `bcc64`, `bcc64x` (C++Builder)

@@ -4,14 +4,14 @@ setlocal enabledelayedexpansion
 REM ---------------------------------------------------------------
 REM  Clean build artifacts for Anafestica test suites.
 REM
-REM  Usage:  clean_tests.bat [toolchain ...]
+REM  Usage:  clear_tests.bat [toolchain ...]
 REM
 REM  Toolchains: bcc32c  bcc64  bcc64x   (default: all three)
 REM
 REM  Examples:
-REM    clean_tests.bat                 Clean all three
-REM    clean_tests.bat bcc64x          Clean bcc64x only
-REM    clean_tests.bat bcc32c bcc64    Clean bcc32c and bcc64
+REM    clear_tests.bat                 Clean all three
+REM    clear_tests.bat bcc64x          Clean bcc64x only
+REM    clear_tests.bat bcc32c bcc64    Clean bcc32c and bcc64
 REM ---------------------------------------------------------------
 
 set "ROOT=%~dp0."

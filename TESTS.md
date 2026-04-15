@@ -16,8 +16,8 @@ test_all.bat --no-build             # skip build, run existing executables only
 test_all.bat --stop-on-error        # abort on first failure
 ```
 
-The build is incremental by default (MSBuild `/t:Build`); use `--rebuild` to
-force a full recompile (`/t:Rebuild`). The script calls `rsvars.bat` to set up
+The build is incremental by default (MSBuild `/t:Make`); use `--rebuild` to
+force a full recompile (`/t:Build`). The script calls `rsvars.bat` to set up
 the Embarcadero environment, builds all selected targets first, then runs the
 tests only if all builds succeeded:
 
@@ -29,6 +29,19 @@ tests only if all builds succeeded:
 
 At the end it prints a summary with pass/fail/skip counts and exits with
 a non-zero code if any test suite failed.
+
+### Cleaning build artifacts
+
+To remove all test build output directories, use the `clear_tests.bat` script:
+
+```powershell
+clear_tests.bat                     # clean all three toolchains
+clear_tests.bat bcc64x              # clean bcc64x only
+clear_tests.bat bcc32c bcc64        # clean two toolchains
+```
+
+This deletes the `Win32`, `Win64`, and/or `Win64x` output directories under
+each test project folder. It does not require MSBuild or `rsvars.bat`.
 
 ---
 

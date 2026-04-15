@@ -105,3 +105,16 @@ succeeded:
 | `Test\TestBcc64\anafestica_test_bcc64.cbproj` | Win64 | `Test\TestBcc64\Win64\Release\anafestica_test_bcc64.exe` |
 | `Test\TestBcc64x\anafestica_test_bcc64x.cbproj` | Win64x | `Test\TestBcc64x\Win64x\Release\anafestica_test_bcc64x.exe` |
 
+### Cleaning build artifacts
+
+To remove all test build output directories:
+
+```powershell
+clear_tests.bat                     # clean all three toolchains
+clear_tests.bat bcc64x              # clean bcc64x only
+clear_tests.bat bcc32c bcc64        # clean two toolchains
+```
+
+This deletes the output directories (`Win32`, `Win64`, `Win64x`) under each
+test project folder. It does not require MSBuild or `rsvars.bat`.
+

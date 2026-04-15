@@ -23,7 +23,7 @@ REM ---------------------------------------------------------------
 
 set "ROOT=%~dp0."
 set BUILD=1
-set "MSBUILD_TARGET=Build"
+set "MSBUILD_TARGET=Make"
 set STOP_ON_ERROR=0
 set DO_BCC32C=0
 set DO_BCC64=0
@@ -33,7 +33,7 @@ set TOOLCHAIN_SELECTED=0
 :parse_args
 if "%~1"=="" goto :args_done
 if /i "%~1"=="--no-build"      ( set BUILD=0& shift & goto :parse_args )
-if /i "%~1"=="--rebuild"       ( set "MSBUILD_TARGET=Rebuild"& shift & goto :parse_args )
+if /i "%~1"=="--rebuild"       ( set "MSBUILD_TARGET=Build"& shift & goto :parse_args )
 if /i "%~1"=="--stop-on-error" ( set STOP_ON_ERROR=1& shift & goto :parse_args )
 if /i "%~1"=="bcc32c"  ( set DO_BCC32C=1& set TOOLCHAIN_SELECTED=1& shift & goto :parse_args )
 if /i "%~1"=="bcc64"   ( set DO_BCC64=1& set TOOLCHAIN_SELECTED=1& shift & goto :parse_args )

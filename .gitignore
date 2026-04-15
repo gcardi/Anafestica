@@ -31,9 +31,7 @@ Win64x/
 *.@@@
 ~$*.*
 *.tmp
-
-# Build artifacts
-build/
+*.log
 
 # CTest temporary files
 Testing/

@@ -2,46 +2,28 @@
 
 This document describes how to run tests, configuration rules, and current test coverage.
 
-## 1. Build and run tests with CMake/Ninja
+## 1. Build and run tests
 
-1. Create build folder:
-
-```powershell
-mkdir build
-cd build
-```
-
-1. Configure with CMake (Ninja):
+The three C++Builder `.cbproj` test projects are built and run with MSBuild
+using the provided `test_all.bat` script.
 
 ```powershell
-cmake -G Ninja ..
-# if needed
-cmake -G Ninja -DBOOST_ROOT="C:\\Program Files (x86)\\Embarcadero\\Studio\\37.0" ..
+test_all.bat                # build all three projects and run their tests
+test_all.bat --no-build     # skip build, run existing executables only
+test_all.bat --stop-on-error  # abort on first failure
 ```
 
-1. Build:
+The script calls `rsvars.bat` to set up the Embarcadero environment, then
+invokes MSBuild for each project in Release configuration:
 
-```powershell
-ninja
-# or
-cmake --build .
-```
+| Project | Platform | Compiler | Executable |
+| ------- | -------- | -------- | ---------- |
+| `Test\TestBcc32c\anafestica_test_bcc32c.cbproj` | Win32 | bcc32c | `Win32\Release\anafestica_test_bcc32c.exe` |
+| `Test\TestBcc64\anafestica_test_bcc64.cbproj` | Win64 | bcc64 | `Win64\Release\anafestica_test_bcc64.exe` |
+| `Test\TestBcc64x\anafestica_test_bcc64x.cbproj` | Win64x | bcc64x | `Win64x\Release\anafestica_test_bcc64x.exe` |
 
-1. Run tests:
-
-```powershell
-ctest -V
-```
-
-> **Note:** `ctest -V` is the recommended command because it provides verbose
-> per-test output, which is helpful when diagnosing failures.
-
-1. Clean:
-
-```powershell
-cd ..
-rd /S /Q build
-```
+At the end it prints a summary with pass/fail/skip counts and exits with
+a non-zero code if any test suite failed.
 
 ---
 
@@ -49,7 +31,7 @@ rd /S /Q build
 
 - Windows
 - C++Builder with RTL/VCL support
-- Boost unit_test_framework (linked in `CMakeLists.txt`)
+- Boost unit_test_framework
 - HKCU registry write permission (required by registry tests)
 
 ---
@@ -124,23 +106,10 @@ Five representative mismatch pairs are tested across all four backends:
 | `bool` (true) | `int` | C++ converts bool↔int implicitly, but the variant treats them as separate alternatives |
 | `double` (3.14…) | `float` | Closely related FP types, easy to mix up, yet distinct in the variant |
 
-## 4. CTest integration notes
+## 4. Quick checklist
 
-- `CMakeLists.txt` registers the test via `add_test()` for local use and
-  CI/CDash integration.
-- Use `ctest -V` as the default test runner so each test case and failure
-  context is printed verbosely.
-- Running `anafestica_test_bcc64x.exe` or `anafestica_test_bcc64.exe` directly
-  is still possible for targeted debugging, but `ctest -V` is the recommended
-  command for normal runs.
-
----
-
-## 5. Quick checklist
-
-- [x] Builds
-- [x] `ctest -V` passes
-- [x] `anafestica_test.exe` passes directly
-- [x] All 21 variant types covered (bcc64x) / 19 variant types (bcc64) across Registry, JSON, XML, and INI backends
+- [x] Builds (MSBuild via `test_all.bat`)
+- [x] `test_all.bat` passes all three compilers
+- [x] All 21 variant types covered (bcc64x) / 19 variant types (bcc64, bcc32c) across Registry, JSON, XML, and INI backends
 - [x] Enum roundtrip covered across Registry, JSON, XML, and INI backends
 - [x] Type-mismatch silent-default behaviour covered across all four backends

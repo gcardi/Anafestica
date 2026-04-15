@@ -56,57 +56,37 @@ To complete the installation, add references to this library in the development 
 
 That's all.
 
-## Building and running tests (CMake + Ninja)
-
-A `CMakeLists.txt` is included to build the unit-test target using CMake + Ninja with C++Builder.
+## Building and running tests
 
 See also: [TESTS.md](TESTS.md) for an extended test plan and variant coverage matrix.
 
-1. Create and enter a build directory:
+The three C++Builder test projects are built and run with MSBuild using the
+provided `test_all.bat` script.
+
+1. Run all three compilers (build + test):
 
 ```powershell
-mkdir build
-cd build
+test_all.bat
 ```
 
-2. Configure with C++Builder compiler and auto-detected Boost path from registry:
+2. Run only existing executables (skip build):
 
 ```powershell
-cmake -G Ninja ..
+test_all.bat --no-build
 ```
 
-If your Boost layout is non-standard, override:
+3. Stop at first failure:
 
 ```powershell
-cmake -G Ninja -DBOOST_ROOT="C:\\Program Files (x86)\\Embarcadero\\Studio\\37.0" ..
+test_all.bat --stop-on-error
 ```
 
-3. Build the tests:
+The script calls `rsvars.bat` to set up the Embarcadero environment, then
+builds and runs the test executables for each compiler:
 
-```powershell
-ninja
-```
-
-4. Run tests:
-
-```powershell
-ctest -V
-```
-
-> **Note:** Use `ctest -V` for verbose test output and easier diagnostics.
-
-The CMakeLists file now sets `CTEST_OUTPUT_ON_FAILURE` by default:
-
-```cmake
-set(CTEST_OUTPUT_ON_FAILURE TRUE CACHE INTERNAL "Show output when test fails")
-```
-
-This ensures test failures display output in CI.
-
-5. For CI/commit hygiene, remove generated artifacts before pushing:
-
-```powershell
-cd {repository root}
-rd /S /Q build
-```
+| Project | Platform | Executable |
+| ------- | -------- | ---------- |
+| `Test\TestBcc32c\anafestica_test_bcc32c.cbproj` | Win32 | `Test\TestBcc32c\Win32\Release\anafestica_test_bcc32c.exe` |
+| `Test\TestBcc64\anafestica_test_bcc64.cbproj` | Win64 | `Test\TestBcc64\Win64\Release\anafestica_test_bcc64.exe` |
+| `Test\TestBcc64x\anafestica_test_bcc64x.cbproj` | Win64x | `Test\TestBcc64x\Win64x\Release\anafestica_test_bcc64x.exe` |
 

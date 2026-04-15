@@ -15,25 +15,21 @@ anafestica/       — Public header files (the library itself)
 App/              — Demo / sample application
 Demo/             — Additional demo code
 Test/             — Boost.Test unit tests
-build/            — CMake build output (gitignored)
 docs/             — Documentation assets (images, diagrams)
-CMakeLists.txt    — Build system for tests (CMake + Ninja + bcc64x)
+test_all.bat      — Build and run all three test suites via MSBuild
 ```
 
 ## Building and running tests
 
 ```powershell
-mkdir build && cd build
-cmake -G Ninja ..
-ninja
-ctest -V
+test_all.bat                # build + run all three compilers
+test_all.bat --no-build     # run existing executables only
+test_all.bat --stop-on-error  # abort on first failure
 ```
 
-- Compiler: `bcc64x` (Clang 20, C++Builder)
+- Compilers: `bcc32c`, `bcc64`, `bcc64x` (C++Builder)
 - Test framework: Boost.Test (`unit_test_framework`)
-- Boost is auto-detected from the Embarcadero registry; override with `-DBOOST_ROOT=...`
 - Tests require Windows, HKCU registry write access, and RTL/VCL support
-- Use `ctest -V` (verbose) as the standard test command
 
 ## Code conventions
 
@@ -61,9 +57,9 @@ Examples: `feat(ini):`, `fix(xml):`, `test(config):`, `docs(tests):`, `docs:`
 
 ## Things to keep in mind
 
-- The `build/` directory is ephemeral; never commit its contents
 - Test coverage spans all 21 variant types × 4 backends; maintain this when adding types or backends
 - The library is installed by cloning into `$(BDSCOMMONDIR)` — paths matter
 - See [TESTS.md](TESTS.md) for the full test plan and coverage matrix
 - See [LIBRARY_DOCUMENTATION.md](LIBRARY_DOCUMENTATION.md) for API docs
 - See [QUICK_TOUR.md](QUICK_TOUR.md) for usage examples
+

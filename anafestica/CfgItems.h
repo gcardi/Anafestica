@@ -322,6 +322,18 @@ private:
 template<typename T>
 void TConfigNode::GetItemAs( is_enum_tag, String Id, T& Val, Operation Op )
 {
+    // bcc64 (Clang < 15) has compatibility issues with __delphirtti and GetEnumValue on enums.
+    // RSP-27417: Force integer-based enum serialization on bcc64 to work around RTTI bugs.
+#if defined(__BORLANDC__) && defined(_WIN64) && !defined(__MINGW64__) && __clang_major__ < 15
+    // bcc64: use integer-based enum handling
+    auto& Result = GetItemFrom(
+        valueItems_, Id, static_cast<int>( Val ), Op
+    );
+    if ( auto* p = boost::get<int>( &Result ) ) {
+        Val = static_cast<T>( *p );
+    }
+#else
+    // bcc64x and bcc32c: use RTTI-based enum handling
     if ( auto Info = __delphirtti( decltype( Val ) ) ) {
         auto& Result = GetItemFrom(
             valueItems_, Id,
@@ -347,12 +359,23 @@ void TConfigNode::GetItemAs( is_enum_tag, String Id, T& Val, Operation Op )
             Val = static_cast<T>( *p );
         }
     }
+#endif
 }
 //---------------------------------------------------------------------------
 
 template<typename T>
 bool TConfigNode::PutItem( String Id, T Val, is_enum_tag, Operation Op )
 {
+    // bcc64 (Clang < 15) has compatibility issues with __delphirtti and GetEnumValue on enums.
+    // RSP-27417: Force integer-based enum serialization on bcc64 to work around RTTI bugs.
+#if defined(__BORLANDC__) && defined(_WIN64) && !defined(__MINGW64__) && __clang_major__ < 15
+    // bcc64: use integer-based serialization
+    return PutItemTo(
+        valueItems_, Id,
+        std::make_pair( ValueType{ static_cast<int>( Val ) }, Op )
+    );
+#else
+    // bcc64x and bcc32c: use RTTI-based serialization
     if ( auto Info = __delphirtti( decltype( Val ) ) ) {
         // save enum as text
 
@@ -371,6 +394,7 @@ bool TConfigNode::PutItem( String Id, T Val, is_enum_tag, Operation Op )
             std::make_pair( ValueType{ static_cast<int>( Val ) }, Op )
         );
     }
+#endif
 }
 //---------------------------------------------------------------------------
 

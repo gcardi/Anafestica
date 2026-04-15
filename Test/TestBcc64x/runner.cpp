@@ -59,6 +59,35 @@ private:
 #endif
 
 #if defined( _UNICODE )
+#include <shellapi.h>
+
+int _tmain(int argc, TCHAR* argv[]);
+
+/*
+int WINAPI WinMain(
+    HINSTANCE,
+    HINSTANCE,
+    LPSTR,
+    int)
+{
+    int argc = 0;
+    wchar_t** argvW = CommandLineToArgvW(GetCommandLineW(), &argc);
+
+    if (!argvW)
+        return -1;
+
+    int ret = _tmain(argc, (TCHAR**)argvW);
+
+    LocalFree(argvW);
+    return ret;
+}
+*/
+
+::boost::unit_test::test_suite* init_unit_test(int argc, char* argv[])
+{
+    return nullptr;
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
     static constexpr char zero {};
@@ -90,8 +119,7 @@ int _tmain(int argc, _TCHAR* argv[])
         }
     }
     setvbuf(stdout, nullptr, _IONBF, 0);
-    extern int main( int, char** );
-    return main( argc, &UTF8argv[0] );
+    return ::boost::unit_test::unit_test_main( &init_unit_test, argc, UTF8argv.data() );
 }
 #endif
 

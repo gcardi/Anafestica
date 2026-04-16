@@ -422,6 +422,8 @@ The XML backend builds a tree of `<node name="…">` elements mirroring the `TCo
 </node>
 ```
 
+DTD declarations are rejected before parsing. Documents containing `<!DOCTYPE` or `<!ENTITY` are refused rather than handed to the XML parser.
+
 **Type encoding:**
 Every `<value>` element **must** carry a `type` attribute; there is no "bare" shorthand. The attribute value is exactly one of the tag strings from the [Shared Type Tags](#shared-type-tags) table (e.g. `i`, `u`, `sz`, `dt`, `flt`, `dbl`, `cur`, `sv`, `dab`, `vb`, `str`, `wstr`, …). A `<value>` element without a recognized `type` attribute is silently ignored on read.
 
@@ -466,6 +468,8 @@ debug::(b)=1
 last_run::(dt)=2026-04-15T12:00:00.000
 items::(sv)=one|two|three
 ```
+
+Because backslash is the hierarchy separator, INI node names must not contain `\` or `/`. Those characters are rejected when a `TConfigPath` is converted to a section name.
 
 **Type encoding:**
 Because INI has no notion of value types (every value is plain text), the INI backend is the **only** backend in which *every* value must carry its tag — there is no canonical / bare form. The tag is appended to the key using the double-colon convention:
@@ -1281,3 +1285,4 @@ The library uses exceptions for error conditions:
 - Windows Registry support is Windows-only
 - No built-in encryption or security features
 - No concurrent access protection (it's not thread safe)
+- Persistence load/flush rejects paths deeper than `TConfigNode::MaxPersistenceDepth` to avoid stack exhaustion on maliciously deep trees

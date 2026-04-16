@@ -93,6 +93,19 @@ private:
     std::unique_ptr<TMemIniFile> ini_;
     String fileName_;
 
+    static void ValidatePathComponent( String const & Component ) {
+        if ( Component.Pos( _D( "\\" ) ) > 0 ||
+             Component.Pos( _D( "/" ) ) > 0 )
+        {
+            throw Exception(
+                Format(
+                    _D( "Invalid INI path component: '%s'" ),
+                    ARRAYOFCONST(( Component ))
+                )
+            );
+        }
+    }
+
     void CreateIniObject() {
         // Specify UTF-8 so that Unicode strings survive the disk roundtrip.
         ini_ = std::make_unique<TMemIniFile>( fileName_, TEncoding::UTF8 );
@@ -112,6 +125,7 @@ private:
     String GetSectionName( TConfigPath const & Path ) const {
         String Result( _D("config") );
         for ( auto const & Component : Path ) {
+            ValidatePathComponent( Component );
             Result += _D("\\");
             Result += Component;
         }
@@ -470,7 +484,7 @@ protected:
                 std::vector<Byte> VBytes;
                 VBytes.reserve( Bytes.Length );
                 std::copy(
-                    Bytes.begin(), Bytes.end(),
+                    std::begin( Bytes ), std::end( Bytes ),
                     std::back_inserter( VBytes )
                 );
                 return VBytes;

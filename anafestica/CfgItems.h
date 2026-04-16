@@ -4,6 +4,7 @@
 #define CfgItemsH
 
 #include <System.Classes.hpp>
+#include <System.SysUtils.hpp>
 
 #include <utility>
 #include <memory>
@@ -65,6 +66,8 @@ private:
     inline static constexpr auto type_to_enum_v = type_to_enum<T>::value;
 
 public:
+    static constexpr std::size_t MaxPersistenceDepth = 128;
+
     TConfigNode() = default;
     TConfigNode( TConfigNode const & ) = delete;
     TConfigNode& operator=( TConfigNode const & ) = delete;
@@ -247,6 +250,20 @@ private:
     ValueContType valueItems_;
     NodeContType nodeItems_;
     bool deleted_ {};
+
+    static void CheckPersistencePathDepth( TConfigPath const & Path ) {
+        if ( Path.size() > MaxPersistenceDepth ) {
+            throw Exception(
+                Format(
+                    _D( "Configuration path depth %d exceeds the supported maximum of %d" ),
+                    ARRAYOFCONST((
+                        static_cast<int>( Path.size() ),
+                        static_cast<int>( MaxPersistenceDepth )
+                    ))
+                )
+            );
+        }
+    }
 
     bool ValueListModified() const noexcept {
         return
@@ -443,6 +460,7 @@ void TConfigNode::EnumerateValues( OutputIterator Out ) const
 template<typename R>
 void TConfigNode::Read( R& Reader, TConfigPath const & Path )
 {
+    CheckPersistencePathDepth( Path );
     valueItems_ = Reader.CreateValueList( Path );
     nodeItems_ = Reader.CreateNodeList( Path );
     TConfigPath TmpPath;
@@ -465,6 +483,7 @@ void TConfigNode::Read( R& Reader, TConfigPath const & Path )
 template<typename W>
 void TConfigNode::Write( W& Writer, TConfigPath const & Path ) const
 {
+    CheckPersistencePathDepth( Path );
     if ( IsDeleted() ) {
         Writer.DeleteNode( Path );
     }

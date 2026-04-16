@@ -82,17 +82,21 @@ private:
             // Mitigate XXE injection and XML Bomb (billion laughs)
             // attacks: reject documents containing DTD declarations
             // before the XML parser processes them.
+            auto RawContent = TFile::ReadAllText( fileName_ );
+            if ( RawContent.Pos( _D( "<!DOCTYPE" ) ) > 0 ||
+                 RawContent.Pos( _D( "<!ENTITY" ) ) > 0 )
             {
-                auto RawContent = TFile::ReadAllText( fileName_ );
-                if ( RawContent.Pos( _D( "<!DOCTYPE" ) ) > 0 ||
-                     RawContent.Pos( _D( "<!ENTITY" ) ) > 0 )
-                {
-                    throw EXMLDocError(
-                        _D( "XML document rejected: DTD declarations are not allowed" )
-                    );
-                }
+                throw EXMLDocError(
+                    _D( "XML document rejected: DTD declarations are not allowed" )
+                );
             }
-            XMLDoc_ = LoadXMLDocument( fileName_ );
+            auto RawBytes = TEncoding::UTF8->GetBytes( RawContent );
+            auto RawStream = std::make_unique<TBytesStream>( RawBytes );
+            XMLDoc_ = NewXMLDocument();
+            XMLDoc_->LoadFromStream( RawStream.get(), xetUTF_8 );
+            if ( XMLDoc_->Encoding.IsEmpty() ) {
+                XMLDoc_->Encoding = DocumentEncoding;
+            }
             CheckDocument();
             XMLDoc_->Options = XMLDoc_->Options << doNodeAutoIndent;
         }
@@ -212,6 +216,23 @@ private:
             ResultNode = Node->AddChild( NodeName );
             ResultNode->Attributes[AttrName] = AttrValue;
             return ResultNode;
+        }
+    }
+
+    void DeleteValueNodeByName( _di_IXMLNode Node, String const & Name )
+    {
+        auto Childs = Node->ChildNodes;
+        for ( int Idx = Childs->Count - 1 ; Idx >= 0 ; --Idx ) {
+            auto ValueNode = Childs->Get( Idx );
+            if ( ValueNode->NodeName == ValueNodeName ) {
+                auto Attributes = ValueNode->AttributeNodes;
+                if ( auto NameNode = Attributes->FindNode( NameAttrName ) ) {
+                    if ( NameNode->Text == Name ) {
+                        Childs->Remove( ValueNode );
+                        return;
+                    }
+                }
+            }
         }
     }
 
@@ -558,7 +579,7 @@ protected:
                 std::vector<Byte> VBytes;
                 VBytes.reserve( Bytes.Length );
                 std::copy(
-                    Bytes.begin(), Bytes.end(),
+                    std::begin( Bytes ), std::end( Bytes ),
                     std::back_inserter( VBytes )
                 );
                 return VBytes;
@@ -634,7 +655,7 @@ protected:
                         SaveValue( Node, v );
                     }
                     else if ( v.second.second == Operation::Erase ) {
-                        Node->ChildNodes->Delete( v.first );
+                        DeleteValueNodeByName( Node, v.first );
                     }
                 }
             }

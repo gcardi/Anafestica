@@ -163,20 +163,18 @@ members that were previously untested:
   `operator[]`, `DeleteItem` (soft-erase semantics), `DeleteSubNode` (marks
   child deleted via `Clear()`), `Clear` (recursive), `ItemExists`,
   `SubNodeExists`, `GetNodeCount`, `GetValueCount`, `EnumerateNodes`,
-  `EnumerateValueNames`, `EnumerateValues`, `IsDeleted`, `IsModified`.
+  `EnumerateValueNames`, `EnumerateValues`, `IsDeleted`, `IsModified`, plus
+  depth-limit guards for persistence `Read` / `Write`.
 - **Per-backend erase-persistence suites** (`TConfigNode_Registry_Erase`,
   `TConfigNode_JSON_Erase`, `TConfigNode_XML_Erase`, `TConfigNode_INIFile_Erase`)
   populate values and a sub-node, flush, reopen, delete one value and the
   sub-node, flush, and reopen again to verify the removed names are gone.
 
-Two known backend gaps are surfaced as `BOOST_WARN_MESSAGE` rather than hard
-failures so the suites still pass:
+One known backend gap is surfaced as `BOOST_WARN_MESSAGE` rather than a hard
+failure so the suite still passes:
 
 - **Registry**: `DeleteSubNode` does not always remove the empty sub-key
   across a flush/reopen cycle.
-- **XML**: `DoSaveValueList`'s erase branch calls `ChildNodes->Delete(name)`,
-  but `<value>` elements are addressed by their `name` attribute rather than
-  the element's local name, so the delete is a silent no-op.
 
 ## 4. Quick checklist
 

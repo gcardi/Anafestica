@@ -101,6 +101,26 @@ struct NodeOpsXMLCOMFixture {
     NodeOpsXMLCOMFixture() { ::CoInitializeEx( nullptr, COINIT_MULTITHREADED ); }
 };
 
+struct NoOpWriter {
+    bool GetAlwaysFlushNodeFlag() const noexcept { return true; }
+    void DeleteNode( Anafestica::TConfigPath const & ) {}
+    void SaveValueList( Anafestica::TConfigPath const &, Anafestica::ValueContType const & ) {}
+};
+
+struct DeepChainReader {
+    Anafestica::ValueContType CreateValueList( Anafestica::TConfigPath const & ) {
+        return {};
+    }
+
+    Anafestica::NodeContType CreateNodeList( Anafestica::TConfigPath const & Path ) {
+        Anafestica::NodeContType Nodes;
+        if ( Path.size() <= Anafestica::TConfigNode::MaxPersistenceDepth ) {
+            Nodes[L"next"] = std::make_unique<Anafestica::TConfigNode>();
+        }
+        return Nodes;
+    }
+};
+
 } // namespace
 
 //---------------------------------------------------------------------------
@@ -293,6 +313,26 @@ BOOST_AUTO_TEST_CASE( IsModified_reacts_to_every_mutation )
     }
 }
 
+BOOST_AUTO_TEST_CASE( Write_rejects_paths_deeper_than_persistence_limit )
+{
+    TConfigNode root;
+    auto* current = &root;
+    for ( std::size_t i = 0; i <= TConfigNode::MaxPersistenceDepth; ++i ) {
+        current = &current->GetSubNode( L"next" + IntToStr( static_cast<int>( i ) ) );
+    }
+    current->PutItem( L"sentinel", 1 );
+
+    NoOpWriter writer;
+    BOOST_CHECK_THROW( root.Write( writer, Anafestica::TConfigPath{} ), Exception );
+}
+
+BOOST_AUTO_TEST_CASE( Read_rejects_paths_deeper_than_persistence_limit )
+{
+    TConfigNode root;
+    DeepChainReader reader;
+    BOOST_CHECK_THROW( root.Read( reader, Anafestica::TConfigPath{} ), Exception );
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 //---------------------------------------------------------------------------
@@ -406,16 +446,9 @@ BOOST_AUTO_TEST_CASE( XML_delete_persists )
     {
         Anafestica::XML::TConfig c( path );
         BOOST_TEST( c.GetRootNode().ItemExists( L"keep" ) );
+        BOOST_TEST( !c.GetRootNode().ItemExists( L"drop" ) );
         BOOST_TEST( !c.GetRootNode().SubNodeExists( L"child" ) );
         BOOST_TEST( c.GetRootNode().GetItem<int>( L"keep" ) == 1 );
-        // Known backend gap: DoSaveValueList's erase branch calls
-        // ChildNodes->Delete(name), but <value> elements are addressed
-        // by the "name" attribute rather than the element's local name,
-        // so the delete is a silent no-op.  Surface as a warning.
-        BOOST_WARN_MESSAGE(
-            !c.GetRootNode().ItemExists( L"drop" ),
-            "XML backend: DeleteItem did not remove the <value> element"
-        );
     }
 }
 

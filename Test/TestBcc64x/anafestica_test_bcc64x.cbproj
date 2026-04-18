@@ -80,6 +80,7 @@
         <SanitizedProjectName>anafestica_test_bcc64x</SanitizedProjectName>
         <VerInfo_Locale>1040</VerInfo_Locale>
         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_IncludeVerInfo>false</VerInfo_IncludeVerInfo>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <PackageImports>adortl;bcbie;bcbsmp;bindcomp;bindcompdbx;bindcompfmx;bindcompvcl;bindcompvclsmp;bindcompvclwinx;bindengine;CloudService;CustomIPTransport;DataSnapClient;DataSnapCommon;DataSnapConnectors;DatasnapConnectorsFreePascal;DataSnapFireDAC;DataSnapIndy10ServerTransport;DataSnapNativeClient;DataSnapProviderClient;DataSnapServer;DataSnapServerMidas;dbexpress;dbrtl;dbxcds;DbxClientDriver;DbxCommonDriver;DBXDb2Driver;DBXFirebirdDriver;DBXInformixDriver;DBXInterBaseDriver;DBXMSSQLDriver;DBXMySQLDriver;DBXOdbcDriver;DBXOracleDriver;DBXSqliteDriver;DBXSybaseASADriver;DBXSybaseASEDriver;dsnap;dsnapcon;dsnapxml;emsclient;emsclientfiredac;emsedge;emshosting;emsserverresource;EnhDbGridRunPkg;FireDAC;FireDACADSDriver;FireDACASADriver;FireDACCommon;FireDACCommonDriver;FireDACCommonODBC;FireDACDb2Driver;FireDACDBXDriver;FireDACDSDriver;FireDACIBDriver;FireDACInfxDriver;FireDACMongoDBDriver;FireDACMSAccDriver;FireDACMSSQLDriver;FireDACMySQLDriver;FireDACODBCDriver;FireDACOracleDriver;FireDACPgDriver;FireDACSqliteDriver;FireDACTDataDriver;fmx;fmxase;fmxdae;fmxFireDAC;fmxobj;FMXTee;FmxTeeUI;IndyCore;IndyIPClient;IndyIPCommon;IndyIPServer;IndyProtocols;IndySystem;inet;inetdb;inetdbxpress;inetstn;NDrawGridPkgRun;QRWRun;RESTBackendComponents;RESTComponents;rtl;Skia;soapmidas;soaprtl;soapserver;SVGIconImageList;SynEditDR;Tee;TeeDB;TeeUI;tethering;vcl;vclactnband;vcldb;vcldsnap;vcledge;vclFireDAC;vclie;vclimg;VCLRESTComponents;VclSmp;vcltouch;vclwinx;vclx;xmlrtl;$(PackageImports)</PackageImports>
@@ -165,23 +166,23 @@
         <CppCompile Include="runner.cpp">
             <BuildOrder>1</BuildOrder>
         </CppCompile>
-        <CppCompile Include="test_config.cpp">
+        <CppCompile Include="..\Shared\test_config.cpp">
             <BuildOrder>2</BuildOrder>
         </CppCompile>
-        <CppCompile Include="test_config_simplified.cpp">
+        <CppCompile Include="..\Shared\test_config_simplified.cpp">
             <BuildOrder>3</BuildOrder>
         </CppCompile>
-        <CppCompile Include="test_singleton_version_info.cpp">
+        <CppCompile Include="..\Shared\test_singleton_version_info.cpp">
             <BuildOrder>4</BuildOrder>
         </CppCompile>
-        <CppCompile Include="test_types.cpp">
-            <DependentOn>test_types.h</DependentOn>
+        <CppCompile Include="..\Shared\test_types.cpp">
+            <DependentOn>..\Shared\test_types.h</DependentOn>
             <BuildOrder>6</BuildOrder>
         </CppCompile>
-        <CppCompile Include="test_type_mismatch.cpp">
+        <CppCompile Include="..\Shared\test_type_mismatch.cpp">
             <BuildOrder>5</BuildOrder>
         </CppCompile>
-        <CppCompile Include="test_node_ops.cpp">
+        <CppCompile Include="..\Shared\test_node_ops.cpp">
             <BuildOrder>7</BuildOrder>
         </CppCompile>
         <BuildConfiguration Include="Base">
@@ -201,6 +202,9 @@
         <Borland.ProjectType>CppConsoleApplication</Borland.ProjectType>
         <BorlandProject>
             <CPlusPlusBuilder.Personality>
+                <Source>
+                    <Source Name="MainSource">runner.cpp</Source>
+                </Source>
                 <ProjectProperties>
                     <ProjectProperties Name="AutoShowDeps">False</ProjectProperties>
                     <ProjectProperties Name="ManagePaths">True</ProjectProperties>

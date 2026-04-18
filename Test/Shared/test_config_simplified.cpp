@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------
-// bcc32c compatibility-focused config tests (simplified for boost::variant).
-// This file tests Registry/JSON/XML/INI backends with types supported by
-// boost::variant (no std::string/wstring support in bcc32c).
+// Simplified TConfig roundtrip tests for the 19-type subset shared by all
+// three toolchains. The std::variant-only std::string/std::wstring coverage
+// remains in test_config.cpp.
 //---------------------------------------------------------------------------
 
 #pragma hdrstop
@@ -24,7 +24,7 @@ namespace {
 using StringCont = std::vector<System::UnicodeString>;
 using BytesCont  = std::vector<unsigned char>;
 
-// Test constants for all types supported by boost::variant
+// Test constants for the types common to all three toolchains
 constexpr int                kI   = 42;
 constexpr unsigned int       kU   = 100U;
 constexpr long               kL   = -1000L;
@@ -66,7 +66,13 @@ bool DABEqual( System::Sysutils::TBytes const& a,
     return true;
 }
 
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+const String RegCfgRoot = L"Software\\Anafestica\\TestBcc64x\\ConfigSimplified";
+#elif defined( _WIN64 )
+const String RegCfgRoot = L"Software\\Anafestica\\TestBcc64\\Config";
+#else
 const String RegCfgRoot = L"Software\\Anafestica\\TestBcc32c\\Config";
+#endif
 static int   RegCfgSeq  = 0;
 
 String MakeRegCfgKey() {
@@ -105,7 +111,7 @@ struct RegistryCfgFixture {
 }
 
 //---------------------------------------------------------------------------
-// *** Registry::TConfig basic roundtrip tests (bcc32c compatible) ***
+// *** Registry::TConfig basic roundtrip tests (common-type subset) ***
 //---------------------------------------------------------------------------
 
 BOOST_FIXTURE_TEST_SUITE( TConfig_Registry_Simplified, RegistryCfgFixture )

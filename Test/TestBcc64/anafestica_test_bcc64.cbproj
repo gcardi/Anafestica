@@ -70,6 +70,7 @@
         <Multithreaded>true</Multithreaded>
         <SanitizedProjectName>anafestica_test_bcc64</SanitizedProjectName>
         <_TCHARMapping>wchar_t</_TCHARMapping>
+        <VerInfo_IncludeVerInfo>false</VerInfo_IncludeVerInfo>
         <IncludePath>..\..\..\..\..\Public\Documents\Embarcadero\Studio\37.0\Anafestica\Test\TestBcc64\;$(IncludePath)</IncludePath>
         <ILINK_LibraryPath>..\..\..\..\..\Public\Documents\Embarcadero\Studio\37.0\Anafestica\Test\TestBcc64\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
     </PropertyGroup>
@@ -147,29 +148,29 @@
             <BuildOrder>0</BuildOrder>
             <PCH>true</PCH>
         </PCHCompile>
-        <CppCompile Include="runner.cpp">
+        <CppCompile Include="..\Shared\runner.cpp">
             <BuildOrder>1</BuildOrder>
         </CppCompile>
         <CppCompile Include="test_bcc64_variant_compat.cpp">
             <BuildOrder>2</BuildOrder>
         </CppCompile>
-        <CppCompile Include="test_config.cpp">
+        <CppCompile Include="..\Shared\test_config.cpp">
             <BuildOrder>3</BuildOrder>
         </CppCompile>
-        <CppCompile Include="test_config_simplified.cpp">
+        <CppCompile Include="..\Shared\test_config_simplified.cpp">
             <BuildOrder>4</BuildOrder>
         </CppCompile>
-        <CppCompile Include="test_singleton_version_info.cpp">
+        <CppCompile Include="..\Shared\test_singleton_version_info.cpp">
             <BuildOrder>5</BuildOrder>
         </CppCompile>
-        <CppCompile Include="test_types.cpp">
-            <DependentOn>test_types.h</DependentOn>
+        <CppCompile Include="..\Shared\test_types.cpp">
+            <DependentOn>..\Shared\test_types.h</DependentOn>
             <BuildOrder>7</BuildOrder>
         </CppCompile>
-        <CppCompile Include="test_type_mismatch.cpp">
+        <CppCompile Include="..\Shared\test_type_mismatch.cpp">
             <BuildOrder>6</BuildOrder>
         </CppCompile>
-        <CppCompile Include="test_node_ops.cpp">
+        <CppCompile Include="..\Shared\test_node_ops.cpp">
             <BuildOrder>8</BuildOrder>
         </CppCompile>
         <BuildConfiguration Include="Base">
@@ -189,6 +190,9 @@
         <Borland.ProjectType>CppConsoleApplication</Borland.ProjectType>
         <BorlandProject>
             <CPlusPlusBuilder.Personality>
+                <Source>
+                    <Source Name="MainSource">..\Shared\runner.cpp</Source>
+                </Source>
                 <ProjectProperties>
                     <ProjectProperties Name="AutoShowDeps">False</ProjectProperties>
                     <ProjectProperties Name="ManagePaths">True</ProjectProperties>

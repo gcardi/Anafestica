@@ -1,6 +1,8 @@
 //---------------------------------------------------------------------------
-// TConfig roundtrip tests for all three backends (Registry, JSON, XML)
-// covering all 21 types in TConfigNodeValueType.
+// TConfig roundtrip tests for all four backends (Registry, JSON, INIFile,
+// XML). The 19 common variant alternatives are exercised on every toolchain.
+// The std::variant-only std::string, std::wstring, and string_view coverage is
+// compiled only on the bcc64x path.
 //---------------------------------------------------------------------------
 
 #pragma hdrstop
@@ -13,8 +15,11 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include <string_view>
 #include <cmath>
+
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+# include <string_view>
+#endif
 
 #include <windows.h>
 #include <objbase.h>
@@ -43,7 +48,7 @@ using Anafestica::BytesCont;
 static bool gKeepArtifacts = false;
 
 //---------------------------------------------------------------------------
-// Test values – one for each of the 19 TConfigNodeValueType alternatives
+// Test values -- one for each of the 19 cross-toolchain alternatives.
 //---------------------------------------------------------------------------
 
 constexpr int                kI   = -42;
@@ -80,9 +85,10 @@ inline BytesCont MakeVB() {
     return { 0xFE, 0xCA, 0x39, 0x43 };
 }
 
-// std::string (UTF-8) and std::wstring (UTF-16) test values
+#if defined( ANAFESTICA_USE_STD_VARIANT )
 const std::string  kSTR  = "Hello Anafestica (UTF-8)";
 const std::wstring kWSTR = L"Hello Anafestica (Wide)";
+#endif
 
 enum class ETestMode {
   Alpha = 1,
@@ -183,7 +189,7 @@ struct ArtifactSetup {
 };
 BOOST_GLOBAL_FIXTURE( ArtifactSetup );
 
-// XML COM fixture – called once per XML test case.
+// XML COM fixture -- called once per XML test case.
 // CoUninitialize is intentionally omitted: the Embarcadero RTL performs its
 // own COM teardown at process exit; an explicit unbalanced call here would
 // crash the RTL cleanup code.
@@ -375,6 +381,7 @@ BOOST_AUTO_TEST_CASE( Registry_bytevec_roundtrip )
     BOOST_TEST( c.GetRootNode().GetItem<BytesCont>( L"val" ) == vb );
 }
 
+#if defined( ANAFESTICA_USE_STD_VARIANT )
 BOOST_AUTO_TEST_CASE( Registry_stdstring_roundtrip )
 {
     const auto key = MakeRegCfgKey(); ScopedRegKey g( key );
@@ -407,6 +414,8 @@ BOOST_AUTO_TEST_CASE( Registry_string_view_write )
     BOOST_TEST( c.GetRootNode().GetItem<std::string> ( L"sv"  ) == kSTR  );
     BOOST_CHECK( c.GetRootNode().GetItem<std::wstring>( L"wsv" ) == kWSTR );
 }
+
+#endif
 
 BOOST_AUTO_TEST_CASE( Registry_enum_roundtrip )
 {
@@ -619,6 +628,7 @@ BOOST_AUTO_TEST_CASE( JSON_bytevec_roundtrip )
     BOOST_TEST( c.GetRootNode().GetItem<BytesCont>( L"val" ) == vb );
 }
 
+#if defined( ANAFESTICA_USE_STD_VARIANT )
 BOOST_AUTO_TEST_CASE( JSON_stdstring_roundtrip )
 {
     const auto f = MakeTempPath( L".json" ); TempFileGuard g( f );
@@ -649,6 +659,8 @@ BOOST_AUTO_TEST_CASE( JSON_string_view_write )
     BOOST_TEST( c.GetRootNode().GetItem<std::string> ( L"sv"  ) == kSTR  );
     BOOST_CHECK( c.GetRootNode().GetItem<std::wstring>( L"wsv" ) == kWSTR );
 }
+
+#endif
 
 BOOST_AUTO_TEST_CASE( JSON_enum_roundtrip )
 {
@@ -875,6 +887,7 @@ BOOST_AUTO_TEST_CASE( INIFile_bytevec_roundtrip )
     BOOST_TEST( c.GetRootNode().GetItem<BytesCont>( L"val" ) == vb );
 }
 
+#if defined( ANAFESTICA_USE_STD_VARIANT )
 BOOST_AUTO_TEST_CASE( INIFile_stdstring_roundtrip )
 {
     const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
@@ -905,6 +918,8 @@ BOOST_AUTO_TEST_CASE( INIFile_string_view_write )
     BOOST_TEST(  c.GetRootNode().GetItem<std::string> ( L"sv"  ) == kSTR  );
     BOOST_CHECK( c.GetRootNode().GetItem<std::wstring>( L"wsv" ) == kWSTR );
 }
+
+#endif
 
 BOOST_AUTO_TEST_CASE( INIFile_enum_roundtrip )
 {
@@ -1115,6 +1130,7 @@ BOOST_AUTO_TEST_CASE( XML_bytevec_roundtrip )
     BOOST_TEST( c.GetRootNode().GetItem<BytesCont>( L"val" ) == vb );
 }
 
+#if defined( ANAFESTICA_USE_STD_VARIANT )
 BOOST_AUTO_TEST_CASE( XML_stdstring_roundtrip )
 {
     const auto f = MakeTempPath( L".xml" ); TempFileGuard g( f );
@@ -1145,6 +1161,8 @@ BOOST_AUTO_TEST_CASE( XML_string_view_write )
     BOOST_TEST( c.GetRootNode().GetItem<std::string> ( L"sv"  ) == kSTR  );
     BOOST_CHECK( c.GetRootNode().GetItem<std::wstring>( L"wsv" ) == kWSTR );
 }
+
+#endif
 
 BOOST_AUTO_TEST_CASE( XML_enum_roundtrip )
 {

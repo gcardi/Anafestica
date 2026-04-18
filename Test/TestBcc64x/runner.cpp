@@ -63,27 +63,7 @@ private:
 
 int _tmain(int argc, TCHAR* argv[]);
 
-/*
-int WINAPI WinMain(
-    HINSTANCE,
-    HINSTANCE,
-    LPSTR,
-    int)
-{
-    int argc = 0;
-    wchar_t** argvW = CommandLineToArgvW(GetCommandLineW(), &argc);
-
-    if (!argvW)
-        return -1;
-
-    int ret = _tmain(argc, (TCHAR**)argvW);
-
-    LocalFree(argvW);
-    return ret;
-}
-*/
-
-::boost::unit_test::test_suite* init_unit_test(int argc, char* argv[])
+::boost::unit_test::test_suite* init_unit_test(int, char*[])
 {
     return nullptr;
 }
@@ -122,4 +102,3 @@ int _tmain(int argc, _TCHAR* argv[])
     return ::boost::unit_test::unit_test_main( &init_unit_test, argc, UTF8argv.data() );
 }
 #endif
-

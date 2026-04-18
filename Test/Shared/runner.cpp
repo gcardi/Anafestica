@@ -2,6 +2,7 @@
 #pragma argsused
 
 #include <windows.h>
+#include <shellapi.h>
 
 #ifdef _WIN32
 #include <tchar.h>
@@ -58,8 +59,18 @@ private:
 # define BOOST_TEST_ALTERNATIVE_INIT_API
 #endif
 
-#if defined( _UNICODE )
-int _tmain(int argc, _TCHAR* argv[])
+extern int main( int, char** );
+
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+::boost::unit_test::test_suite* init_unit_test( int, char*[] )
+{
+    return nullptr;
+}
+#endif
+
+namespace {
+
+int RunBoostUtf8Main( int argc, wchar_t* argv[] )
 {
     static constexpr char zero {};
     vector<LPSTR> UTF8argv;
@@ -90,7 +101,31 @@ int _tmain(int argc, _TCHAR* argv[])
         }
     }
     setvbuf(stdout, nullptr, _IONBF, 0);
-    extern int main( int, char** );
-    return main( argc, &UTF8argv[0] );
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+    return ::boost::unit_test::unit_test_main( &init_unit_test, argc, UTF8argv.data() );
+#else
+    return ::main( argc, &UTF8argv[0] );
+#endif
+}
+
+} // namespace
+
+#if defined( _UNICODE )
+int _tmain(int argc, _TCHAR* argv[])
+{
+    return RunBoostUtf8Main( argc, argv );
 }
 #endif
+
+int WINAPI WinMain( HINSTANCE, HINSTANCE, LPSTR, int )
+{
+    int argc = 0;
+    auto argv = CommandLineToArgvW( GetCommandLineW(), &argc );
+    if ( argv == nullptr ) {
+        return GetLastError();
+    }
+
+    const auto result = RunBoostUtf8Main( argc, argv );
+    LocalFree( argv );
+    return result;
+}

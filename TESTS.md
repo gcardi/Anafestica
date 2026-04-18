@@ -37,24 +37,23 @@ The three suites do not run exactly the same set of cases. Per-file case counts:
 | File | bcc32c | bcc64 | bcc64x |
 | ---- | :----: | :---: | :----: |
 | `test_config.cpp` | 85 | 85 | 97 |
-| `test_config_simplified.cpp` | 19 | 19 | — |
-| `test_node_ops.cpp` | 17 | 17 | 17 |
+| `test_config_simplified.cpp` | 19 | 19 | 19 |
+| `test_node_ops.cpp` | 19 | 19 | 19 |
 | `test_type_mismatch.cpp` | 20 | 20 | 20 |
 | `test_types.cpp` | 7 | 7 | 7 |
 | `test_singleton_version_info.cpp` | 2 | 2 | 2 |
 | `test_bccXX_variant_compat.cpp` | 2 | 2 | — |
-| **Total** | **152** | **152** | **143** |
+| **Total** | **154** | **154** | **164** |
 
-Despite having two additional variant alternatives (`std::string`, `std::wstring`),
-bcc64x reports **fewer** cases than the two boost-variant toolchains. The net
-−9 delta breaks down as:
+Despite not having a `variant_compat` module, bcc64x now reports **more** cases
+than the two boost-variant toolchains. The net +10 delta breaks down as:
 
 - **+12** in `test_config.cpp` — extra roundtrip cases for `str` and `wstr`
   across the four backends, plus enum and `string_view`/`wstring_view`
   write-convenience tests that only compile on the `std::variant` path.
-- **−19** — `test_config_simplified.cpp` is not present under
-  [Test/TestBcc64x/](Test/TestBcc64x/). This looks like an oversight rather
-  than an intentional exclusion; porting it over would restore parity.
+- `test_config_simplified.cpp` now exists under `Test\TestBcc64x` as the
+  shared 19-type subset, so parity with the legacy toolchains is restored
+  without duplicating the bcc64x-only `std::string`/`std::wstring` coverage.
 - **−2** — no `test_bcc64x_variant_compat.cpp` exists. This one **is**
   intentional: the `variant_compat` files pin down `boost::variant` quirks
   that are specific to the pre-Clang-15 toolchains and do not apply on the
@@ -79,7 +78,7 @@ each test project folder. It does not require MSBuild or `rsvars.bat`.
 
 - Windows
 - C++Builder with RTL/VCL support
-- Boost unit_test_framework
+- Boost.Test `unit_test_framework` for all three test executables, even though the library code on `bcc64x` itself uses the `std::variant` path and does not require Boost for value storage
 - HKCU registry write permission (required by registry tests)
 
 ---
@@ -101,6 +100,7 @@ are absent there because Boost 1.70's `mpl::list` is hardcoded to a 20-type limi
 
 `Test/TestBcc64x/test_config.cpp` covers full roundtrip through all four backends for all 21 types (bcc64x).
 `Test/TestBcc64/test_config.cpp` covers the same four backends for the 19 common types (bcc64).
+`Test/TestBcc64x/test_config_simplified.cpp` adds the shared 19-type registry-only subset to the `bcc64x` suite as well, restoring per-module parity with `bcc32c` and `bcc64` without introducing any `boost::variant`-specific behaviour on the `bcc64x` path.
 
 | Tag | Type | Registry | JSON | XML | INI |
 | --- | ---- | :------: | :--: | :-: | :-: |

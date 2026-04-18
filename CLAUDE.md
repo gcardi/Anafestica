@@ -34,7 +34,7 @@ clear_tests.bat bcc64x              # remove bcc64x artifacts only
 ```
 
 - Compilers: `bcc32c`, `bcc64`, `bcc64x` (C++Builder)
-- Test framework: Boost.Test (`unit_test_framework`)
+- Test framework: Boost.Test (`unit_test_framework`) for all three test executables
 - Tests require Windows, HKCU registry write access, and RTL/VCL support
 
 ## Code conventions
@@ -42,6 +42,7 @@ clear_tests.bat bcc64x              # remove bcc64x artifacts only
 - **Header-only** — all library code lives in `anafestica/*.h`; do not add `.cpp` files to the library
 - **C++17** standard; no C++20 features
 - Variant selection is auto-detected in `CfgNodeValueType.h` via `__clang_major__`: `std::variant` for bcc64x (Clang ≥ 15), `boost::variant` for bcc64/bcc32c — no manual `ANAFESTICA_USE_STD_VARIANT` definition needed
+- The library itself does not require Boost on the bcc64x `std::variant` path, but the bundled test harness still uses Boost.Test on bcc64x
 - NVI (Non-Virtual Interface) pattern on `TConfig` — public non-virtual methods delegate to `protected virtual Do*` hooks
 - RAII lifecycle: constructors load from storage, destructors flush back
 - Embarcadero types are used throughout: `System::String`, `System::TDateTime`, `System::Currency`, `System::Sysutils::TBytes`
@@ -63,7 +64,7 @@ Examples: `feat(ini):`, `fix(xml):`, `test(config):`, `docs(tests):`, `docs:`
 
 ## Things to keep in mind
 
-- Test coverage spans all 21 variant types × 4 backends; maintain this when adding types or backends
+- Test coverage spans all 21 variant types × 4 backends on bcc64x, plus a shared 19-type simplified module across all three toolchains; maintain this when adding types or backends
 - The library is installed by cloning into `$(BDSCOMMONDIR)` — paths matter
 - See [TESTS.md](TESTS.md) for the full test plan and coverage matrix
 - See [LIBRARY_DOCUMENTATION.md](LIBRARY_DOCUMENTATION.md) for API docs

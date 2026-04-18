@@ -1188,7 +1188,7 @@ This pattern demonstrates:
 ## Dependencies
 
 - **Variant back-end (auto-detected)**: `anafestica/CfgNodeValueType.h` selects the variant implementation automatically based on the toolchain's predefined macros — you do **not** need to define anything by hand. `bcc64x` (Clang ≥ 15, `_WIN64`) uses `std::variant` with 21 alternatives (including `std::string` / `std::wstring`); `bcc64` (Clang < 15, affected by RSP-27418) and `bcc32c` fall back to `boost::variant` with 19 alternatives. The internal flag `ANAFESTICA_USE_STD_VARIANT` is defined inside the header on the `bcc64x` path — it is not a user-facing switch, and overriding it manually is unsupported. Legacy non-Clang `BCC32` produces a hard `#error`.
-- **Boost Libraries**: Required on the `boost::variant` path only (i.e. `bcc32c` and `bcc64`). Not needed when compiling with `bcc64x`.
+- **Boost Libraries**: Required by the library on the `boost::variant` path only (i.e. `bcc32c` and `bcc64`). The `bcc64x` library build uses `std::variant` and does not need Boost for value storage. Separately, the bundled test projects still use Boost.Test on all three toolchains.
 - **Embarcadero C++ Compiler**: Only clang-based compilers (bcc32c, bcc64, bcc64x) are supported
 - **RAD Studio**: Compatible with RAD Studio 10.3+ (earlier versions may work but are untested)
 
@@ -1197,7 +1197,7 @@ This pattern demonstrates:
 1. Clone or download the library headers
 2. Add the library path to your project's include directories
 3. For Registry usage, ensure your project has proper version info set (CompanyName, ProductName, ProductVersion)
-4. Install Boost libraries via GetIt or manually (for bcc64 and bcc32c)
+4. Install Boost libraries via GetIt or manually when targeting `bcc64` / `bcc32c`, or whenever you want to build the bundled Boost.Test-based test suite
 
 ## Thread Safety
 

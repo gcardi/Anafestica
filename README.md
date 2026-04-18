@@ -34,6 +34,8 @@ The selection is performed inside `CfgNodeValueType.h` via the `__clang_major__`
 
 When `boost::variant` is selected (`bcc64` or `bcc32c`), the Boost libraries are required. You can install them via the IDE's GetIt tool (e.g., version 1.68.0 for RAD Studio 10.3 or 1.70.0 for RAD Studio 10.4).
 
+If you build the bundled test projects, note that the current test harness uses **Boost.Test** on all three toolchains, including `bcc64x`. In other words: `bcc64x` does not need Boost for the library's `std::variant` path, but the test executables still depend on Boost.Test.
+
 <img src="docs/assets/images/1.png" alt="Figure 1">
 
 Please note that only Clang-based compilers are supported by this library (i.e., bcc32c, bcc64, and bcc64x).
@@ -62,6 +64,10 @@ See also: [TESTS.md](TESTS.md) for an extended test plan and variant coverage ma
 
 The three C++Builder test projects are built and run with MSBuild using the
 provided `test_all.bat` script.
+
+The current `bcc64x` suite includes both the full `test_config.cpp` coverage for
+all 21 `std::variant` alternatives and the shared 19-type
+`test_config_simplified.cpp` module used for parity with the legacy toolchains.
 
 1. Run all three compilers (build + test):
 
@@ -117,4 +123,6 @@ clear_tests.bat bcc32c bcc64        # clean two toolchains
 
 This deletes the output directories (`Win32`, `Win64`, `Win64x`) under each
 test project folder. It does not require MSBuild or `rsvars.bat`.
+
+The test executables are currently based on **Boost.Test** (`unit_test_framework`) for all three compilers.
 

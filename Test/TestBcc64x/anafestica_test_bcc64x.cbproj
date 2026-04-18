@@ -168,18 +168,21 @@
         <CppCompile Include="test_config.cpp">
             <BuildOrder>2</BuildOrder>
         </CppCompile>
-        <CppCompile Include="test_singleton_version_info.cpp">
+        <CppCompile Include="test_config_simplified.cpp">
             <BuildOrder>3</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="test_singleton_version_info.cpp">
+            <BuildOrder>4</BuildOrder>
         </CppCompile>
         <CppCompile Include="test_types.cpp">
             <DependentOn>test_types.h</DependentOn>
-            <BuildOrder>5</BuildOrder>
+            <BuildOrder>6</BuildOrder>
         </CppCompile>
         <CppCompile Include="test_type_mismatch.cpp">
-            <BuildOrder>4</BuildOrder>
+            <BuildOrder>5</BuildOrder>
         </CppCompile>
         <CppCompile Include="test_node_ops.cpp">
-            <BuildOrder>6</BuildOrder>
+            <BuildOrder>7</BuildOrder>
         </CppCompile>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>

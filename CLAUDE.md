@@ -15,6 +15,10 @@ anafestica/       — Public header files (the library itself)
 App/              — Demo / sample application
 Demo/             — Additional demo code
 Test/             — Boost.Test unit tests
+	Shared/         — Shared test modules compiled by all toolchains
+	TestBcc32c/     — Win32 project + bcc32c-specific compatibility files
+	TestBcc64/      — Win64 project + bcc64-specific compatibility files
+	TestBcc64x/     — Win64x project + bcc64x-specific runner
 docs/             — Documentation assets (images, diagrams)
 test_all.bat      — Build and run all three test suites via MSBuild
 clear_tests.bat   — Remove test build artifacts (selective or all)
@@ -25,9 +29,10 @@ clear_tests.bat   — Remove test build artifacts (selective or all)
 ```powershell
 test_all.bat                        # build + run all three compilers
 test_all.bat bcc64x                 # build + run bcc64x only
-test_all.bat --rebuild bcc32c bcc64 # force full recompile for two toolchains
+test_all.bat --rebuild bcc32c bcc64 # clean + rebuild two toolchains
 test_all.bat --no-build             # run existing executables only
 test_all.bat --stop-on-error        # abort on first failure
+test_all.bat --verbose-build        # show full MSBuild/compiler commands
 
 clear_tests.bat                     # remove build artifacts for all three
 clear_tests.bat bcc64x              # remove bcc64x artifacts only

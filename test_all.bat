@@ -9,8 +9,9 @@ REM  Usage:  test_all.bat [options] [toolchain ...]
 REM
 REM  Options:
 REM    --no-build       Skip the build step; run existing executables
-REM    --rebuild        Force full recompilation (default: incremental)
+REM    --rebuild        Force a clean rebuild (Clean + Build)
 REM    --stop-on-error  Abort immediately on first failure
+REM    --verbose-build  Use normal MSBuild verbosity and show compiler commands
 REM
 REM  Toolchains: bcc32c  bcc64  bcc64x   (default: all three)
 REM
@@ -24,6 +25,7 @@ REM ---------------------------------------------------------------
 set "ROOT=%~dp0."
 set BUILD=1
 set "MSBUILD_TARGET=Make"
+set "MSBUILD_VERBOSITY=minimal"
 set STOP_ON_ERROR=0
 set DO_BCC32C=0
 set DO_BCC64=0
@@ -33,8 +35,9 @@ set TOOLCHAIN_SELECTED=0
 :parse_args
 if "%~1"=="" goto :args_done
 if /i "%~1"=="--no-build"      ( set BUILD=0& shift & goto :parse_args )
-if /i "%~1"=="--rebuild"       ( set "MSBUILD_TARGET=Build"& shift & goto :parse_args )
+if /i "%~1"=="--rebuild"       ( set "MSBUILD_TARGET=Clean,Build"& shift & goto :parse_args )
 if /i "%~1"=="--stop-on-error" ( set STOP_ON_ERROR=1& shift & goto :parse_args )
+if /i "%~1"=="--verbose-build" ( set "MSBUILD_VERBOSITY=normal"& shift & goto :parse_args )
 if /i "%~1"=="bcc32c"  ( set DO_BCC32C=1& set TOOLCHAIN_SELECTED=1& shift & goto :parse_args )
 if /i "%~1"=="bcc64"   ( set DO_BCC64=1& set TOOLCHAIN_SELECTED=1& shift & goto :parse_args )
 if /i "%~1"=="bcc64x"  ( set DO_BCC64X=1& set TOOLCHAIN_SELECTED=1& shift & goto :parse_args )
@@ -117,10 +120,10 @@ echo.
 echo ===============================================================
 echo  Building: !LABEL!
 echo ===============================================================
-echo --- MSBuild: !CBPROJ! [!PLAT!^|Release] ---
+echo --- MSBuild: !CBPROJ! [!PLAT!^|Release, /t:!MSBUILD_TARGET!, /v:!MSBUILD_VERBOSITY!] ---
 
 set "MSBUILD_LOG=!TEMP!\anafestica_msbuild_!PLAT!.log"
-msbuild "!ROOT!\!CBPROJ!" /p:Config=Release /p:Platform=!PLAT! /t:!MSBUILD_TARGET! /v:minimal /nologo > "!MSBUILD_LOG!" 2>&1
+msbuild "!ROOT!\!CBPROJ!" /p:Config=Release /p:Platform=!PLAT! /t:!MSBUILD_TARGET! /v:!MSBUILD_VERBOSITY! /nologo > "!MSBUILD_LOG!" 2>&1
 set "MSBUILD_ERR=!ERRORLEVEL!"
 findstr /v /c:"MSB4056" "!MSBUILD_LOG!"
 del "!MSBUILD_LOG!" >nul 2>&1

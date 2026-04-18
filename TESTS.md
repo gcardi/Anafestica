@@ -11,15 +11,18 @@ using the provided `test_all.bat` script.
 test_all.bat                        # build + run all three compilers
 test_all.bat bcc64x                 # build + run bcc64x only
 test_all.bat bcc32c bcc64           # build + run two toolchains
-test_all.bat --rebuild              # force full recompile for all three
+test_all.bat --rebuild              # clean + rebuild all three
 test_all.bat --no-build             # skip build, run existing executables only
 test_all.bat --stop-on-error        # abort on first failure
+test_all.bat --verbose-build        # show full MSBuild/compiler commands
 ```
 
 The build is incremental by default (MSBuild `/t:Make`); use `--rebuild` to
-force a full recompile (`/t:Build`). The script calls `rsvars.bat` to set up
-the Embarcadero environment, builds all selected targets first, then runs the
-tests only if all builds succeeded:
+force a clean rebuild (`/t:Clean,Build`). By default the script uses MSBuild
+`/v:minimal`, so the exact compiler command lines shown can differ by
+toolchain; use `--verbose-build` for consistent full command output. The script
+calls `rsvars.bat` to set up the Embarcadero environment, builds all selected
+targets first, then runs the tests only if all builds succeeded:
 
 | Project | Platform | Compiler | Executable |
 | ------- | -------- | -------- | ---------- |
@@ -51,9 +54,10 @@ than the two boost-variant toolchains. The net +10 delta breaks down as:
 - **+12** in `test_config.cpp` — extra roundtrip cases for `str` and `wstr`
   across the four backends, plus enum and `string_view`/`wstring_view`
   write-convenience tests that only compile on the `std::variant` path.
-- `test_config_simplified.cpp` now exists under `Test\TestBcc64x` as the
-  shared 19-type subset, so parity with the legacy toolchains is restored
-  without duplicating the bcc64x-only `std::string`/`std::wstring` coverage.
+- `Test\Shared\test_config_simplified.cpp` now provides the shared 19-type
+  subset for all three toolchains, so parity with the legacy toolchains is
+  restored without duplicating the bcc64x-only
+  `std::string`/`std::wstring` coverage.
 - **−2** — no `test_bcc64x_variant_compat.cpp` exists. This one **is**
   intentional: the `variant_compat` files pin down `boost::variant` quirks
   that are specific to the pre-Clang-15 toolchains and do not apply on the
@@ -96,11 +100,22 @@ are absent there because Boost 1.70's `mpl::list` is hardcoded to a 20-type limi
 - **std::string** (UTF-8, tag `str`) — bcc64x only
 - **std::wstring** (UTF-16, tag `wstr`) — bcc64x only
 
-`Test/TestBcc64x/test_types.cpp` covers low-level registry primitives (QWORD, MultiSz, binary, expand-string).
+Most of the suite now lives under `Test\Shared` and is compiled into all three
+toolchain-specific `.cbproj` projects. The remaining per-toolchain files are
+the `boost::variant` compatibility modules in `Test\TestBcc32c` and
+`Test\TestBcc64`, plus the bcc64x-specific `runner.cpp`.
 
-`Test/TestBcc64x/test_config.cpp` covers full roundtrip through all four backends for all 21 types (bcc64x).
-`Test/TestBcc64/test_config.cpp` covers the same four backends for the 19 common types (bcc64).
-`Test/TestBcc64x/test_config_simplified.cpp` adds the shared 19-type registry-only subset to the `bcc64x` suite as well, restoring per-module parity with `bcc32c` and `bcc64` without introducing any `boost::variant`-specific behaviour on the `bcc64x` path.
+`Test/Shared/test_types.cpp` covers low-level registry primitives (QWORD,
+MultiSz, binary, expand-string).
+
+`Test/Shared/test_config.cpp` covers full roundtrip through all four backends.
+It builds as 97 cases on bcc64x (all 21 `std::variant` alternatives plus the
+bcc64x-only convenience tests) and as 85 cases on bcc64/bcc32c (the shared
+19-type subset).
+
+`Test/Shared/test_config_simplified.cpp` provides the shared 19-type subset for
+all three toolchains without introducing any `boost::variant`-specific
+behaviour on the `bcc64x` path.
 
 | Tag | Type | Registry | JSON | XML | INI |
 | --- | ---- | :------: | :--: | :-: | :-: |
@@ -126,7 +141,7 @@ are absent there because Boost 1.70's `mpl::list` is hardcoded to a 20-type limi
 | `str` | std::string (UTF-8) — bcc64x only | ✓ | ✓ | ✓ | ✓ |
 | `wstr` | std::wstring (UTF-16) — bcc64x only | ✓ | ✓ | ✓ | ✓ |
 
-`Test/TestBcc64x/test_config.cpp` also includes explicit enum roundtrip tests for all
+`Test/Shared/test_config.cpp` also includes explicit enum roundtrip tests for all
 four backends:
 
 - `Registry_enum_roundtrip`
@@ -138,7 +153,7 @@ four backends:
 
 ### Type-mismatch tests
 
-`Test/TestBcc64x/test_type_mismatch.cpp` (shared with the bcc64 target) verifies that reading a value with a C++ type
+`Test/Shared/test_type_mismatch.cpp` verifies that reading a value with a C++ type
 that differs from the type tag stored by the backend silently returns the
 default-initialised value (`T{}`).  The variant alternative written by
 `PutItem<A>()` does not match the `std::get_if<B>()` performed by

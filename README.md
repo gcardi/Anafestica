@@ -85,7 +85,7 @@ test_all.bat bcc32c bcc64           # build + run two toolchains
 3. Force a full recompile:
 
 ```powershell
-test_all.bat --rebuild              # rebuild all three from scratch
+test_all.bat --rebuild              # clean + rebuild all three from scratch
 ```
 
 4. Run only existing executables (skip build):
@@ -100,10 +100,18 @@ test_all.bat --no-build
 test_all.bat --stop-on-error
 ```
 
-The build is incremental by default — only changed files are recompiled.
-The script calls `rsvars.bat` to set up the Embarcadero environment, then
-builds all selected targets first, and runs the tests only if all builds
-succeeded:
+6. Show full MSBuild/compiler commands:
+
+```powershell
+test_all.bat --verbose-build
+```
+
+The build is incremental by default and uses MSBuild `/t:Make` with
+`/v:minimal`. Use `--rebuild` to run `/t:Clean,Build`, and use
+`--verbose-build` to switch to `/v:normal` when you want the full compiler
+command lines for every toolchain. The script calls `rsvars.bat` to set up the
+Embarcadero environment, then builds all selected targets first, and runs the
+tests only if all builds succeeded:
 
 | Project | Platform | Executable |
 | ------- | -------- | ---------- |

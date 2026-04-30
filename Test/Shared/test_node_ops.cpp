@@ -28,6 +28,7 @@
 #include <anafestica/CfgItems.h>
 #include <anafestica/CfgRegistry.h>
 #include <anafestica/CfgJSON.h>
+#include <anafestica/CfgBSON.h>
 #include <anafestica/CfgXML.h>
 #include <anafestica/CfgIniFile.h>
 
@@ -414,6 +415,37 @@ BOOST_AUTO_TEST_CASE( JSON_delete_persists )
     }
     {
         Anafestica::JSON::TConfig c( path );
+        BOOST_TEST( c.GetRootNode().ItemExists( L"keep" ) );
+        BOOST_TEST( !c.GetRootNode().ItemExists( L"drop" ) );
+        BOOST_TEST( !c.GetRootNode().SubNodeExists( L"child" ) );
+        BOOST_TEST( c.GetRootNode().GetItem<int>( L"keep" ) == 1 );
+    }
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+//---------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_SUITE( TConfigNode_BSON_Erase )
+
+BOOST_AUTO_TEST_CASE( BSON_delete_persists )
+{
+    auto const path = MakeNodeOpsTempPath( L".bson" );
+    NodeOpsTempGuard g( path );
+
+    {
+        Anafestica::BSON::TConfig c( path );
+        c.GetRootNode().PutItem( L"keep", 1 );
+        c.GetRootNode().PutItem( L"drop", 2 );
+        c.GetRootNode()[L"child"].PutItem( L"v", 99 );
+    }
+    {
+        Anafestica::BSON::TConfig c( path );
+        c.GetRootNode().DeleteItem( L"drop" );
+        c.GetRootNode().DeleteSubNode( L"child" );
+    }
+    {
+        Anafestica::BSON::TConfig c( path );
         BOOST_TEST( c.GetRootNode().ItemExists( L"keep" ) );
         BOOST_TEST( !c.GetRootNode().ItemExists( L"drop" ) );
         BOOST_TEST( !c.GetRootNode().SubNodeExists( L"child" ) );

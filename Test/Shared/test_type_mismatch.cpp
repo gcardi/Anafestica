@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
-// TConfig type-mismatch tests for all four backends
-// (Registry, JSON, INI, XML).
+// TConfig type-mismatch tests for all five backends
+// (Registry, JSON, BSON, INI, XML).
 //
 // Each test stores a value of type A via PutItem<A>(), then reads it back
 // with GetItem<B>() where B != A.  Because the variant alternative written
@@ -33,6 +33,7 @@
 
 #include <anafestica/CfgRegistry.h>
 #include <anafestica/CfgJSON.h>
+#include <anafestica/CfgBSON.h>
 #include <anafestica/CfgXML.h>
 #include <anafestica/CfgIniFile.h>
 
@@ -258,6 +259,65 @@ BOOST_AUTO_TEST_CASE( JSON_double_read_as_float )
     { Anafestica::JSON::TConfig c( f );
       c.GetRootNode().PutItem( L"val", double( 3.141592653589793 ) ); }
     Anafestica::JSON::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<float>( L"val" ) == float{} );
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
+//---------------------------------------------------------------------------
+// *** BSON type-mismatch tests ***
+//---------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_SUITE( TypeMismatch_BSON )
+
+BOOST_AUTO_TEST_CASE( BSON_int_read_as_double )
+{
+    const auto f = MakeMismatchTempPath( L".bson" );
+    MismatchTempFileGuard g( f );
+    { Anafestica::BSON::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", int( -42 ) ); }
+    Anafestica::BSON::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<double>( L"val" ) == double{} );
+}
+
+BOOST_AUTO_TEST_CASE( BSON_string_read_as_int )
+{
+    const auto f = MakeMismatchTempPath( L".bson" );
+    MismatchTempFileGuard g( f );
+    { Anafestica::BSON::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", String( L"Hello" ) ); }
+    Anafestica::BSON::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<int>( L"val" ) == int{} );
+}
+
+BOOST_AUTO_TEST_CASE( BSON_int_read_as_string )
+{
+    const auto f = MakeMismatchTempPath( L".bson" );
+    MismatchTempFileGuard g( f );
+    { Anafestica::BSON::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", int( -42 ) ); }
+    Anafestica::BSON::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<String>( L"val" ) == String{} );
+}
+
+BOOST_AUTO_TEST_CASE( BSON_bool_read_as_int )
+{
+    const auto f = MakeMismatchTempPath( L".bson" );
+    MismatchTempFileGuard g( f );
+    { Anafestica::BSON::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", true ); }
+    Anafestica::BSON::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<int>( L"val" ) == int{} );
+}
+
+BOOST_AUTO_TEST_CASE( BSON_double_read_as_float )
+{
+    const auto f = MakeMismatchTempPath( L".bson" );
+    MismatchTempFileGuard g( f );
+    { Anafestica::BSON::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", double( 3.141592653589793 ) ); }
+    Anafestica::BSON::TConfig c( f );
     BOOST_TEST( c.GetRootNode().GetItem<float>( L"val" ) == float{} );
 }
 

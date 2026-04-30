@@ -39,20 +39,20 @@ The three suites do not run exactly the same set of cases. Per-file case counts:
 
 | File | bcc32c | bcc64 | bcc64x |
 | ---- | :----: | :---: | :----: |
-| `test_config.cpp` | 85 | 85 | 97 |
+| `test_config.cpp` | 107 | 107 | 122 |
 | `test_config_simplified.cpp` | 19 | 19 | 19 |
-| `test_node_ops.cpp` | 19 | 19 | 19 |
-| `test_type_mismatch.cpp` | 20 | 20 | 20 |
+| `test_node_ops.cpp` | 20 | 20 | 20 |
+| `test_type_mismatch.cpp` | 25 | 25 | 25 |
 | `test_types.cpp` | 7 | 7 | 7 |
 | `test_singleton_version_info.cpp` | 2 | 2 | 2 |
 | `test_bccXX_variant_compat.cpp` | 2 | 2 | — |
-| **Total** | **154** | **154** | **164** |
+| **Total** | **182** | **182** | **195** |
 
 Despite not having a `variant_compat` module, bcc64x now reports **more** cases
-than the two boost-variant toolchains. The net +10 delta breaks down as:
+than the two boost-variant toolchains. The net +13 delta breaks down as:
 
-- **+12** in `test_config.cpp` — extra roundtrip cases for `str` and `wstr`
-  across the four backends, plus enum and `string_view`/`wstring_view`
+- **+15** in `test_config.cpp` — extra roundtrip cases for `str` and `wstr`
+  across the five backends, plus enum and `string_view`/`wstring_view`
   write-convenience tests that only compile on the `std::variant` path.
 - `Test\Shared\test_config_simplified.cpp` now provides the shared 19-type
   subset for all three toolchains, so parity with the legacy toolchains is
@@ -108,48 +108,49 @@ the `boost::variant` compatibility modules in `Test\TestBcc32c` and
 `Test/Shared/test_types.cpp` covers low-level registry primitives (QWORD,
 MultiSz, binary, expand-string).
 
-`Test/Shared/test_config.cpp` covers full roundtrip through all four backends.
-It builds as 97 cases on bcc64x (all 21 `std::variant` alternatives plus the
-bcc64x-only convenience tests) and as 85 cases on bcc64/bcc32c (the shared
+`Test/Shared/test_config.cpp` covers full roundtrip through all five backends.
+It builds as 122 cases on bcc64x (all 21 `std::variant` alternatives plus the
+bcc64x-only convenience tests) and as 107 cases on bcc64/bcc32c (the shared
 19-type subset).
 
 `Test/Shared/test_config_simplified.cpp` provides the shared 19-type subset for
 all three toolchains without introducing any `boost::variant`-specific
 behaviour on the `bcc64x` path.
 
-| Tag | Type | Registry | JSON | XML | INI |
-| --- | ---- | :------: | :--: | :-: | :-: |
-| `i` | int | ✓ | ✓ | ✓ | ✓ |
-| `u` | unsigned int | ✓ | ✓ | ✓ | ✓ |
-| `l` | long | ✓ | ✓ | ✓ | ✓ |
-| `ul` | unsigned long | ✓ | ✓ | ✓ | ✓ |
-| `c` | char | ✓ | ✓ | ✓ | ✓ |
-| `uc` | unsigned char | ✓ | ✓ | ✓ | ✓ |
-| `s` | short | ✓ | ✓ | ✓ | ✓ |
-| `us` | unsigned short | ✓ | ✓ | ✓ | ✓ |
-| `ll` | long long | ✓ | ✓ | ✓ | ✓ |
-| `ull` | unsigned long long | ✓ | ✓ | ✓ | ✓ |
-| `b` | bool | ✓ | ✓ | ✓ | ✓ |
-| `sz` | System::String | ✓ | ✓ | ✓ | ✓ |
-| `dt` | System::TDateTime | ✓ | ✓ | ✓ | ✓ |
-| `flt` | float | ✓ | ✓ | ✓ | ✓ |
-| `dbl` | double | ✓ | ✓ | ✓ | ✓ |
-| `cur` | System::Currency | ✓ | ✓ | ✓ | ✓ |
-| `sv` | StringCont (vector\<String\>) | ✓ | ✓ | ✓ | ✓ |
-| `dab` | TBytes | ✓ | ✓ | ✓ | ✓ |
-| `vb` | BytesCont (vector\<Byte\>) | ✓ | ✓ | ✓ | ✓ |
-| `str` | std::string (UTF-8) — bcc64x only | ✓ | ✓ | ✓ | ✓ |
-| `wstr` | std::wstring (UTF-16) — bcc64x only | ✓ | ✓ | ✓ | ✓ |
+| Tag | Type | Registry | JSON | BSON | XML | INI |
+| --- | ---- | :------: | :--: | :--: | :-: | :-: |
+| `i` | int | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `u` | unsigned int | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `l` | long | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `ul` | unsigned long | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `c` | char | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `uc` | unsigned char | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `s` | short | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `us` | unsigned short | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `ll` | long long | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `ull` | unsigned long long | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `b` | bool | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `sz` | System::String | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `dt` | System::TDateTime | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `flt` | float | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `dbl` | double | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `cur` | System::Currency | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `sv` | StringCont (vector\<String\>) | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `dab` | TBytes | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `vb` | BytesCont (vector\<Byte\>) | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `str` | std::string (UTF-8) — bcc64x only | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `wstr` | std::wstring (UTF-16) — bcc64x only | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 `Test/Shared/test_config.cpp` also includes explicit enum roundtrip tests for all
-four backends:
+five backends:
 
 - `Registry_enum_roundtrip`
 - `JSON_enum_roundtrip`
+- `BSON_enum_roundtrip`
 - `INIFile_enum_roundtrip`
 - `XML_enum_roundtrip`
 
-`string_view` / `wstring_view` write-convenience overloads are also tested for all four backends (bcc64x only).
+`string_view` / `wstring_view` write-convenience overloads are also tested for all five backends (bcc64x only).
 
 ### Type-mismatch tests
 
@@ -159,7 +160,7 @@ default-initialised value (`T{}`).  The variant alternative written by
 `PutItem<A>()` does not match the `std::get_if<B>()` performed by
 `GetItem<B>()`, so the assignment is skipped and the caller gets `T{}`.
 
-Five representative mismatch pairs are tested across all four backends:
+Five representative mismatch pairs are tested across all five backends:
 
 | Stored as | Read as | Why |
 | --------- | ------- | --- |
@@ -181,7 +182,8 @@ members that were previously untested:
   `EnumerateValueNames`, `EnumerateValues`, `IsDeleted`, `IsModified`, plus
   depth-limit guards for persistence `Read` / `Write`.
 - **Per-backend erase-persistence suites** (`TConfigNode_Registry_Erase`,
-  `TConfigNode_JSON_Erase`, `TConfigNode_XML_Erase`, `TConfigNode_INIFile_Erase`)
+  `TConfigNode_JSON_Erase`, `TConfigNode_BSON_Erase`,
+  `TConfigNode_XML_Erase`, `TConfigNode_INIFile_Erase`)
   populate values and a sub-node, flush, reopen, delete one value and the
   sub-node, flush, and reopen again to verify the removed names are gone.
 
@@ -195,7 +197,7 @@ failure so the suite still passes:
 
 - [x] Builds (MSBuild via `test_all.bat`)
 - [x] `test_all.bat` passes all three compilers
-- [x] All 21 variant types covered (bcc64x) / 19 variant types (bcc64, bcc32c) across Registry, JSON, XML, and INI backends
-- [x] Enum roundtrip covered across Registry, JSON, XML, and INI backends
-- [x] Type-mismatch silent-default behaviour covered across all four backends
+- [x] All 21 variant types covered (bcc64x) / 19 variant types (bcc64, bcc32c) across Registry, JSON, BSON, XML, and INI backends
+- [x] Enum roundtrip covered across Registry, JSON, BSON, XML, and INI backends
+- [x] Type-mismatch silent-default behaviour covered across all five backends
 - [x] `TConfigNode` in-memory operations and per-backend erase persistence covered

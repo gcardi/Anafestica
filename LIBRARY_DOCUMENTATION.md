@@ -2,14 +2,14 @@
 
 ## Overview
 
-Anafestica is a header-only C++ library designed for the persistence of application settings in various storage media, including the Windows Registry, JSON files, XML files, and INI files. It provides a hierarchical, heterogeneous container that mimics the Windows Registry structure but operates in application memory, allowing seamless saving and loading of configuration data.
+Anafestica is a header-only C++ library designed for the persistence of application settings in various storage media, including the Windows Registry, JSON files, BSON files, XML files, and INI files. It provides a hierarchical, heterogeneous container that mimics the Windows Registry structure but operates in application memory, allowing seamless saving and loading of configuration data.
 
 The library is particularly well-suited for GUI applications (FMX, VCL, and others) where it simplifies the management of persistent attributes such as form positions, sizes, states, and custom application settings. It requires minimal code changes to existing applications and supports multiple storage formats through a policy-based design.
 
 ## Key Features
 
 - **Header-only library**: No compilation required, just include the necessary headers
-- **Multiple storage backends**: Windows Registry, JSON files, XML files, INI files
+- **Multiple storage backends**: Windows Registry, JSON files, BSON files, XML files, INI files
 - **Hierarchical data structure**: Tree-like organization similar to Windows Registry
 - **Type-safe operations**: Supports various data types including primitives, strings, dates, and collections
 - **Singleton pattern support**: Easy access through singleton classes
@@ -247,7 +247,7 @@ This class is commonly used to dynamically display version information in applic
 
 ## Type Encoding Conventions
 
-Every value stored by Anafestica is tagged with one of 21 (or 19 on non-`bcc64x` compilers) C++ types drawn from the `TConfigNodeValueType` variant. Because none of the four backends natively distinguishes all of these types, the library uses a small set of **type tags** that are persisted alongside the data so the correct C++ type can be reconstructed on read.
+Every value stored by Anafestica is tagged with one of 21 (or 19 on non-`bcc64x` compilers) C++ types drawn from the `TConfigNodeValueType` variant. Because none of the five backends natively distinguishes all of these types, the library uses a small set of **type tags** that are persisted alongside the data so the correct C++ type can be reconstructed on read.
 
 The same tags are shared by every backend. What differs is **where** the tag is written (in the value's name, in a separate attribute, as a nested JSON key, …) and which types — if any — are allowed to be written without a tag because the storage format itself is unambiguous for them.
 
@@ -390,6 +390,68 @@ All other types are *always* written tagged. In particular:
 
 When editing a JSON file by hand, you can freely switch between the bare and tagged forms for the three canonical types. For every other alternative you must keep (or add) the wrapping `{ "TypeTag": value }` object — otherwise the reader will fall back to the canonical bare-form interpretation for the matching JSON type.
 
+### BSON::TConfig
+
+Implements configuration storage in BSON files using RAD Studio's native `System.JSON.BSON` reader/writer support.
+
+```cpp
+namespace BSON {
+class TConfig : public Anafestica::TConfig {
+public:
+    TConfig(String FileName, bool ReadOnly = false,
+            bool FlushAllItems = false, bool ExplicitTypes = false);
+};
+}
+```
+
+**Constructor Parameters:**
+- `FileName`: Path to the BSON file
+- `ExplicitTypes`: If true, every value is tagged (see below)
+- `ReadOnly`, `FlushAllItems`: Same as base class
+
+**Storage layout:**
+The BSON backend uses the same logical document shape as the JSON backend: nested `TConfigPath` components become nested objects, values live under a `values` object, and child nodes live under a `nodes` object.
+
+In other words, this JSON:
+
+```json
+{
+  "node": {
+    "values": {
+      "Port":     5432,
+      "Count":    { "u":   42 },
+      "LastRun":  { "dt":  "2026-04-15T12:00:00.000" },
+      "Payload":  { "dab": "SGVsbG8=" }
+    }
+  }
+}
+```
+
+is represented in BSON with the same object/key structure, just serialized as BSON instead of text JSON.
+
+**Type encoding:**
+`BSON::TConfig` intentionally follows the same conventions as `JSON::TConfig`.
+
+| C++ type          | Bare form          | Tagged form (always acceptable on read) |
+| ----------------- | ------------------ | --------------------------------------- |
+| `int`             | `"Name": 42`       | `"Name": { "i": 42 }`                   |
+| `bool`            | `"Name": true`     | `"Name": { "b": true }`                 |
+| `System::String`  | `"Name": "hello"`  | `"Name": { "sz": "hello" }`             |
+
+The constructor's `ExplicitTypes` flag has the same meaning as in the JSON backend: when `true`, even `int`, `bool`, and `String` are emitted in tagged form. Reading accepts either form regardless of the flag.
+
+All other types are always written tagged, with the same tag names and payload conventions as JSON:
+
+- Integer types other than `int` are stored with explicit tags.
+- `unsigned long long` is stored as a tagged string to preserve precision.
+- `TDateTime` is stored as an ISO-8601 string under the `dt` tag.
+- `float`, `double`, and `Currency` follow the same numeric/string rules as JSON.
+- `StringCont` is stored as a tagged array of strings.
+- `TBytes` / `BytesCont` are stored as Base-64 strings under `dab` / `vb`.
+- On `bcc64x`, `std::string` uses `str` and `std::wstring` uses `wstr`.
+
+The practical difference from JSON is therefore the transport format: BSON is binary and compact, while preserving the same Anafestica-facing data model and roundtrip semantics.
+
 ### XML::TConfig
 
 Implements configuration storage in XML files.
@@ -518,6 +580,17 @@ public:
 ```
 
 This singleton creates a JSON-based configuration. The file path is derived from the application's version info: `$(HOME)\CompanyName\ProductName\ProductVersion\AppName.json`.
+
+### TConfigBSONSingleton
+
+```cpp
+class TConfigBSONSingleton {
+public:
+    static Anafestica::TConfig& GetConfig();
+};
+```
+
+This singleton creates a BSON-based configuration. The file path is derived from the application's version info: `$(HOME)\CompanyName\ProductName\ProductVersion\AppName.bson`.
 
 ### TConfigXMLSingleton
 
@@ -798,6 +871,20 @@ auto& root = config.GetRootNode();
 
 root.PutItem(_D("AppName"), _D("MyApplication"));
 root.PutItem(_D("Version"), _D("1.0"));
+
+// Configuration is automatically saved on destruction
+```
+
+### BSON Configuration
+
+```cpp
+#include <anafestica/CfgBSON.h>
+
+Anafestica::BSON::TConfig config(_D("settings.bson"));
+auto& root = config.GetRootNode();
+
+root.PutItem(_D("AppName"), _D("MyApplication"));
+root.PutItem(_D("Port"), 5432);
 
 // Configuration is automatically saved on destruction
 ```
@@ -1227,7 +1314,7 @@ In practice, the simplest safe pattern is still to serialize all access to the `
 The library uses exceptions for error conditions:
 - Registry access errors throw `ERegistryException`
 - File I/O errors throw standard C++ exceptions
-- JSON/XML parsing errors throw appropriate parser exceptions
+- JSON/BSON/XML parsing or serialization errors throw the underlying RTL/parser exceptions
 
 ## Best Practices
 

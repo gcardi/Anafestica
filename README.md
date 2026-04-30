@@ -1,17 +1,19 @@
 # Anafestica
-A header-only library for the persistence of application settings in the Windows Registry or other media (JSON, XML, INI, etc.)
+A header-only library for the persistence of application settings in the Windows Registry or other media (JSON, BSON, XML, INI, etc.)
 
 ## Rationale
 
 This library enables easy persistence of application settings for FMX, VCL, and other applications with minimal changes to existing code. For example, you can save the position, size, and state of GUI forms along with other custom attributes by adding just a few lines of code.
 
-The core idea is to provide a hierarchical, heterogeneous container that resembles the Windows Registry but resides in application memory. Consider a Registry key as the base key: this serves as the "root image" of the heterogeneous container. When the application starts, the in-memory container tries to load data from the specified Windows Registry base key. If the Registry key exists, its content (including the base key and all subkeys) is loaded into memory. If the Registry key doesn't exist, the in-memory container is initialized with default attribute values. During application execution, you can read from or write to these keys and their values, but all changes remain confined to the application's memory. When the application terminates, the container's content is written back to the storage medium in its intended format. If the application crashes before writing data back, the data in the storage medium remains unchanged. Note that the container can also use different storage media than the Windows Registry, such as the filesystem or network, using formats like JSON or XML.
+The core idea is to provide a hierarchical, heterogeneous container that resembles the Windows Registry but resides in application memory. Consider a Registry key as the base key: this serves as the "root image" of the heterogeneous container. When the application starts, the in-memory container tries to load data from the specified Windows Registry base key. If the Registry key exists, its content (including the base key and all subkeys) is loaded into memory. If the Registry key doesn't exist, the in-memory container is initialized with default attribute values. During application execution, you can read from or write to these keys and their values, but all changes remain confined to the application's memory. When the application terminates, the container's content is written back to the storage medium in its intended format. If the application crashes before writing data back, the data in the storage medium remains unchanged. Note that the container can also use different storage media than the Windows Registry, such as the filesystem or network, using formats like JSON, BSON, or XML.
 
 The library consists of two main parts: a container part (which is generalized) and a serialization part. From the application's point of view, it provides a consistent interface and enables storing persistent data across different storage media and formats.
 
 Windows applications' persistent data is typically stored in the Registry, following conventions based on the application's nature (whether it's a normal application, service, or other application type). By changing the serialization part via a template parameter (i.e., it's a Policy), you can specify both the data format and storage medium. It is also possible to use several different storage media and formats within the same application. Each serialization format is associated with a specific container, meaning each container is bound to a serializer that can have its own format and storage medium.
 
-The current library version includes serializers for Windows Registry, JSON, XML, and INI files.
+The current library version includes serializers for Windows Registry, JSON, BSON, XML, and INI files.
+
+The BSON backend uses RAD Studio's native `System.JSON.BSON` support and follows the same hierarchical `values` / `nodes` layout as the JSON backend, making it a compact binary alternative when human-edited text files are not required.
 
 ## Getting Started
 
@@ -68,6 +70,8 @@ provided `test_all.bat` script.
 The current `bcc64x` suite includes both the full `test_config.cpp` coverage for
 all 21 `std::variant` alternatives and the shared 19-type
 `test_config_simplified.cpp` module used for parity with the legacy toolchains.
+The regression suite now exercises all five backends: Registry, JSON, BSON,
+XML, and INI.
 
 1. Run all three compilers (build + test):
 

@@ -1,7 +1,9 @@
 //---------------------------------------------------------------------------
-// TConfig roundtrip tests for all five backends (Registry, JSON, BSON,
-// INIFile, XML). The 19 common variant alternatives are exercised on every
-// toolchain.
+// TConfig roundtrip tests for the built-in backends (Registry, JSON, BSON,
+// INIFile, XML). The optional YAML backend is compiled only when
+// ANAFESTICA_TEST_YAML is defined and fkYAML is reachable through the active
+// toolchain include path. The 19 common variant alternatives are exercised on
+// every toolchain.
 // The std::variant-only std::string, std::wstring, and string_view coverage is
 // compiled only on the bcc64x path.
 //---------------------------------------------------------------------------
@@ -31,6 +33,11 @@
 #include <anafestica/CfgXML.h>
 #include <anafestica/CfgIniFile.h>
 #include <anafestica/CfgNodeValueType.h>
+
+#if defined( ANAFESTICA_TEST_YAML ) && __has_include(<fkYAML/node.hpp>)
+# define ANAFESTICA_TEST_YAML_AVAILABLE
+# include <anafestica/CfgYAML.h>
+#endif
 
 #include <System.Classes.hpp>
 #include <System.SysUtils.hpp>
@@ -1441,6 +1448,267 @@ BOOST_AUTO_TEST_CASE( XML_subnode_roundtrip )
 
 BOOST_AUTO_TEST_SUITE_END()
 
+#endif
+
+//---------------------------------------------------------------------------
+// *** YAML::TConfig tests ***
+// Optional: compiled only when ANAFESTICA_TEST_YAML is defined and fkYAML is
+// visible in the active toolchain include path.
+// std::string / std::wstring / string_view tests apply on bcc64x only
+// (those alternatives are not present in the boost::variant configuration).
+//---------------------------------------------------------------------------
+
+#if defined( ANAFESTICA_TEST_YAML_AVAILABLE )
+BOOST_AUTO_TEST_SUITE( TConfig_YAML )
+
+BOOST_AUTO_TEST_CASE( YAML_int_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kI ); }
+    Anafestica::YAML::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<int>( L"val" ) == kI );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_uint_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kU ); }
+    Anafestica::YAML::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<unsigned int>( L"val" ) == kU );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_long_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kL ); }
+    Anafestica::YAML::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<long>( L"val" ) == kL );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_ulong_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kUL ); }
+    Anafestica::YAML::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<unsigned long>( L"val" ) == kUL );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_char_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kC ); }
+    Anafestica::YAML::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<char>( L"val" ) == kC );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_uchar_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kUC ); }
+    Anafestica::YAML::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<unsigned char>( L"val" ) == kUC );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_short_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kS ); }
+    Anafestica::YAML::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<short>( L"val" ) == kS );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_ushort_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kUS ); }
+    Anafestica::YAML::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<unsigned short>( L"val" ) == kUS );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_longlong_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kLL ); }
+    Anafestica::YAML::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<long long>( L"val" ) == kLL );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_ulonglong_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kULL ); }
+    Anafestica::YAML::TConfig c( f );
+    // ULL is serialised as a decimal string (same approach as JSON).
+    BOOST_TEST( c.GetRootNode().GetItem<unsigned long long>( L"val" ) == kULL );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_bool_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kB ); }
+    Anafestica::YAML::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<bool>( L"val" ) == kB );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_string_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", String( kSZ ) ); }
+    Anafestica::YAML::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<String>( L"val" ) == String( kSZ ) );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_datetime_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    const auto dt = kDT();
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", dt ); }
+    Anafestica::YAML::TConfig c( f );
+    const auto got = c.GetRootNode().GetItem<System::TDateTime>( L"val" );
+    BOOST_TEST( DateOf( got ) == DateOf( dt ) );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_float_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kFLT ); }
+    Anafestica::YAML::TConfig c( f );
+    const float got = c.GetRootNode().GetItem<float>( L"val" );
+    BOOST_TEST( std::abs( got - kFLT ) < 1e-3F );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_double_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kDBL ); }
+    Anafestica::YAML::TConfig c( f );
+    const double got = c.GetRootNode().GetItem<double>( L"val" );
+    BOOST_TEST( std::abs( got - kDBL ) < 1e-12 );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_currency_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    const auto cur = kCUR();
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", cur ); }
+    Anafestica::YAML::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<System::Currency>( L"val" ) == cur );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_stringvec_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    const auto sv = MakeSV();
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", sv ); }
+    Anafestica::YAML::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<StringCont>( L"val" ) == sv );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_tbytes_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    const auto dab = MakeDAB();
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", dab ); }
+    Anafestica::YAML::TConfig c( f );
+    BOOST_TEST( DABEqual( c.GetRootNode().GetItem<System::Sysutils::TBytes>( L"val" ), dab ) );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_bytevec_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    const auto vb = MakeVB();
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", vb ); }
+    Anafestica::YAML::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<BytesCont>( L"val" ) == vb );
+}
+
+#if defined( ANAFESTICA_USE_STD_VARIANT )
+BOOST_AUTO_TEST_CASE( YAML_stdstring_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kSTR ); }
+    Anafestica::YAML::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<std::string>( L"val" ) == kSTR );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_wstring_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"val", kWSTR ); }
+    Anafestica::YAML::TConfig c( f );
+    BOOST_CHECK( c.GetRootNode().GetItem<std::wstring>( L"val" ) == kWSTR );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_string_view_write )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    std::string_view  sv  = kSTR;
+    std::wstring_view wsv = kWSTR;
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"sv",  sv  );
+      c.GetRootNode().PutItem( L"wsv", wsv ); }
+    Anafestica::YAML::TConfig c( f );
+    BOOST_TEST( c.GetRootNode().GetItem<std::string> ( L"sv"  ) == kSTR  );
+    BOOST_CHECK( c.GetRootNode().GetItem<std::wstring>( L"wsv" ) == kWSTR );
+}
+#endif
+
+BOOST_AUTO_TEST_CASE( YAML_enum_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode().PutItem( L"mode", kEnum ); }
+    Anafestica::YAML::TConfig c( f );
+    BOOST_TEST( static_cast<int>( c.GetRootNode().GetItem<ETestMode>( L"mode" ) ) ==
+                static_cast<int>( kEnum ) );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_subnode_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    { Anafestica::YAML::TConfig c( f );
+      c.GetRootNode()[L"Child"][L"GrandChild"].PutItem( L"n", kI ); }
+    Anafestica::YAML::TConfig c( f );
+    BOOST_TEST( c.GetRootNode()[L"Child"][L"GrandChild"].GetItem<int>( L"n" ) == kI );
+}
+
+BOOST_AUTO_TEST_CASE( YAML_explicit_types_roundtrip )
+{
+    // With ExplicitTypes=true all values are wrapped with type tag mappings.
+    const auto f = MakeTempPath( L".yaml" ); TempFileGuard g( f );
+    { Anafestica::YAML::TConfig c( f, /*ReadOnly*/false,
+                                   /*FlushAllItems*/false, /*ExplicitTypes*/true );
+      c.GetRootNode().PutItem( L"i",  kI   );
+      c.GetRootNode().PutItem( L"b",  kB   );
+      c.GetRootNode().PutItem( L"sz", String( kSZ ) ); }
+    Anafestica::YAML::TConfig c( f, false, false, true );
+    BOOST_TEST( c.GetRootNode().GetItem<int>( L"i" )    == kI   );
+    BOOST_TEST( c.GetRootNode().GetItem<bool>( L"b" )   == kB   );
+    BOOST_TEST( c.GetRootNode().GetItem<String>( L"sz" ) == String( kSZ ) );
+}
+
+BOOST_AUTO_TEST_SUITE_END()
 #endif
 
 } // namespace

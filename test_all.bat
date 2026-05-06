@@ -12,6 +12,8 @@ REM    --no-build       Skip the build step; run existing executables
 REM    --rebuild        Force a clean rebuild (Clean + Build)
 REM    --stop-on-error  Abort immediately on first failure
 REM    --verbose-build  Use normal MSBuild verbosity and show compiler commands
+REM    --with-yaml      Include optional YAML backend tests when fkYAML is
+REM                     registered in the active compiler include path
 REM
 REM  Toolchains: bcc32c  bcc64  bcc64x   (default: all three)
 REM
@@ -20,6 +22,7 @@ REM    test_all.bat                    Build + run all three
 REM    test_all.bat bcc64x             Build + run bcc64x only
 REM    test_all.bat --rebuild bcc32c bcc64
 REM    test_all.bat --no-build bcc64x  Run bcc64x without building
+REM    test_all.bat --with-yaml        Build + run optional YAML tests too
 REM ---------------------------------------------------------------
 
 set "ROOT=%~dp0."
@@ -27,6 +30,7 @@ set BUILD=1
 set "MSBUILD_TARGET=Make"
 set "MSBUILD_VERBOSITY=minimal"
 set STOP_ON_ERROR=0
+set WITH_YAML=0
 set DO_BCC32C=0
 set DO_BCC64=0
 set DO_BCC64X=0
@@ -38,6 +42,7 @@ if /i "%~1"=="--no-build"      ( set BUILD=0& shift & goto :parse_args )
 if /i "%~1"=="--rebuild"       ( set "MSBUILD_TARGET=Clean,Build"& shift & goto :parse_args )
 if /i "%~1"=="--stop-on-error" ( set STOP_ON_ERROR=1& shift & goto :parse_args )
 if /i "%~1"=="--verbose-build" ( set "MSBUILD_VERBOSITY=normal"& shift & goto :parse_args )
+if /i "%~1"=="--with-yaml"     ( set WITH_YAML=1& shift & goto :parse_args )
 if /i "%~1"=="bcc32c"  ( set DO_BCC32C=1& set TOOLCHAIN_SELECTED=1& shift & goto :parse_args )
 if /i "%~1"=="bcc64"   ( set DO_BCC64=1& set TOOLCHAIN_SELECTED=1& shift & goto :parse_args )
 if /i "%~1"=="bcc64x"  ( set DO_BCC64X=1& set TOOLCHAIN_SELECTED=1& shift & goto :parse_args )
@@ -71,6 +76,17 @@ set BUILD_FAILED=0
 set PASSED=0
 set FAILED=0
 set SKIPPED=0
+
+set "MSBUILD_EXTRA_PROPS="
+if !WITH_YAML! equ 1 (
+    set "MSBUILD_EXTRA_PROPS=/p:BCC_UserSuppliedOptions=-DANAFESTICA_TEST_YAML"
+    echo [INFO] Optional YAML tests requested. If fkYAML is not registered in
+    echo [INFO] the active compiler include path, the YAML test block is
+    echo [INFO] compiled out automatically.
+) else (
+    echo [INFO] Optional YAML tests are disabled. Use --with-yaml to include
+    echo [INFO] ConfigYAML / ConfigYAMLSingleton coverage.
+)
 
 REM ================================================================
 REM  Phase 1 — Build
@@ -123,7 +139,7 @@ echo ===============================================================
 echo --- MSBuild: !CBPROJ! [!PLAT!^|Release, /t:!MSBUILD_TARGET!, /v:!MSBUILD_VERBOSITY!] ---
 
 set "MSBUILD_LOG=!TEMP!\anafestica_msbuild_!PLAT!.log"
-msbuild "!ROOT!\!CBPROJ!" /p:Config=Release /p:Platform=!PLAT! /t:!MSBUILD_TARGET! /v:!MSBUILD_VERBOSITY! /nologo > "!MSBUILD_LOG!" 2>&1
+msbuild "!ROOT!\!CBPROJ!" /p:Config=Release /p:Platform=!PLAT! !MSBUILD_EXTRA_PROPS! /t:!MSBUILD_TARGET! /v:!MSBUILD_VERBOSITY! /nologo > "!MSBUILD_LOG!" 2>&1
 set "MSBUILD_ERR=!ERRORLEVEL!"
 findstr /v /c:"MSB4056" "!MSBUILD_LOG!"
 del "!MSBUILD_LOG!" >nul 2>&1

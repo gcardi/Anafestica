@@ -2,14 +2,14 @@
 
 ## Overview
 
-Anafestica is a header-only C++ library designed for the persistence of application settings in various storage media, including the Windows Registry, JSON files, BSON files, XML files, and INI files. It provides a hierarchical, heterogeneous container that mimics the Windows Registry structure but operates in application memory, allowing seamless saving and loading of configuration data.
+Anafestica is a header-only C++ library designed for the persistence of application settings in various storage media, including the Windows Registry, JSON files, BSON files, YAML files, XML files, and INI files. It provides a hierarchical, heterogeneous container that mimics the Windows Registry structure but operates in application memory, allowing seamless saving and loading of configuration data.
 
 The library is particularly well-suited for GUI applications (FMX, VCL, and others) where it simplifies the management of persistent attributes such as form positions, sizes, states, and custom application settings. It requires minimal code changes to existing applications and supports multiple storage formats through a policy-based design.
 
 ## Key Features
 
 - **Header-only library**: No compilation required, just include the necessary headers
-- **Multiple storage backends**: Windows Registry, JSON files, BSON files, XML files, INI files
+- **Multiple storage backends**: Windows Registry, JSON files, BSON files, YAML files, XML files, INI files
 - **Hierarchical data structure**: Tree-like organization similar to Windows Registry
 - **Type-safe operations**: Supports various data types including primitives, strings, dates, and collections
 - **Singleton pattern support**: Easy access through singleton classes
@@ -247,7 +247,7 @@ This class is commonly used to dynamically display version information in applic
 
 ## Type Encoding Conventions
 
-Every value stored by Anafestica is tagged with one of 21 (or 19 on non-`bcc64x` compilers) C++ types drawn from the `TConfigNodeValueType` variant. Because none of the five backends natively distinguishes all of these types, the library uses a small set of **type tags** that are persisted alongside the data so the correct C++ type can be reconstructed on read.
+Every value stored by Anafestica is tagged with one of 21 (or 19 on non-`bcc64x` compilers) C++ types drawn from the `TConfigNodeValueType` variant. Because none of the six backends natively distinguishes all of these types, the library uses a small set of **type tags** that are persisted alongside the data so the correct C++ type can be reconstructed on read.
 
 The same tags are shared by every backend. What differs is **where** the tag is written (in the value's name, in a separate attribute, as a nested JSON key, …) and which types — if any — are allowed to be written without a tag because the storage format itself is unambiguous for them.
 
@@ -452,6 +452,52 @@ All other types are always written tagged, with the same tag names and payload c
 
 The practical difference from JSON is therefore the transport format: BSON is binary and compact, while preserving the same Anafestica-facing data model and roundtrip semantics.
 
+### YAML::TConfig
+
+Implements configuration storage in YAML files using the external header-only fkYAML library.
+
+```cpp
+namespace YAML {
+class TConfig : public Anafestica::TConfig {
+public:
+    TConfig(String FileName, bool ReadOnly = false,
+            bool FlushAllItems = false, bool ExplicitTypes = false);
+};
+}
+```
+
+**Constructor Parameters:**
+- `FileName`: Path to the YAML file
+- `ExplicitTypes`: If true, every value is tagged (see below)
+- `ReadOnly`: Same as base class
+- `FlushAllItems`: Kept for API parity, but YAML always rebuilds the whole document on flush
+
+**Dependency:**
+`CfgYAML.h` includes `<fkYAML/node.hpp>`. Anafestica does not redistribute fkYAML, so projects that include `<anafestica/CfgYAML.h>` or `<anafestica/CfgYAMLSingleton.h>` must install fkYAML in header-only mode and register the fkYAML include directory in RAD Studio's include search path for the Clang-based compiler platforms they target (`bcc32c`, `bcc64`, `bcc64x`). Projects that do not include the YAML headers do not need fkYAML. The repository includes `register_fkYAML.bat` to update those per-user RAD Studio registry entries automatically.
+
+**Storage layout:**
+The YAML backend uses the same logical document shape as the JSON backend: nested `TConfigPath` components become nested mappings, values live under a `values` mapping, and child nodes live under a `nodes` mapping.
+
+```yaml
+nodes:
+  Database:
+    values:
+      Port: 5432
+      Count:
+        u: 42
+      LastRun:
+        dt: 2026-04-15T12:00:00.000
+      Payload:
+        dab: SGVsbG8=
+```
+
+**Type encoding:**
+`YAML::TConfig` follows the JSON/BSON conventions: `int`, `bool`, and `System::String` may be written in bare form by default, or as tagged single-entry mappings when `ExplicitTypes` is true. Reading accepts either form.
+
+All other types are always written tagged, using the same tag names as the other backends. `unsigned long long`, `float`, `double`, and `Currency` are string-encoded under their tags to preserve precision and locale-independent formatting. `StringCont` is a YAML sequence, `TBytes` / `BytesCont` are Base-64 strings, and on `bcc64x`, `std::string` / `std::wstring` use the `str` / `wstr` tags.
+
+Because fkYAML does not expose an erase operation on its node API, the backend rebuilds the YAML document from the in-memory `TConfigNode` tree on every flush. Deleted values and nodes are therefore removed by omission from the rebuilt document.
+
 ### XML::TConfig
 
 Implements configuration storage in XML files.
@@ -591,6 +637,19 @@ public:
 ```
 
 This singleton creates a BSON-based configuration. The file path is derived from the application's version info: `$(HOME)\CompanyName\ProductName\ProductVersion\AppName.bson`.
+
+### TConfigYAMLSingleton
+
+```cpp
+class TConfigYAMLSingleton {
+public:
+    static Anafestica::TConfig& GetConfig();
+};
+```
+
+This singleton creates a YAML-based configuration. The file path is derived from the application's version info: `$(HOME)\CompanyName\ProductName\ProductVersion\AppName.yaml`.
+
+Include `<anafestica/CfgYAMLSingleton.h>` to use this singleton. The fkYAML header directory must be registered in RAD Studio's include search path for the Clang-based compiler platforms that build this header.
 
 ### TConfigXMLSingleton
 
@@ -888,6 +947,22 @@ root.PutItem(_D("Port"), 5432);
 
 // Configuration is automatically saved on destruction
 ```
+
+### YAML Configuration
+
+```cpp
+#include <anafestica/CfgYAML.h>
+
+Anafestica::YAML::TConfig config(_D("settings.yaml"));
+auto& root = config.GetRootNode();
+
+root.PutItem(_D("AppName"), _D("MyApplication"));
+root.PutItem(_D("Port"), 5432);
+
+// Configuration is automatically saved on destruction
+```
+
+This requires fkYAML in header-only mode with its include directory registered in RAD Studio's include search path for the Clang-based compiler platforms used by the project.
 
 ### INI File Configuration
 
@@ -1276,15 +1351,17 @@ This pattern demonstrates:
 
 - **Variant back-end (auto-detected)**: `anafestica/CfgNodeValueType.h` selects the variant implementation automatically based on the toolchain's predefined macros — you do **not** need to define anything by hand. `bcc64x` (Clang ≥ 15, `_WIN64`) uses `std::variant` with 21 alternatives (including `std::string` / `std::wstring`); `bcc64` (Clang < 15, affected by RSP-27418) and `bcc32c` fall back to `boost::variant` with 19 alternatives. The internal flag `ANAFESTICA_USE_STD_VARIANT` is defined inside the header on the `bcc64x` path — it is not a user-facing switch, and overriding it manually is unsupported. Legacy non-Clang `BCC32` produces a hard `#error`.
 - **Boost Libraries**: Required by the library on the `boost::variant` path only (i.e. `bcc32c` and `bcc64`). The `bcc64x` library build uses `std::variant` and does not need Boost for value storage. Separately, the bundled test projects still use Boost.Test on all three toolchains.
+- **fkYAML**: Required only when using the YAML backend. `CfgYAML.h` includes `<fkYAML/node.hpp>`, so install fkYAML as a header-only dependency and add its include directory to RAD Studio's include search path for any Clang-based compiler platform that builds `CfgYAML.h` or `CfgYAMLSingleton.h`. The repository includes `register_fkYAML.bat` to automate that registration. The bundled test script does not enable YAML coverage by default; run `test_all.bat --with-yaml` to opt in. If that option is used but fkYAML is not visible, the YAML test block is compiled out.
 - **Embarcadero C++ Compiler**: Only clang-based compilers (bcc32c, bcc64, bcc64x) are supported
 - **RAD Studio**: Compatible with RAD Studio 10.3+ (earlier versions may work but are untested)
 
 ## Installation
 
 1. Clone or download the library headers
-2. Add the library path to your project's include directories
+2. Add the library path to your project's include directories, either manually or with `register_anafestica.bat`
 3. For Registry usage, ensure your project has proper version info set (CompanyName, ProductName, ProductVersion)
 4. Install Boost libraries via GetIt or manually when targeting `bcc64` / `bcc32c`, or whenever you want to build the bundled Boost.Test-based test suite
+5. If you use `ConfigYAML` / `Anafestica::YAML::TConfig` or `ConfigYAMLSingleton` / `Anafestica::TConfigYAMLSingleton`, install fkYAML in header-only mode and register its include directory in RAD Studio's include search path for your Clang-based compiler platforms; `register_fkYAML.bat` can do this automatically when fkYAML is installed next to Anafestica under `$(BDSCOMMONDIR)`
 
 ## Thread Safety
 
@@ -1298,7 +1375,7 @@ The actual hazards are in `TConfigNode` itself:
 
 - Operations that look like reads can mutate the node. `GetSubNode` lazily inserts a new child on miss, and `GetItem` goes through `GetItemFrom`, which inserts a default entry when the key is absent. So even "read-only" navigation writes to the underlying `std::map`s.
 - `PutItem`, `DeleteItem`, `Clear`, `Read`, and `Write` all mutate `valueItems_` / `nodeItems_` or walk the subtree without locks.
-- Backends hold non-thread-safe resources (`TRegistry`, `TMemIniFile`, `_di_IXMLDocument`, `TJSONObject`) and reuse them across calls.
+- Backends hold non-thread-safe resources (`TRegistry`, `TMemIniFile`, `_di_IXMLDocument`, `TJSONObject`, `fkyaml::node`) and reuse them across calls.
 - The RAII lifecycle flushes the *entire* tree in the owning `TConfig`'s destructor; this must not overlap with any other thread's access to any part of the tree.
 
 **Working with disjoint subtrees.** Two `TConfigNode` objects that share no ancestor-path in the live graph can be driven by two threads concurrently, because each node owns its own `valueItems_` and `nodeItems_` maps — there is no hidden shared state inside `TConfigNode`. To use this safely:
@@ -1314,7 +1391,7 @@ In practice, the simplest safe pattern is still to serialize all access to the `
 The library uses exceptions for error conditions:
 - Registry access errors throw `ERegistryException`
 - File I/O errors throw standard C++ exceptions
-- JSON/BSON/XML parsing or serialization errors throw the underlying RTL/parser exceptions
+- JSON/BSON/YAML/XML parsing or serialization errors throw the underlying RTL/parser exceptions
 
 ## Best Practices
 

@@ -1,19 +1,21 @@
 # Anafestica
-A header-only library for the persistence of application settings in the Windows Registry or other media (JSON, BSON, XML, INI, etc.)
+A header-only library for the persistence of application settings in the Windows Registry or other media (JSON, BSON, YAML, XML, INI, etc.)
 
 ## Rationale
 
 This library enables easy persistence of application settings for FMX, VCL, and other applications with minimal changes to existing code. For example, you can save the position, size, and state of GUI forms along with other custom attributes by adding just a few lines of code.
 
-The core idea is to provide a hierarchical, heterogeneous container that resembles the Windows Registry but resides in application memory. Consider a Registry key as the base key: this serves as the "root image" of the heterogeneous container. When the application starts, the in-memory container tries to load data from the specified Windows Registry base key. If the Registry key exists, its content (including the base key and all subkeys) is loaded into memory. If the Registry key doesn't exist, the in-memory container is initialized with default attribute values. During application execution, you can read from or write to these keys and their values, but all changes remain confined to the application's memory. When the application terminates, the container's content is written back to the storage medium in its intended format. If the application crashes before writing data back, the data in the storage medium remains unchanged. Note that the container can also use different storage media than the Windows Registry, such as the filesystem or network, using formats like JSON, BSON, or XML.
+The core idea is to provide a hierarchical, heterogeneous container that resembles the Windows Registry but resides in application memory. Consider a Registry key as the base key: this serves as the "root image" of the heterogeneous container. When the application starts, the in-memory container tries to load data from the specified Windows Registry base key. If the Registry key exists, its content (including the base key and all subkeys) is loaded into memory. If the Registry key doesn't exist, the in-memory container is initialized with default attribute values. During application execution, you can read from or write to these keys and their values, but all changes remain confined to the application's memory. When the application terminates, the container's content is written back to the storage medium in its intended format. If the application crashes before writing data back, the data in the storage medium remains unchanged. Note that the container can also use different storage media than the Windows Registry, such as the filesystem or network, using formats like JSON, BSON, YAML, or XML.
 
 The library consists of two main parts: a container part (which is generalized) and a serialization part. From the application's point of view, it provides a consistent interface and enables storing persistent data across different storage media and formats.
 
 Windows applications' persistent data is typically stored in the Registry, following conventions based on the application's nature (whether it's a normal application, service, or other application type). By changing the serialization part via a template parameter (i.e., it's a Policy), you can specify both the data format and storage medium. It is also possible to use several different storage media and formats within the same application. Each serialization format is associated with a specific container, meaning each container is bound to a serializer that can have its own format and storage medium.
 
-The current library version includes serializers for Windows Registry, JSON, BSON, XML, and INI files.
+The current library version includes serializers for Windows Registry, JSON, BSON, YAML, XML, and INI files.
 
 The BSON backend uses RAD Studio's native `System.JSON.BSON` support and follows the same hierarchical `values` / `nodes` layout as the JSON backend, making it a compact binary alternative when human-edited text files are not required.
+
+The YAML backend uses the external header-only [fkYAML](https://github.com/fktn-k/fkYAML) library and follows the same logical `values` / `nodes` layout as the JSON backend. Anafestica does not redistribute fkYAML: if you include `<anafestica/CfgYAML.h>` or `<anafestica/CfgYAMLSingleton.h>`, register the fkYAML include directory in RAD Studio's include search path for the Clang-based compilers you target (`bcc32c`, `bcc64`, `bcc64x`).
 
 ## Getting Started
 
@@ -35,6 +37,8 @@ The library selects the variant implementation automatically based on the compil
 The selection is performed inside `CfgNodeValueType.h` via the `__clang_major__` predefined macro; no manual `ANAFESTICA_USE_STD_VARIANT` definition is required.
 
 When `boost::variant` is selected (`bcc64` or `bcc32c`), the Boost libraries are required. You can install them via the IDE's GetIt tool (e.g., version 1.68.0 for RAD Studio 10.3 or 1.70.0 for RAD Studio 10.4).
+
+The YAML backend has one additional opt-in dependency: `CfgYAML.h` includes `<fkYAML/node.hpp>`. To use `Anafestica::YAML::TConfig` or `Anafestica::TConfigYAMLSingleton`, install fkYAML in header-only mode and add its include directory to RAD Studio's include search path for the Clang-based C++ compilers you build with. Projects that do not include the YAML headers do not need fkYAML.
 
 If you build the bundled test projects, note that the current test harness uses **Boost.Test** on all three toolchains, including `bcc64x`. In other words: `bcc64x` does not need Boost for the library's `std::variant` path, but the test executables still depend on Boost.Test.
 
@@ -60,6 +64,24 @@ To complete the installation, add references to this library in the development 
 
 That's all.
 
+If you prefer not to edit the RAD Studio registry-backed options by hand, run:
+
+```bat
+register_anafestica.bat
+```
+
+This updates the per-user RAD Studio C++ include-path registry entries under `HKCU\Software\Embarcadero\BDS\XX.X\C++\Paths` for `Win32`, `Win64`, and `Win64x`. Use `register_anafestica.bat --dry-run` to preview the changes without writing them.
+
+If you plan to use the YAML backend, add the fkYAML header directory to the same include search-path pages for the Clang-based compiler platforms you use. No library path or linker setting is required because fkYAML is consumed header-only by Anafestica.
+
+You can register fkYAML the same way:
+
+```bat
+register_fkYAML.bat
+```
+
+By default this looks for the fkYAML repository next to Anafestica under `$(BDSCOMMONDIR)` and registers its `include` directory. Use `register_fkYAML.bat --dry-run` to preview the registry update.
+
 ## Building and running tests
 
 See also: [TESTS.md](TESTS.md) for an extended test plan and variant coverage matrix.
@@ -70,8 +92,9 @@ provided `test_all.bat` script.
 The current `bcc64x` suite includes both the full `test_config.cpp` coverage for
 all 21 `std::variant` alternatives and the shared 19-type
 `test_config_simplified.cpp` module used for parity with the legacy toolchains.
-The regression suite now exercises all five backends: Registry, JSON, BSON,
-XML, and INI.
+By default, the regression suite exercises the built-in Registry, JSON, BSON,
+XML, and INI backends. YAML coverage is opt-in because it depends on the
+external fkYAML headers.
 
 1. Run all three compilers (build + test):
 
@@ -109,6 +132,17 @@ test_all.bat --stop-on-error
 ```powershell
 test_all.bat --verbose-build
 ```
+
+7. Include optional YAML backend tests:
+
+```powershell
+test_all.bat --with-yaml
+```
+
+`--with-yaml` defines `ANAFESTICA_TEST_YAML` for the test projects. If fkYAML is
+not visible through the active Clang-based compiler include path,
+`test_config.cpp` compiles the YAML block out automatically instead of including
+`CfgYAML.h`.
 
 The build is incremental by default and uses MSBuild `/t:Make` with
 `/v:minimal`. Use `--rebuild` to run `/t:Clean,Build`, and use

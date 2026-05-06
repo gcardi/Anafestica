@@ -4,7 +4,7 @@
 
 Anafestica is a **header-only C++17 library** for persisting application settings
 on Windows. It provides a hierarchical, heterogeneous in-memory container with
-pluggable storage backends: **Windows Registry, JSON, XML, and INI files**.
+pluggable storage backends: **Windows Registry, JSON, BSON, YAML, XML, and INI files**.
 It targets **C++Builder** (Embarcadero RAD Studio) and its Clang-based compilers
 (`bcc32c`, `bcc64`, `bcc64x`).
 
@@ -33,6 +33,7 @@ test_all.bat --rebuild bcc32c bcc64 # clean + rebuild two toolchains
 test_all.bat --no-build             # run existing executables only
 test_all.bat --stop-on-error        # abort on first failure
 test_all.bat --verbose-build        # show full MSBuild/compiler commands
+test_all.bat --with-yaml            # opt in to optional fkYAML-backed tests
 
 clear_tests.bat                     # remove build artifacts for all three
 clear_tests.bat bcc64x              # remove bcc64x artifacts only
@@ -48,6 +49,8 @@ clear_tests.bat bcc64x              # remove bcc64x artifacts only
 - **C++17** standard; no C++20 features
 - Variant selection is auto-detected in `CfgNodeValueType.h` via `__clang_major__`: `std::variant` for bcc64x (Clang ≥ 15), `boost::variant` for bcc64/bcc32c — no manual `ANAFESTICA_USE_STD_VARIANT` definition needed
 - The library itself does not require Boost on the bcc64x `std::variant` path, but the bundled test harness still uses Boost.Test on bcc64x
+- The YAML backend includes `<fkYAML/node.hpp>` and requires the external header-only fkYAML include directory to be registered in RAD Studio's include search path for any Clang-based compiler platform that builds `CfgYAML.h` / `CfgYAMLSingleton.h`; `test_all.bat` keeps YAML tests off by default and enables them only with `--with-yaml`
+- `register_anafestica.bat` and `register_fkYAML.bat` can update the per-user RAD Studio include-path registry entries under `HKCU\Software\Embarcadero\BDS\XX.X\C++\Paths`; both support `--dry-run`
 - NVI (Non-Virtual Interface) pattern on `TConfig` — public non-virtual methods delegate to `protected virtual Do*` hooks
 - RAII lifecycle: constructors load from storage, destructors flush back
 - Embarcadero types are used throughout: `System::String`, `System::TDateTime`, `System::Currency`, `System::Sysutils::TBytes`
@@ -69,7 +72,7 @@ Examples: `feat(ini):`, `fix(xml):`, `test(config):`, `docs(tests):`, `docs:`
 
 ## Things to keep in mind
 
-- Test coverage spans all 21 variant types × 4 backends on bcc64x, plus a shared 19-type simplified module across all three toolchains; maintain this when adding types or backends
+- Test coverage spans all 21 variant types across Registry, JSON, BSON, XML, and INI on bcc64x by default, plus optional YAML coverage with `test_all.bat --with-yaml`; maintain this when adding types or backends
 - The library is installed by cloning into `$(BDSCOMMONDIR)` — paths matter
 - See [TESTS.md](TESTS.md) for the full test plan and coverage matrix
 - See [LIBRARY_DOCUMENTATION.md](LIBRARY_DOCUMENTATION.md) for API docs

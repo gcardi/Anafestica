@@ -79,24 +79,45 @@ protected:
 
 **Flush-on-destruction semantics (behavioural change):**
 
-The file-based backends used to call `DoFlush()` unconditionally from their
-destructor whenever the object was not read-only.  They now consult
-`ShouldFlushOnDestruction()` instead, so an unmodified `TConfig` no longer
-rewrites (or even creates) its backing file/registry data.  The practical
-consequences:
+Every backend (Registry, JSON, BSON, XML, INIFile, YAML) used to call
+`DoFlush()` unconditionally from its destructor whenever the object was
+not read-only.  They now consult `ShouldFlushOnDestruction()` instead,
+so an unmodified `TConfig` no longer rewrites (or even creates) its
+backing file or registry key.  The practical consequences:
 
-- **Fresh install, no modifications** — no file is created.  Earlier
-  versions of the library produced an empty stub file in this case;
-  applications that relied on that side-effect (for example, as a
-  "user has launched the app at least once" sentinel) must instead
-  call `Flush()` explicitly or write a value before destruction.
-- **Existing file, no modifications** — the file is left byte-for-byte
-  untouched (previously it was rewritten on every run).
-- **Existing file, with modifications** — flushed as before.
+- **Fresh install, no modifications** — no file or registry key is
+  created.  Earlier versions of the library produced an empty stub
+  artifact in this case; applications that relied on that side-effect
+  (for example, as a "user has launched the app at least once"
+  sentinel) must instead call `Flush()` explicitly or write a value
+  before destruction.
+- **Existing storage, no modifications** — the backing file is left
+  byte-for-byte untouched, and no registry write traffic is generated.
+- **Existing storage, with modifications** — flushed as before; see
+  the per-attribute note below for what "flushed" means in practice.
 - **Migration constructor** — flushes unconditionally because
   `MarkForFlush()` is called after loading from the source file, so the
   destination ends up populated even when the caller never modified
   anything between load and destruction.
+
+**Per-attribute dirty tracking (not changed by this work):**
+
+`ShouldFlushOnDestruction()` is a **whole-object** gate that decides
+whether `DoFlush()` runs at all.  Inside `DoFlush()`, every backend's
+`DoSaveValueList` has always operated **per attribute**: it writes only
+values whose state is `Operation::Write`, deletes only values whose
+state is `Operation::Erase`, and leaves `Operation::None` values
+untouched on disk.  The file backends additionally re-read the existing
+destination as a merge base, so unmodified values pass through verbatim
+rather than being rewritten.
+
+The migration constructor is the **only** code path that flips on
+`FlushAllItems` to write every attribute regardless of state, and it
+does so only because the values came from a different source file and
+would otherwise never reach the destination.  Normal single-argument
+construction, including the path taken by the `GetConfigSingleton`
+helpers when no migration is needed, preserves the per-attribute
+behaviour.
 
 ### TConfigNode
 
@@ -806,13 +827,104 @@ Semantics:
   returns `true` even though nothing has been modified — ensuring the
   destination file gets populated.
 
-Prefer the named `Migrate` factory at call sites:
+> **Note on `FlushAllItems = true` in the migration ctor.**  The
+> "always-write-everything" behaviour is **scoped to the migration
+> constructor**, not the library at large.  All single-arg constructors
+> (and the `GetConfigSingleton` helpers when no migration is needed)
+> keep the default `FlushAllItems = false`, which means every backend's
+> `DoSaveValueList` writes only items in state `Operation::Write` and
+> deletes only items in state `Operation::Erase`; items in state
+> `Operation::None` are untouched on disk.  The file backends layer a
+> re-read of the existing destination on top of that, so a
+> partial-modification flush ends up as "modified values overwritten,
+> the rest passed through verbatim from the previous file."  The
+> migration ctor cannot use that mode because the values came from a
+> *different* file (the source) and would otherwise never reach the
+> destination.
+
+Prefer the named `Migrate` factory at call sites — it makes the load/save
+direction unambiguous when both arguments are `String`.
+
+**Example 1 — explicit source path.**  Use this when the application
+already knows where the previous version's data lives (for example,
+because it computed the path from a known schema or read it from a
+command-line argument):
 
 ```cpp
-auto Cfg = Anafestica::JSON::TConfig::Migrate(
-    R"(C:\Users\Me\AppData\…\1.5\MyApp.json)",  // source (previous version)
-    R"(C:\Users\Me\AppData\…\2.0\MyApp.json)"   // destination (current version)
-);
+#include <anafestica/CfgJSON.h>
+
+void RunWithMigratedConfig()
+{
+    String const Source = _D( "C:\\Users\\Me\\AppData\\Roaming\\Acme\\MyApp\\1.5\\MyApp.json" );
+    String const Dest   = _D( "C:\\Users\\Me\\AppData\\Roaming\\Acme\\MyApp\\2.0\\MyApp.json" );
+
+    // Load 1.5's settings, persist to 2.0 on scope exit.  If Dest already
+    // exists (e.g. the app was launched once already at 2.0), the load
+    // silently reads from Dest and ignores Source.  If neither exists,
+    // the object starts from defaults and the dtor does not create a file.
+    auto Cfg = Anafestica::JSON::TConfig::Migrate( Source, Dest );
+
+    // From here on, Cfg behaves like any other TConfig — read or modify
+    // values, and the dtor flushes to Dest.
+    Cfg.GetRootNode().PutItem( _D( "migrated_at" ), Now() );
+}
+```
+
+**Example 2 — discovery + migration.**  When the previous version is not
+known up front, combine the `FindPriorVersionFile` helper with `Migrate`.
+This is what the file-based singleton helpers do internally; you only
+need to write this code by hand if you are constructing `TConfig`
+objects directly (without the singletons), or if you want to apply a
+custom migration policy:
+
+```cpp
+#include <anafestica/CfgJSON.h>
+#include <anafestica/CfgJSONSingleton.h>   // for Anafestica::JSON::GetFileName
+#include <anafestica/Migration.h>
+
+Anafestica::JSON::TConfig OpenAppConfigWithMigration( String ExePath = ParamStr( {} ) )
+{
+    auto const Dest = Anafestica::JSON::GetFileName( ExePath );
+
+    if ( !TFile::Exists( Dest ) ) {
+        // Look for the most recent strictly older version under
+        // $HOME\<CompanyName>\<ProductName>\.
+        if ( auto const Source =
+                Anafestica::Migration::FindPriorVersionFile(
+                    ExePath, _D( ".json" )
+                ) )
+        {
+            return Anafestica::JSON::TConfig::Migrate( *Source, Dest );
+        }
+    }
+
+    // Either Dest already exists, or no prior version was found — open
+    // normally.  In the no-prior-version case the dtor will not create
+    // a file unless something is modified.
+    return Anafestica::JSON::TConfig( Dest );
+}
+```
+
+The two `return` statements work even though `TConfig`'s copy/move are
+deleted: in C++17 the prvalue produced by each `return` initialises the
+caller's storage directly (mandatory copy elision).
+
+For most applications, the **simpler path is to use the singleton
+helper** — `Anafestica::JSON::GetConfigSingleton()` already performs
+the discovery and migration internally, so no migration-specific code
+is needed:
+
+```cpp
+#include <anafestica/CfgJSONSingleton.h>
+
+void UseAppConfig()
+{
+    auto& Cfg = Anafestica::JSON::GetConfigSingleton();
+    // First call after a version bump: loaded from the prior version's
+    // file (if any), then written to the current-version path on
+    // application exit.  No explicit Migrate call needed.
+    auto const Lang = Cfg.GetRootNode().GetItem<String>( _D( "language" ) );
+}
 ```
 
 ### Discovery: `FindPriorVersionFile`

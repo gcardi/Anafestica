@@ -185,6 +185,12 @@
         <CppCompile Include="..\Shared\test_node_ops.cpp">
             <BuildOrder>7</BuildOrder>
         </CppCompile>
+        <CppCompile Include="..\Shared\test_version.cpp">
+            <BuildOrder>8</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\Shared\test_migration.cpp">
+            <BuildOrder>9</BuildOrder>
+        </CppCompile>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

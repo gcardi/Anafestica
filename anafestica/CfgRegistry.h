@@ -472,7 +472,7 @@ public:
 
     ~TConfig() {
         try {
-            if ( !GetReadOnlyFlag() ) {
+            if ( ShouldFlushOnDestruction() ) {
                 DoFlush();
             }
         }

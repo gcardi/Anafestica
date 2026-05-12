@@ -69,7 +69,36 @@ public:
     /// because they rewrite the entire file atomically.
     [[nodiscard]] bool GetAlwaysFlushNodeFlag() const noexcept { return flushAllItems_; }
 
+    /// Decides whether a backend's destructor should call @c DoFlush().
+    ///
+    /// Returns @c true when the object is writable AND either:
+    ///   - some caller has marked it for forced flush
+    ///     (see @ref MarkForFlush — used by the migration constructors), or
+    ///   - the in-memory tree has any pending @c Write/@c Erase operation
+    ///     (i.e. @ref TConfigNode::IsModified on the root).
+    ///
+    /// Read-only objects always skip the flush.  A freshly constructed
+    /// object with no source file loaded and no modifications applied is
+    /// considered clean, so its destructor leaves the storage untouched
+    /// — in particular, no empty file or registry key is created on
+    /// first run.
+    [[nodiscard]] bool ShouldFlushOnDestruction() const noexcept {
+        return !readOnly_ && ( markedForFlush_ || root_->IsModified() );
+    }
+
 protected:
+    /// Forces the destructor to flush even when no @c Write/@c Erase has
+    /// occurred since construction.
+    ///
+    /// Intended for the migration constructors of the file-based backends:
+    /// after a successful load from a different source file, every loaded
+    /// item is in state @c Operation::None, so @c IsModified would return
+    /// @c false and the destructor would skip the flush — yet the data
+    /// still needs to be persisted to the destination file.  The migration
+    /// ctor calls @ref MarkForFlush so the dtor writes to the destination.
+    void MarkForFlush() noexcept { markedForFlush_ = true; }
+
+
     /// Deserialises the values stored at @p Path into a value map.
     ///
     /// Each backend parses its own format, resolves the type tag, and
@@ -86,6 +115,7 @@ private:
 
     bool readOnly_ {};
     bool flushAllItems_ {};
+    bool markedForFlush_ {};
     TConfigNodePtr root_;
 };
 

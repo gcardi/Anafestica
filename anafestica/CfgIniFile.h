@@ -56,17 +56,44 @@ class TConfig : public Anafestica::TConfig {
 public:
     TConfig( String FileName, bool ReadOnly = false, bool FlushAllItems = false )
         : Anafestica::TConfig( ReadOnly, FlushAllItems )
-        , fileName_( FileName )
+        , fileName_( FileName ), loadFileName_( FileName )
     {
-        if ( TFile::Exists( fileName_ ) ) {
-            IniFileRAII Ini( *this );
+        if ( TFile::Exists( loadFileName_ ) ) {
+            IniFileRAII Ini( *this, loadFileName_ );
             GetRootNode().Read( *this, TConfigPath{} );
         }
     }
 
+    /// Migration constructor: loads from @p LoadFileName, persists to
+    /// @p SaveFileName.  Destination wins when both exist.  FlushAllItems
+    /// is forced @c true so that values in @c Operation::None state are
+    /// still written to the destination.  See @ref Migrate for a named
+    /// wrapper that makes the load/save direction unambiguous.
+    TConfig( String LoadFileName, String SaveFileName, bool ReadOnly = false )
+        : Anafestica::TConfig( ReadOnly, /*FlushAllItems*/ true )
+        , fileName_( SaveFileName )
+        , loadFileName_(
+            TFile::Exists( SaveFileName ) ? SaveFileName : LoadFileName
+          )
+    {
+        if ( TFile::Exists( loadFileName_ ) ) {
+            IniFileRAII Ini( *this, loadFileName_ );
+            GetRootNode().Read( *this, TConfigPath{} );
+            if ( loadFileName_ != fileName_ ) {
+                MarkForFlush();
+            }
+        }
+    }
+
+    static TConfig Migrate( String LoadFileName, String SaveFileName,
+                            bool ReadOnly = false )
+    {
+        return TConfig( LoadFileName, SaveFileName, ReadOnly );
+    }
+
     ~TConfig() {
         try {
-            if ( !GetReadOnlyFlag() ) {
+            if ( ShouldFlushOnDestruction() ) {
                 DoFlush();
             }
         }
@@ -82,7 +109,11 @@ private:
     // -----------------------------------------------------------------------
     class IniFileRAII {
     public:
-        explicit IniFileRAII( TConfig& Cfg ) : cfg_( Cfg ) { Cfg.CreateIniObject(); }
+        IniFileRAII( TConfig& Cfg, String FilePath )
+            : cfg_( Cfg )
+        {
+            Cfg.CreateIniObject( FilePath );
+        }
         ~IniFileRAII() { try { cfg_.DestroyIniObject(); } catch ( ... ) {} }
         IniFileRAII( IniFileRAII const & ) = delete;
         IniFileRAII& operator=( IniFileRAII const & ) = delete;
@@ -92,6 +123,7 @@ private:
 
     std::unique_ptr<TMemIniFile> ini_;
     String fileName_;
+    String loadFileName_;
 
     static void ValidatePathComponent( String const & Component ) {
         if ( Component.Pos( _D( "\\" ) ) > 0 ||
@@ -106,9 +138,13 @@ private:
         }
     }
 
-    void CreateIniObject() {
+    // Opens (and implicitly loads) the underlying TMemIniFile against the
+    // given path.  Constructors pass loadFileName_; DoFlush passes
+    // fileName_ — TMemIniFile::UpdateFile writes back to its construction
+    // path, so this is how the load/save split is realised.
+    void CreateIniObject( String FilePath ) {
         // Specify UTF-8 so that Unicode strings survive the disk roundtrip.
-        ini_ = std::make_unique<TMemIniFile>( fileName_, TEncoding::UTF8 );
+        ini_ = std::make_unique<TMemIniFile>( FilePath, TEncoding::UTF8 );
     }
 
     void DestroyIniObject() {
@@ -604,7 +640,9 @@ protected:
     // DoFlush – write the in-memory tree back to the INI file
     // -----------------------------------------------------------------------
     virtual void DoFlush() override {
-        IniFileRAII Ini{ *this };
+        // Open the TMemIniFile against fileName_ so that UpdateFile writes
+        // to the destination, regardless of where the initial load came from.
+        IniFileRAII Ini{ *this, fileName_ };
         GetRootNode().Write( *this, TConfigPath{} );
 
         if ( !TFile::Exists( fileName_ ) ) {

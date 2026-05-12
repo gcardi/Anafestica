@@ -35,18 +35,47 @@ public:
     TConfig( String FileName, bool ReadOnly = false,
              bool FlushAllItems = false, bool ExplicitTypes = false )
         : Anafestica::TConfig( ReadOnly, FlushAllItems )
-        , fileName_{ FileName }
+        , fileName_{ FileName }, loadFileName_{ FileName }
         , explicitTypes_{ ExplicitTypes }
     {
-        if ( TFile::Exists( fileName_ ) ) {
+        if ( TFile::Exists( loadFileName_ ) ) {
             BSONObjRAII BSON{ *this };
             GetRootNode().Read( *this, TConfigPath{} );
         }
     }
 
+    /// Migration constructor: loads from @p LoadFileName, persists to
+    /// @p SaveFileName.  Destination wins when both exist.  FlushAllItems
+    /// is forced @c true so that values in @c Operation::None state are
+    /// still written to the destination.  See @ref Migrate for a named
+    /// wrapper that makes the load/save direction unambiguous.
+    TConfig( String LoadFileName, String SaveFileName,
+             bool ReadOnly = false, bool ExplicitTypes = false )
+        : Anafestica::TConfig( ReadOnly, /*FlushAllItems*/ true )
+        , fileName_{ SaveFileName }
+        , loadFileName_{
+            TFile::Exists( SaveFileName ) ? SaveFileName : LoadFileName
+          }
+        , explicitTypes_{ ExplicitTypes }
+    {
+        if ( TFile::Exists( loadFileName_ ) ) {
+            BSONObjRAII BSON{ *this };
+            GetRootNode().Read( *this, TConfigPath{} );
+            if ( loadFileName_ != fileName_ ) {
+                MarkForFlush();
+            }
+        }
+    }
+
+    static TConfig Migrate( String LoadFileName, String SaveFileName,
+                            bool ReadOnly = false, bool ExplicitTypes = false )
+    {
+        return TConfig( LoadFileName, SaveFileName, ReadOnly, ExplicitTypes );
+    }
+
     ~TConfig() {
         try {
-            if ( !GetReadOnlyFlag() ) {
+            if ( ShouldFlushOnDestruction() ) {
                 DoFlush();
             }
         }
@@ -71,14 +100,15 @@ private:
 
     std::unique_ptr<TJSONValue> document_;
     String fileName_;
+    String loadFileName_;
     bool explicitTypes_;
 
     void CreateBSONDocument() {
         document_.reset();
-        if ( TFile::Exists( fileName_ ) ) {
+        if ( TFile::Exists( loadFileName_ ) ) {
             auto Stream =
                 std::make_unique<TFileStream>(
-                    fileName_, fmOpenRead | fmShareDenyWrite
+                    loadFileName_, fmOpenRead | fmShareDenyWrite
                 );
             auto Reader =
                 std::make_unique<System::Json::Bson::TBsonReader>(

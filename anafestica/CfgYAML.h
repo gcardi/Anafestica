@@ -57,18 +57,46 @@ public:
     TConfig( String FileName, bool ReadOnly = false,
              bool /*FlushAllItems*/ = false, bool ExplicitTypes = false )
         : Anafestica::TConfig( ReadOnly, /*FlushAllItems*/ true )
-        , fileName_{ FileName }
+        , fileName_{ FileName }, loadFileName_{ FileName }
         , explicitTypes_{ ExplicitTypes }
     {
-        if ( TFile::Exists( fileName_ ) ) {
+        if ( TFile::Exists( loadFileName_ ) ) {
             YAMLObjRAII YAML{ *this, /*Load*/true };
             GetRootNode().Read( *this, TConfigPath{} );
         }
     }
 
+    /// Migration constructor: loads from @p LoadFileName, persists to
+    /// @p SaveFileName.  Destination wins when both exist.  FlushAllItems
+    /// is already always-on for YAML (see header note).  See @ref Migrate
+    /// for a named wrapper that makes the load/save direction unambiguous.
+    TConfig( String LoadFileName, String SaveFileName,
+             bool ReadOnly = false, bool ExplicitTypes = false )
+        : Anafestica::TConfig( ReadOnly, /*FlushAllItems*/ true )
+        , fileName_{ SaveFileName }
+        , loadFileName_{
+            TFile::Exists( SaveFileName ) ? SaveFileName : LoadFileName
+          }
+        , explicitTypes_{ ExplicitTypes }
+    {
+        if ( TFile::Exists( loadFileName_ ) ) {
+            YAMLObjRAII YAML{ *this, /*Load*/true };
+            GetRootNode().Read( *this, TConfigPath{} );
+            if ( loadFileName_ != fileName_ ) {
+                MarkForFlush();
+            }
+        }
+    }
+
+    static TConfig Migrate( String LoadFileName, String SaveFileName,
+                            bool ReadOnly = false, bool ExplicitTypes = false )
+    {
+        return TConfig( LoadFileName, SaveFileName, ReadOnly, ExplicitTypes );
+    }
+
     ~TConfig() {
         try {
-            if ( !GetReadOnlyFlag() ) {
+            if ( ShouldFlushOnDestruction() ) {
                 DoFlush();
             }
         }
@@ -98,6 +126,7 @@ private:
 
     std::unique_ptr<YamlNode>          document_;
     String                             fileName_;
+    String                             loadFileName_;
     bool                               explicitTypes_;
     std::unique_ptr<TBase64Encoding>   base64_ { new TBase64Encoding{ 0 } };
 
@@ -119,12 +148,12 @@ private:
     //-----------------------------------------------------------------------
     void CreateYAMLDocument( bool Load ) {
         document_.reset();
-        if ( Load && TFile::Exists( fileName_ ) ) {
+        if ( Load && TFile::Exists( loadFileName_ ) ) {
             std::string Content;
             {
                 std::unique_ptr<TFileStream> Stream(
                     new TFileStream(
-                        fileName_, fmOpenRead | fmShareDenyWrite
+                        loadFileName_, fmOpenRead | fmShareDenyWrite
                     )
                 );
                 auto const Size = static_cast<size_t>( Stream->Size );

@@ -40,18 +40,46 @@ public:
     TConfig( String FileName, bool ReadOnly = false,
              bool FlushAllItems = false )
         : Anafestica::TConfig( ReadOnly, FlushAllItems )
-        , fileName_( FileName )
+        , fileName_( FileName ), loadFileName_( FileName )
     {
-        if ( FileExists( fileName_ ) ) {
+        if ( FileExists( loadFileName_ ) ) {
             XMLObjRAII XML( *this );
             CheckDocument();
             GetRootNode().Read( *this, TConfigPath{} );
         }
     }
 
+    /// Migration constructor: loads from @p LoadFileName, persists to
+    /// @p SaveFileName.  Destination wins when both exist.  FlushAllItems
+    /// is forced @c true so that values in @c Operation::None state are
+    /// still written to the destination.  See @ref Migrate for a named
+    /// wrapper that makes the load/save direction unambiguous.
+    TConfig( String LoadFileName, String SaveFileName, bool ReadOnly = false )
+        : Anafestica::TConfig( ReadOnly, /*FlushAllItems*/ true )
+        , fileName_( SaveFileName )
+        , loadFileName_(
+            TFile::Exists( SaveFileName ) ? SaveFileName : LoadFileName
+          )
+    {
+        if ( FileExists( loadFileName_ ) ) {
+            XMLObjRAII XML( *this );
+            CheckDocument();
+            GetRootNode().Read( *this, TConfigPath{} );
+            if ( loadFileName_ != fileName_ ) {
+                MarkForFlush();
+            }
+        }
+    }
+
+    static TConfig Migrate( String LoadFileName, String SaveFileName,
+                            bool ReadOnly = false )
+    {
+        return TConfig( LoadFileName, SaveFileName, ReadOnly );
+    }
+
     ~TConfig() {
         try {
-            if ( !GetReadOnlyFlag() ) {
+            if ( ShouldFlushOnDestruction() ) {
                 DoFlush();
             }
         }
@@ -76,13 +104,14 @@ private:
 
     _di_IXMLDocument XMLDoc_;
     String fileName_;
+    String loadFileName_;
 
     void CreateXMLObject() {
-        if ( TFile::Exists( fileName_ ) ) {
+        if ( TFile::Exists( loadFileName_ ) ) {
             // Mitigate XXE injection and XML Bomb (billion laughs)
             // attacks: reject documents containing DTD declarations
             // before the XML parser processes them.
-            auto RawContent = TFile::ReadAllText( fileName_ );
+            auto RawContent = TFile::ReadAllText( loadFileName_ );
             if ( RawContent.Pos( _D( "<!DOCTYPE" ) ) > 0 ||
                  RawContent.Pos( _D( "<!ENTITY" ) ) > 0 )
             {

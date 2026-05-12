@@ -5,6 +5,7 @@
 
 #include <anafestica/CfgSingletonVersionInfo.h>
 #include <anafestica/CfgJSON.h>
+#include <anafestica/Migration.h>
 
 
 //---------------------------------------------------------------------------
@@ -38,7 +39,19 @@ inline String GetFileName( String FileName )
 
 inline Anafestica::TConfig& GetConfigSingleton( String FileName = ParamStr( {} ) )
 {
-    static auto Cfg = TConfig( GetFileName( FileName ), false );
+    static auto Cfg = [FileName]() -> TConfig {
+        auto const Dest = GetFileName( FileName );
+        if ( !TFile::Exists( Dest ) ) {
+            if ( auto const Source =
+                    Anafestica::Migration::FindPriorVersionFile(
+                        FileName, _D( ".json" )
+                    ) )
+            {
+                return TConfig::Migrate( *Source, Dest );
+            }
+        }
+        return TConfig( Dest );
+    }();
     return Cfg;
 }
 //---------------------------------------------------------------------------

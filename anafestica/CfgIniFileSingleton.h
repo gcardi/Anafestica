@@ -5,6 +5,7 @@
 
 #include <anafestica/CfgSingletonVersionInfo.h>
 #include <anafestica/CfgIniFile.h>
+#include <anafestica/Migration.h>
 
 //---------------------------------------------------------------------------
 namespace Anafestica {
@@ -39,7 +40,19 @@ inline String GetFileName( String FileName )
 
 inline Anafestica::TConfig& GetConfigSingleton( String FileName = ParamStr( {} ) )
 {
-    static auto Cfg = TConfig( GetFileName( FileName ), false );
+    static auto Cfg = [FileName]() -> TConfig {
+        auto const Dest = GetFileName( FileName );
+        if ( !TFile::Exists( Dest ) ) {
+            if ( auto const Source =
+                    Anafestica::Migration::FindPriorVersionFile(
+                        FileName, _D( ".ini" )
+                    ) )
+            {
+                return TConfig::Migrate( *Source, Dest );
+            }
+        }
+        return TConfig( Dest );
+    }();
     return Cfg;
 }
 //---------------------------------------------------------------------------

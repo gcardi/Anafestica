@@ -53,6 +53,9 @@ public:
     void DeleteNode(TConfigPath const & Path);
     bool GetReadOnlyFlag() const noexcept;
     bool GetAlwaysFlushNodeFlag() const noexcept;
+    bool ShouldFlushOnDestruction() const noexcept;   // see "Flush-on-destruction" below
+protected:
+    void MarkForFlush() noexcept;                     // used by the migration ctors
 };
 ```
 
@@ -69,6 +72,31 @@ public:
 - `CreateNodeList()`: Creates a list of sub-nodes for a given path
 - `SaveValueList()`: Saves a list of values to a given path
 - `DeleteNode()`: Deletes a node at the specified path
+- `ShouldFlushOnDestruction()`: Predicate consulted by each backend's
+  destructor.  Returns `true` only when the object is writable AND either
+  some caller marked it for forced flush (the migration ctors do this) OR
+  the in-memory tree has at least one pending `Write` / `Erase` operation.
+
+**Flush-on-destruction semantics (behavioural change):**
+
+The file-based backends used to call `DoFlush()` unconditionally from their
+destructor whenever the object was not read-only.  They now consult
+`ShouldFlushOnDestruction()` instead, so an unmodified `TConfig` no longer
+rewrites (or even creates) its backing file/registry data.  The practical
+consequences:
+
+- **Fresh install, no modifications** — no file is created.  Earlier
+  versions of the library produced an empty stub file in this case;
+  applications that relied on that side-effect (for example, as a
+  "user has launched the app at least once" sentinel) must instead
+  call `Flush()` explicitly or write a value before destruction.
+- **Existing file, no modifications** — the file is left byte-for-byte
+  untouched (previously it was rewritten on every run).
+- **Existing file, with modifications** — flushed as before.
+- **Migration constructor** — flushes unconditionally because
+  `MarkForFlush()` is called after loading from the source file, so the
+  destination ends up populated even when the caller never modified
+  anything between load and destruction.
 
 ### TConfigNode
 
@@ -339,8 +367,23 @@ Implements configuration storage in JSON files.
 namespace JSON {
 class TConfig : public Anafestica::TConfig {
 public:
+    // Standard ctor: load from FileName, persist to FileName.
     TConfig(String FileName, bool ReadOnly = false, bool Compact = true,
             bool FlushAllItems = false, bool ExplicitTypes = false);
+
+    // Migration ctor: load from LoadFileName, persist to SaveFileName.
+    // When SaveFileName already exists, the destination wins (the load
+    // reads from SaveFileName, ignoring LoadFileName).  FlushAllItems is
+    // forced true internally so loaded values reach the destination.
+    TConfig(String LoadFileName, String SaveFileName,
+            bool ReadOnly = false, bool Compact = true,
+            bool ExplicitTypes = false);
+
+    // Named-constructor wrapper around the migration ctor — preferred at
+    // call sites for readability.
+    static TConfig Migrate(String LoadFileName, String SaveFileName,
+                           bool ReadOnly = false, bool Compact = true,
+                           bool ExplicitTypes = false);
 };
 }
 ```
@@ -350,6 +393,8 @@ public:
 - `Compact`: If true, outputs compact JSON; if false, pretty-printed
 - `ExplicitTypes`: If true, every value is tagged (see below)
 - `ReadOnly`, `FlushAllItems`: Same as base class
+- `LoadFileName` / `SaveFileName`: For the migration ctor — source and
+  destination, respectively.  See "Configuration migration" below.
 
 **Storage layout:**
 Nested `TConfigPath` components become nested JSON objects. Each group of values lives under a `values` child object, and each value is **either** a plain key/value pair **or** a one-entry object that carries the type tag as its inner key:
@@ -674,6 +719,161 @@ public:
 This singleton creates an INI-file-based configuration. The file path is derived from the application's version info: `$(HOME)\CompanyName\ProductName\ProductVersion\AppName.ini`.
 
 Include `<anafestica/CfgIniFileSingleton.h>` to use this singleton.
+
+## Configuration migration
+
+When an application's `ProductVersion` changes, the per-version path of the
+file-based singletons changes too — so the new build starts with an empty
+configuration unless the data is migrated forward.  The migration helpers
+do this automatically.
+
+### TVersion (`anafestica/Version.h`)
+
+Strict version-string parser used by the discovery helpers.
+
+```cpp
+class TVersion {
+public:
+    TVersion() = default;                 // produces 0.0.0.0
+    explicit TVersion(String Text);       // throws Exception on malformed input
+
+    unsigned long long Major()    const noexcept;
+    unsigned long long Minor()    const noexcept;
+    String             MinorSuffix() const;
+    unsigned long long Build()    const noexcept;
+    unsigned long long Revision() const noexcept;
+
+    bool operator< (TVersion const & Other) const;
+    bool operator==(TVersion const & Other) const;
+    // !=, >, <=, >= follow
+};
+```
+
+Grammar:  `^\d+(?:\.\d+[a-zA-Z]*)(?:\.\d+){0,2}$`
+
+- First component: digits only.
+- Second component: digits plus an optional letter suffix
+  (case-insensitive — lowercased at parse time).
+- Up to two additional digits-only components (build, revision).
+
+Accepted: `1.2`, `1.3a`, `2.0beta`, `1.0.2.3`, `1.10a.0.0`.
+Rejected: `1` (too few components), `1a.3` (letter on major),
+`1.0.0a` (letter on build/revision), `1.2.3.4.5` (too many), `1.0RC1`
+(digits after letters inside one component).  Malformed input throws a
+Delphi-style `Exception` whose message contains the offending string.
+
+Ordering is lexicographic over (major, minor, suffix, build, revision)
+with absent trailing components compared as zero — so `1.0.2.3 < 1.1`,
+`1.1 < 1.1a`, and `1.1 == 1.1.0.0`.
+
+### Migration constructor and `Migrate` factory
+
+Every file-based backend (`JSON`, `BSON`, `XML`, `INIFile`, `YAML`)
+exposes a migration constructor and a named `Migrate` factory:
+
+```cpp
+// One ctor variant per backend — parameters after the two file names
+// vary slightly (Compact / ExplicitTypes / etc.).  See each backend's
+// header for the precise signature.
+namespace JSON {
+class TConfig : public Anafestica::TConfig {
+public:
+    TConfig(String LoadFileName, String SaveFileName,
+            bool ReadOnly = false, bool Compact = true,
+            bool ExplicitTypes = false);
+
+    static TConfig Migrate(String LoadFileName, String SaveFileName,
+                           bool ReadOnly = false, bool Compact = true,
+                           bool ExplicitTypes = false);
+};
+}
+```
+
+Semantics:
+
+- Loads from `LoadFileName` on construction; persists to `SaveFileName`
+  on destruction.
+- If `SaveFileName` already exists, the **destination wins** — the load
+  reads from `SaveFileName` and ignores `LoadFileName`.  This protects
+  data already written for the current version.
+- If `LoadFileName` does not exist either, the object behaves like a
+  fresh-install single-arg ctor (defaults; no flush unless modified).
+- `FlushAllItems` is forced `true` internally so that values loaded from
+  the source (state `Operation::None`) are still written out to the
+  destination when the destructor runs.
+- After a successful load from the source, the migration ctor calls
+  `MarkForFlush()` on the base class so that `ShouldFlushOnDestruction()`
+  returns `true` even though nothing has been modified — ensuring the
+  destination file gets populated.
+
+Prefer the named `Migrate` factory at call sites:
+
+```cpp
+auto Cfg = Anafestica::JSON::TConfig::Migrate(
+    R"(C:\Users\Me\AppData\…\1.5\MyApp.json)",  // source (previous version)
+    R"(C:\Users\Me\AppData\…\2.0\MyApp.json)"   // destination (current version)
+);
+```
+
+### Discovery: `FindPriorVersionFile`
+
+`anafestica/Migration.h` provides two helpers that turn the file-version
+info on disk into a candidate source path.
+
+```cpp
+namespace Anafestica { namespace Migration {
+
+// Production entry point: reads CompanyName / ProductName /
+// ProductVersion from FileName's VERSIONINFO and enumerates sibling
+// version directories under $HOME\<Co>\<Prod>\.  Extension must include
+// the leading dot.
+std::optional<String>
+FindPriorVersionFile(String FileName, String Extension);
+
+// Lower-level variant — useful for tests and for applications that want
+// to use a non-default product-root directory.
+std::optional<String>
+FindPriorVersionFileUnder(String ProductRoot, TVersion Current,
+                          String LeafFileName, String Extension);
+
+}}
+```
+
+For each sibling directory whose leaf name parses as `TVersion`, the
+helper picks the largest strictly less than `Current`.  Subdirectories
+that don't parse as versions (e.g. `backup`, `tmp`) are silently
+skipped.  Returns `std::nullopt` when the product root is missing, when
+no strictly older version is found, or when the matched sibling does not
+contain a file with the requested extension.
+
+### Automatic wiring in the file-based singletons
+
+The `GetConfigSingleton` helper of every file backend calls
+`FindPriorVersionFile` transparently when the per-version destination is
+missing, so applications using the singletons get migration for free —
+no code changes needed:
+
+```cpp
+// CfgJSONSingleton.h — equivalent of:
+inline Anafestica::TConfig& GetConfigSingleton(String FileName = ParamStr({})) {
+    static auto Cfg = [FileName]() -> TConfig {
+        auto const Dest = GetFileName(FileName);
+        if (!TFile::Exists(Dest)) {
+            if (auto const Source =
+                    Anafestica::Migration::FindPriorVersionFile(FileName, _D(".json")))
+            {
+                return TConfig::Migrate(*Source, Dest);
+            }
+        }
+        return TConfig(Dest);
+    }();
+    return Cfg;
+}
+```
+
+The same wiring applies in `CfgBSONSingleton.h`, `CfgXMLSingleton.h`,
+`CfgIniFileSingleton.h`, and `CfgYAMLSingleton.h` with the appropriate
+file extension.
 
 ## Form Persistence Classes
 

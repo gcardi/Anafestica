@@ -54,8 +54,10 @@ case counts, without `--with-yaml`:
 | `test_type_mismatch.cpp` | 25 | 25 | 25 |
 | `test_types.cpp` | 7 | 7 | 7 |
 | `test_singleton_version_info.cpp` | 2 | 2 | 2 |
+| `test_version.cpp` | 20 | 20 | 20 |
+| `test_migration.cpp` | 12 | 12 | 12 |
 | `test_bccXX_variant_compat.cpp` | 2 | 2 | — |
-| **Total** | **182** | **182** | **195** |
+| **Total** | **214** | **214** | **227** |
 
 With `--with-yaml` and fkYAML available to the selected toolchain include
 path, the YAML block adds 22 cases on `bcc32c` / `bcc64` and 25 cases on
@@ -64,7 +66,7 @@ path, the YAML block adds 22 cases on `bcc32c` / `bcc64` and 25 cases on
 | File | bcc32c | bcc64 | bcc64x |
 | ---- | :----: | :---: | :----: |
 | `test_config.cpp` | 129 | 129 | 147 |
-| **Total** | **204** | **204** | **220** |
+| **Total** | **236** | **236** | **252** |
 
 Despite not having a `variant_compat` module, bcc64x now reports **more** cases
 than the two boost-variant toolchains. The net +13 delta breaks down as:
@@ -228,6 +230,53 @@ failure so the suite still passes:
 - **Registry**: `DeleteSubNode` does not always remove the empty sub-key
   across a flush/reopen cycle.
 
+### Version-parser tests
+
+`Test/Shared/test_version.cpp` covers `Anafestica::TVersion` (header
+`anafestica/Version.h`) used by the migration discovery helpers:
+
+- Grammar acceptance: `1.2`, `1.3a`, `2.0beta`, `1.0.2.3`, `1.2a.0.0`,
+  multi-digit components, multi-character suffixes.
+- Grammar rejection: single-component (`1`), letter on major (`1a.3`) or on
+  build/revision (`1.0.0a`), more than four components, digits-after-letters
+  (`1.0RC1`), garbage / whitespace-padded input.
+- Ordering: numeric per component (so `1.9 < 1.10`), suffix sorts after
+  absent suffix, suffix does not override a higher minor bump, missing
+  trailing components compare as zero, and the suffix comparison is
+  case-insensitive.
+- Exception messages mention the offending input.
+
+### Migration tests
+
+`Test/Shared/test_migration.cpp` covers the file-based migration constructor
+and the new dirty-tracking dtor behaviour, using the JSON backend as the
+representative (the BSON / XML / INI / YAML backends share the same ctor
+shape and the same `ShouldFlushOnDestruction` logic):
+
+- **Empty-file suppression** — a single-arg ctor on a non-existent file
+  with no modifications does NOT create an empty file on destruction.
+- **No-rewrite when unchanged** — a single-arg ctor on an existing file
+  with no modifications leaves the file byte-for-byte untouched.
+- **Migration ctor** — load from `LoadFileName`, persist to
+  `SaveFileName`; the source remains untouched, the destination ends up
+  with the source's content (and any in-session modifications layered on
+  top).
+- **Destination wins** — when both `LoadFileName` and `SaveFileName`
+  already exist, the migration ctor reads from the destination, not the
+  source.
+- **Missing source** — when `LoadFileName` does not exist, the
+  migration ctor behaves like a fresh-install single-arg ctor (defaults,
+  no flush unless modified).
+- **`FindPriorVersionFileUnder`** (the testable variant of
+  `Anafestica::Migration::FindPriorVersionFile` from
+  `anafestica/Migration.h`):
+  - Picks the highest strictly older sibling directory.
+  - Ignores non-version-shaped subdirectories (`backup`, `tmp`,
+    malformed strings like `1.0RC1`).
+  - Returns `std::nullopt` when no older version exists, when the
+    product root is missing, or when the older sibling holds a
+    different backend's file extension.
+
 ## 4. Quick checklist
 
 - [x] Builds (MSBuild via `test_all.bat`)
@@ -236,3 +285,5 @@ failure so the suite still passes:
 - [x] Enum roundtrip covered across Registry, JSON, BSON, XML, and INI backends by default; YAML is covered with `--with-yaml` when fkYAML is available
 - [x] Type-mismatch silent-default behaviour covered across Registry, JSON, BSON, XML, and INI backends
 - [x] `TConfigNode` in-memory operations and per-backend erase persistence covered
+- [x] `TVersion` grammar (acceptance + rejection) and ordering rules covered
+- [x] Migration constructor (load A → save B), destination-wins fallback, empty-file suppression on fresh install, and `FindPriorVersionFileUnder` discovery covered (JSON as representative)

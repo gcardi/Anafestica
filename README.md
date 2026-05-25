@@ -17,6 +17,13 @@ The BSON backend uses RAD Studio's native `System.JSON.BSON` support and follows
 
 The YAML backend uses the external header-only [fkYAML](https://github.com/fktn-k/fkYAML) library and follows the same logical `values` / `nodes` layout as the JSON backend. Anafestica does not redistribute fkYAML: if you include `<anafestica/CfgYAML.h>` or `<anafestica/CfgYAMLSingleton.h>`, register the fkYAML include directory in RAD Studio's include search path for the Clang-based compilers you target (`bcc32c`, `bcc64`, `bcc64x`).
 
+Encrypted file variants are available for the file-generating backends via
+`CfgJSONCrypt.h`, `CfgBSONCrypt.h`, `CfgYAMLCrypt.h`, `CfgXMLCrypt.h`, and
+`CfgIniFileCrypt.h`. They preserve the normal backend APIs but encrypt the
+whole file with Windows CNG AES-GCM. By default the key material is bound to
+the current machine and application identity; callers can also pass an explicit
+`Anafestica::Crypt::TOptions`.
+
 ## Getting Started
 
 The library consists only of header files, making it easy to use and integrate into your codebase without requiring additional compilation steps; you just need to include the necessary header files in your project. It can also be used in contexts other than GUI applications, but its real advantages are evident when developing GUI applications, where it greatly simplifies the management of persistent attributes such as form position, size, and state, as well as application-wide settings.
@@ -36,43 +43,43 @@ The library selects the variant implementation automatically based on the compil
 
 The selection is performed inside `CfgNodeValueType.h` via the `__clang_major__` predefined macro; no manual `ANAFESTICA_USE_STD_VARIANT` definition is required.
 
-When `boost::variant` is selected (`bcc64` or `bcc32c`), the Boost libraries are required. You can install them via the IDE's GetIt tool (e.g., version 1.68.0 for RAD Studio 10.3 or 1.70.0 for RAD Studio 10.4).
+When `boost::variant` is selected (`bcc64` or `bcc32c`), the Boost headers are required; install Boost through RAD Studio's GetIt package manager or make an existing Boost installation visible in the compiler include path. For **bcc64x** in recent RAD Studio Florence toolchains based on Clang 20, Anafestica uses `std::variant`, so Boost is not required by the library itself.
 
 The YAML backend has one additional opt-in dependency: `CfgYAML.h` includes `<fkYAML/node.hpp>`. To use `Anafestica::YAML::TConfig` or `Anafestica::TConfigYAMLSingleton`, install fkYAML in header-only mode and add its include directory to RAD Studio's include search path for the Clang-based C++ compilers you build with. Projects that do not include the YAML headers do not need fkYAML.
 
-If you build the bundled test projects, note that the current test harness uses **Boost.Test** on all three toolchains, including `bcc64x`. In other words: `bcc64x` does not need Boost for the library's `std::variant` path, but the test executables still depend on Boost.Test.
-
-<img src="docs/assets/images/1.png" alt="Figure 1">
+If you build the bundled test projects, note that the current test harness uses **Boost.Test** on all three toolchains, including `bcc64x`. In other words: `bcc64x` does not need Boost for Anafestica's `std::variant` path, but the test executables still depend on Boost.Test.
 
 Please note that only Clang-based compilers are supported by this library (i.e., bcc32c, bcc64, and bcc64x).
 
 ### Installing
 
-Installation is not strictly necessary. Simply add the header files that comprise the library to your project. However, if you include the same files in multiple projects, it can lead to unwanted duplication, which can be confusing if you use different revisions over time. Therefore, it is often preferable to "install" the library and reference it using the development system's environment variables.
+Installation is not strictly necessary. Anafestica is header-only, so a project can use it as soon as the compiler can find the `anafestica` include directory. For one-off experiments you can add the repository folder directly to the project's C++ include path. For regular use across several projects, it is better to register the include path once in RAD Studio.
 
-To install the library, clone the repository to `$(BDSCOMMONDIR)`, which is normally `%PUBLIC%\Documents\Embarcadero\Studio\XX.X`, where `XX.X` corresponds to the version of RAD Studio you are using. For example, for RAD Studio 10.4, `$(BDSCOMMONDIR)` corresponds to `%PUBLIC%\Documents\Embarcadero\Studio\21.0`.
-
-```
-C:\Users\Public\Documents\Embarcadero\Studio\21.0>git clone https://github.com/gcardi/Anafestica.git
-```
-
-To complete the installation, add references to this library in the development system's include paths. Using the IDE menu **Tools → Options**, add the `$(BDSCOMMONDIR)\Anafestica` path to both bcc32c, bcc64, and bcc64x settings:
-
-<img src="docs/assets/images/2.png" alt="BCC64">
-
-<img src="docs/assets/images/3.png" alt="BCC32C, BCC64, BCC64X">
-
-That's all.
-
-If you prefer not to edit the RAD Studio registry-backed options by hand, run:
+The recommended layout is to clone the repository under `$(BDSCOMMONDIR)`, which is normally `%PUBLIC%\Documents\Embarcadero\Studio\XX.X`, where `XX.X` is the RAD Studio version. For example, RAD Studio 13 uses `37.0`:
 
 ```bat
+cd /d "%PUBLIC%\Documents\Embarcadero\Studio\37.0"
+git clone https://github.com/gcardi/Anafestica.git
+```
+
+Then open a RAD Studio command prompt for the toolchain you want to update, or run that version's `rsvars.bat`, and execute:
+
+```bat
+cd /d "%PUBLIC%\Documents\Embarcadero\Studio\37.0\Anafestica"
 register_anafestica.bat
 ```
 
-This updates the per-user RAD Studio C++ include-path registry entries under `HKCU\Software\Embarcadero\BDS\XX.X\C++\Paths` for `Win32`, `Win64`, and `Win64x`. Use `register_anafestica.bat --dry-run` to preview the changes without writing them.
+`register_anafestica.bat` adds the Anafestica folder to the per-user RAD Studio C++ include-path registry entries under `HKCU\Software\Embarcadero\BDS\XX.X\C++\Paths` for `Win32`, `Win64`, and `Win64x`. It determines `XX.X` from `BDSCOMMONDIR`, so running it after the matching `rsvars.bat` is the clearest way to target the intended RAD Studio installation. Use `register_anafestica.bat --dry-run` to preview the registry changes without writing them.
 
-If you plan to use the YAML backend, add the fkYAML header directory to the same include search-path pages for the Clang-based compiler platforms you use. No library path or linker setting is required because fkYAML is consumed header-only by Anafestica.
+If you prefer to configure the IDE manually, use **Tools → Options → Language → C++ → Paths and Directories** and add:
+
+```text
+$(BDSCOMMONDIR)\Anafestica
+```
+
+to the include path for each C++ platform you build with: `Win32` / `bcc32c`, `Win64` / `bcc64`, and `Win64x` / `bcc64x`. No library path is required for Anafestica itself.
+
+If you plan to use the YAML backend, add the fkYAML header directory to the same include-path pages for the Clang-based compiler platforms you use. No library path or linker setting is required because fkYAML is consumed header-only by Anafestica.
 
 You can register fkYAML the same way:
 

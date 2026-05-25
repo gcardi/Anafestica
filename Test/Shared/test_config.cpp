@@ -19,6 +19,7 @@
 #include <vector>
 #include <string>
 #include <cmath>
+#include <algorithm>
 
 #if defined( ANAFESTICA_USE_STD_VARIANT )
 # include <string_view>
@@ -29,14 +30,19 @@
 
 #include <anafestica/CfgRegistry.h>
 #include <anafestica/CfgJSON.h>
+#include <anafestica/CfgJSONCrypt.h>
 #include <anafestica/CfgBSON.h>
+#include <anafestica/CfgBSONCrypt.h>
 #include <anafestica/CfgXML.h>
+#include <anafestica/CfgXMLCrypt.h>
 #include <anafestica/CfgIniFile.h>
+#include <anafestica/CfgIniFileCrypt.h>
 #include <anafestica/CfgNodeValueType.h>
 
 #if defined( ANAFESTICA_TEST_YAML ) && __has_include(<fkYAML/node.hpp>)
 # define ANAFESTICA_TEST_YAML_AVAILABLE
 # include <anafestica/CfgYAML.h>
+# include <anafestica/CfgYAMLCrypt.h>
 #endif
 
 #include <System.Classes.hpp>
@@ -182,6 +188,21 @@ struct TempFileGuard {
         try { if ( TFile::Exists( path ) ) TFile::Delete( path ); } catch ( ... ) {}
     }
 };
+
+Anafestica::Crypt::TOptions MakeCryptOptions() {
+    return Anafestica::Crypt::TOptions{
+        L"anafestica-test-secret", L"anafestica-test-app"
+    };
+}
+
+bool FileContainsAscii( String const& Path, std::string const& Needle ) {
+    auto Bytes = TFile::ReadAllBytes( Path );
+    std::vector<unsigned char> Haystack( std::begin( Bytes ), std::end( Bytes ) );
+    return
+        std::search(
+            Haystack.begin(), Haystack.end(), Needle.begin(), Needle.end()
+        ) != Haystack.end();
+}
 
 // Global fixture: parse --keep-artifacts from user arguments (pass after --).
 struct ArtifactSetup {
@@ -454,6 +475,18 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE( TConfig_JSON )
 
+BOOST_AUTO_TEST_CASE( JSONCrypt_string_roundtrip )
+{
+    const auto f = MakeTempPath( L".json.crypt" ); TempFileGuard g( f );
+    auto const Options = MakeCryptOptions();
+    { Anafestica::JSONCrypt::TConfig c( f, false, true, false, false, Options );
+      c.GetRootNode().PutItem( L"secret", String( L"Hello Anafestica" ) ); }
+    BOOST_TEST( !FileContainsAscii( f, "secret" ) );
+    BOOST_TEST( !FileContainsAscii( f, "Hello Anafestica" ) );
+    Anafestica::JSONCrypt::TConfig c( f, false, true, false, false, Options );
+    BOOST_TEST( c.GetRootNode().GetItem<String>( L"secret" ) == String( L"Hello Anafestica" ) );
+}
+
 BOOST_AUTO_TEST_CASE( JSON_int_roundtrip )
 {
     const auto f = MakeTempPath( L".json" ); TempFileGuard g( f );
@@ -714,6 +747,18 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE( TConfig_BSON )
 
+BOOST_AUTO_TEST_CASE( BSONCrypt_string_roundtrip )
+{
+    const auto f = MakeTempPath( L".bson.crypt" ); TempFileGuard g( f );
+    auto const Options = MakeCryptOptions();
+    { Anafestica::BSONCrypt::TConfig c( f, false, false, false, Options );
+      c.GetRootNode().PutItem( L"secret", String( L"Hello Anafestica" ) ); }
+    BOOST_TEST( !FileContainsAscii( f, "secret" ) );
+    BOOST_TEST( !FileContainsAscii( f, "Hello Anafestica" ) );
+    Anafestica::BSONCrypt::TConfig c( f, false, false, false, Options );
+    BOOST_TEST( c.GetRootNode().GetItem<String>( L"secret" ) == String( L"Hello Anafestica" ) );
+}
+
 BOOST_AUTO_TEST_CASE( BSON_int_roundtrip )
 {
     const auto f = MakeTempPath( L".bson" ); TempFileGuard g( f );
@@ -968,6 +1013,18 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE( TConfig_INIFile )
 
+BOOST_AUTO_TEST_CASE( INIFileCrypt_string_roundtrip )
+{
+    const auto f = MakeTempPath( L".ini.crypt" ); TempFileGuard g( f );
+    auto const Options = MakeCryptOptions();
+    { Anafestica::INIFileCrypt::TConfig c( f, false, false, Options );
+      c.GetRootNode().PutItem( L"secret", String( L"Hello Anafestica" ) ); }
+    BOOST_TEST( !FileContainsAscii( f, "secret" ) );
+    BOOST_TEST( !FileContainsAscii( f, "Hello Anafestica" ) );
+    Anafestica::INIFileCrypt::TConfig c( f, false, false, Options );
+    BOOST_TEST( c.GetRootNode().GetItem<String>( L"secret" ) == String( L"Hello Anafestica" ) );
+}
+
 BOOST_AUTO_TEST_CASE( INIFile_int_roundtrip )
 {
     const auto f = MakeTempPath( L".ini" ); TempFileGuard g( f );
@@ -1211,6 +1268,18 @@ BOOST_AUTO_TEST_SUITE_END()
 
 #if 1
 BOOST_FIXTURE_TEST_SUITE( TConfig_XML, XMLCOMFixture )
+
+BOOST_AUTO_TEST_CASE( XMLCrypt_string_roundtrip )
+{
+    const auto f = MakeTempPath( L".xml.crypt" ); TempFileGuard g( f );
+    auto const Options = MakeCryptOptions();
+    { Anafestica::XMLCrypt::TConfig c( f, false, false, Options );
+      c.GetRootNode().PutItem( L"secret", String( L"Hello Anafestica" ) ); }
+    BOOST_TEST( !FileContainsAscii( f, "secret" ) );
+    BOOST_TEST( !FileContainsAscii( f, "Hello Anafestica" ) );
+    Anafestica::XMLCrypt::TConfig c( f, false, false, Options );
+    BOOST_TEST( c.GetRootNode().GetItem<String>( L"secret" ) == String( L"Hello Anafestica" ) );
+}
 
 BOOST_AUTO_TEST_CASE( XML_int_roundtrip )
 {
@@ -1460,6 +1529,18 @@ BOOST_AUTO_TEST_SUITE_END()
 
 #if defined( ANAFESTICA_TEST_YAML_AVAILABLE )
 BOOST_AUTO_TEST_SUITE( TConfig_YAML )
+
+BOOST_AUTO_TEST_CASE( YAMLCrypt_string_roundtrip )
+{
+    const auto f = MakeTempPath( L".yaml.crypt" ); TempFileGuard g( f );
+    auto const Options = MakeCryptOptions();
+    { Anafestica::YAMLCrypt::TConfig c( f, false, false, false, Options );
+      c.GetRootNode().PutItem( L"secret", String( L"Hello Anafestica" ) ); }
+    BOOST_TEST( !FileContainsAscii( f, "secret" ) );
+    BOOST_TEST( !FileContainsAscii( f, "Hello Anafestica" ) );
+    Anafestica::YAMLCrypt::TConfig c( f, false, false, false, Options );
+    BOOST_TEST( c.GetRootNode().GetItem<String>( L"secret" ) == String( L"Hello Anafestica" ) );
+}
 
 BOOST_AUTO_TEST_CASE( YAML_int_roundtrip )
 {

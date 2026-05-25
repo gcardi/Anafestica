@@ -12,6 +12,7 @@
 #include <string>
 
 #include <anafestica/Cfg.h>
+#include <anafestica/CfgCrypt.h>
 
 #pragma comment( lib, "xmlrtl" )
 
@@ -38,9 +39,10 @@ static constexpr LPCTSTR TypeAttrName = _D( "type" );
 class TConfig : public Anafestica::TConfig {
 public:
     TConfig( String FileName, bool ReadOnly = false,
-             bool FlushAllItems = false )
+             bool FlushAllItems = false, Crypt::TOptions CryptOptions = {} )
         : Anafestica::TConfig( ReadOnly, FlushAllItems )
         , fileName_( FileName ), loadFileName_( FileName )
+        , cryptOptions_( CryptOptions )
     {
         if ( FileExists( loadFileName_ ) ) {
             XMLObjRAII XML( *this );
@@ -54,12 +56,14 @@ public:
     /// is forced @c true so that values in @c Operation::None state are
     /// still written to the destination.  See @ref Migrate for a named
     /// wrapper that makes the load/save direction unambiguous.
-    TConfig( String LoadFileName, String SaveFileName, bool ReadOnly = false )
+    TConfig( String LoadFileName, String SaveFileName, bool ReadOnly = false,
+             Crypt::TOptions CryptOptions = {} )
         : Anafestica::TConfig( ReadOnly, /*FlushAllItems*/ true )
         , fileName_( SaveFileName )
         , loadFileName_(
             TFile::Exists( SaveFileName ) ? SaveFileName : LoadFileName
           )
+        , cryptOptions_( CryptOptions )
     {
         if ( FileExists( loadFileName_ ) ) {
             XMLObjRAII XML( *this );
@@ -72,9 +76,10 @@ public:
     }
 
     static TConfig Migrate( String LoadFileName, String SaveFileName,
-                            bool ReadOnly = false )
+                            bool ReadOnly = false,
+                            Crypt::TOptions CryptOptions = {} )
     {
-        return TConfig( LoadFileName, SaveFileName, ReadOnly );
+        return TConfig( LoadFileName, SaveFileName, ReadOnly, CryptOptions );
     }
 
     ~TConfig() {
@@ -105,13 +110,36 @@ private:
     _di_IXMLDocument XMLDoc_;
     String fileName_;
     String loadFileName_;
+    Crypt::TOptions cryptOptions_;
+
+    String ReadFileText( String const & FileName ) const {
+        return cryptOptions_.Enabled
+            ? Crypt::LoadText( FileName, TEncoding::UTF8, cryptOptions_ )
+            : TFile::ReadAllText( FileName );
+    }
+
+    void SaveXMLDocument( String const & FileName ) const {
+        if ( cryptOptions_.Enabled ) {
+            auto Stream = std::make_unique<TMemoryStream>();
+            XMLDoc_->SaveToStream( Stream.get() );
+            Crypt::Bytes Bytes( static_cast<size_t>( Stream->Size ) );
+            Stream->Position = 0;
+            if ( !Bytes.empty() ) {
+                Stream->ReadBuffer( Bytes.data(), static_cast<NativeInt>( Bytes.size() ) );
+            }
+            Crypt::SaveBytes( FileName, Bytes, cryptOptions_ );
+        }
+        else {
+            XMLDoc_->SaveToFile( FileName );
+        }
+    }
 
     void CreateXMLObject() {
         if ( TFile::Exists( loadFileName_ ) ) {
             // Mitigate XXE injection and XML Bomb (billion laughs)
             // attacks: reject documents containing DTD declarations
             // before the XML parser processes them.
-            auto RawContent = TFile::ReadAllText( loadFileName_ );
+            auto RawContent = ReadFileText( loadFileName_ );
             if ( RawContent.Pos( _D( "<!DOCTYPE" ) ) > 0 ||
                  RawContent.Pos( _D( "<!ENTITY" ) ) > 0 )
             {
@@ -708,7 +736,7 @@ protected:
                 TDirectory::CreateDirectory( DirPath );
             }
         }
-        XMLDoc_->SaveToFile( fileName_ );
+        SaveXMLDocument( fileName_ );
     }
 
     virtual bool DoGetForcedWritesFlag() const {

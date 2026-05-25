@@ -518,6 +518,52 @@ All other types are always written tagged, with the same tag names and payload c
 
 The practical difference from JSON is therefore the transport format: BSON is binary and compact, while preserving the same Anafestica-facing data model and roundtrip semantics.
 
+### Encrypted File Backends
+
+The file-generating backends also have whole-file encrypted variants:
+
+```cpp
+#include <anafestica/CfgJSONCrypt.h>
+#include <anafestica/CfgBSONCrypt.h>
+#include <anafestica/CfgYAMLCrypt.h>
+#include <anafestica/CfgXMLCrypt.h>
+#include <anafestica/CfgIniFileCrypt.h>
+```
+
+They expose the same constructor shape as the corresponding plain backend under
+parallel namespaces: `JSONCrypt`, `BSONCrypt`, `YAMLCrypt`, `XMLCrypt`, and
+`INIFileCrypt`.
+
+```cpp
+Anafestica::JSONCrypt::TConfig Config( _D( "settings.jsonc" ) );
+Config.GetRootNode().PutItem( _D( "DatabasePassword" ), String( _D( "secret" ) ) );
+```
+
+The encrypted variants serialize the normal JSON/BSON/YAML/XML/INI document in
+memory and encrypt the resulting file payload using Windows CNG AES-GCM. The
+file starts with an Anafestica crypt header and includes a random nonce and
+authentication tag; editing it manually is not supported.
+
+By default, `Anafestica::Crypt::TOptions::Default()` derives key material from
+the local machine (`MachineGuid`, with a system-volume fallback) and the
+application identity (`ProductName` from version info, with module name fallback).
+This means an encrypted file is intended for the same application on the same
+machine. To make tests, migrations, or shared deployments explicit, pass your
+own options:
+
+```cpp
+Anafestica::Crypt::TOptions Options(
+    _D( "deployment-secret" ),
+    _D( "my-product-id" )
+);
+Anafestica::JSONCrypt::TConfig Config(
+    _D( "settings.jsonc" ), false, true, false, false, Options
+);
+```
+
+The plain backends also accept a final `Crypt::TOptions` parameter for advanced
+code that wants to select encryption without changing namespace.
+
 ### YAML::TConfig
 
 Implements configuration storage in YAML files using the external header-only fkYAML library.

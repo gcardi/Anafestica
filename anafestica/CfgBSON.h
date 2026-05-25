@@ -20,6 +20,7 @@
 #include <iterator>
 
 #include <anafestica/Cfg.h>
+#include <anafestica/CfgCrypt.h>
 
 //---------------------------------------------------------------------------
 namespace Anafestica {
@@ -33,10 +34,12 @@ private:
     static constexpr LPCTSTR NodesNodeName = _D( "nodes" );
 public:
     TConfig( String FileName, bool ReadOnly = false,
-             bool FlushAllItems = false, bool ExplicitTypes = false )
+             bool FlushAllItems = false, bool ExplicitTypes = false,
+             Crypt::TOptions CryptOptions = {} )
         : Anafestica::TConfig( ReadOnly, FlushAllItems )
         , fileName_{ FileName }, loadFileName_{ FileName }
         , explicitTypes_{ ExplicitTypes }
+        , cryptOptions_{ CryptOptions }
     {
         if ( TFile::Exists( loadFileName_ ) ) {
             BSONObjRAII BSON{ *this };
@@ -50,13 +53,15 @@ public:
     /// still written to the destination.  See @ref Migrate for a named
     /// wrapper that makes the load/save direction unambiguous.
     TConfig( String LoadFileName, String SaveFileName,
-             bool ReadOnly = false, bool ExplicitTypes = false )
+             bool ReadOnly = false, bool ExplicitTypes = false,
+             Crypt::TOptions CryptOptions = {} )
         : Anafestica::TConfig( ReadOnly, /*FlushAllItems*/ true )
         , fileName_{ SaveFileName }
         , loadFileName_{
             TFile::Exists( SaveFileName ) ? SaveFileName : LoadFileName
           }
         , explicitTypes_{ ExplicitTypes }
+        , cryptOptions_{ CryptOptions }
     {
         if ( TFile::Exists( loadFileName_ ) ) {
             BSONObjRAII BSON{ *this };
@@ -68,9 +73,12 @@ public:
     }
 
     static TConfig Migrate( String LoadFileName, String SaveFileName,
-                            bool ReadOnly = false, bool ExplicitTypes = false )
+                            bool ReadOnly = false, bool ExplicitTypes = false,
+                            Crypt::TOptions CryptOptions = {} )
     {
-        return TConfig( LoadFileName, SaveFileName, ReadOnly, ExplicitTypes );
+        return TConfig(
+            LoadFileName, SaveFileName, ReadOnly, ExplicitTypes, CryptOptions
+        );
     }
 
     ~TConfig() {
@@ -102,14 +110,41 @@ private:
     String fileName_;
     String loadFileName_;
     bool explicitTypes_;
+    Crypt::TOptions cryptOptions_;
+
+    std::unique_ptr<TStream> OpenReadStream( String const & FileName ) const {
+        if ( cryptOptions_.Enabled ) {
+            auto Bytes = Crypt::LoadBytes( FileName, cryptOptions_ );
+            TBytes BytesArray;
+            BytesArray.Length = static_cast<int>( Bytes.size() );
+            if ( !Bytes.empty() ) {
+                std::copy( Bytes.begin(), Bytes.end(), std::begin( BytesArray ) );
+            }
+            return std::make_unique<TBytesStream>( BytesArray );
+        }
+        return std::make_unique<TFileStream>(
+            FileName, fmOpenRead | fmShareDenyWrite
+        );
+    }
+
+    void SaveBSONStream( std::unique_ptr<TStream> Stream ) const {
+        if ( cryptOptions_.Enabled ) {
+            auto MemoryStream = dynamic_cast<TMemoryStream*>( Stream.get() );
+            Crypt::Bytes Bytes( static_cast<size_t>( MemoryStream->Size ) );
+            MemoryStream->Position = 0;
+            if ( !Bytes.empty() ) {
+                MemoryStream->ReadBuffer(
+                    Bytes.data(), static_cast<NativeInt>( Bytes.size() )
+                );
+            }
+            Crypt::SaveBytes( fileName_, Bytes, cryptOptions_ );
+        }
+    }
 
     void CreateBSONDocument() {
         document_.reset();
         if ( TFile::Exists( loadFileName_ ) ) {
-            auto Stream =
-                std::make_unique<TFileStream>(
-                    loadFileName_, fmOpenRead | fmShareDenyWrite
-                );
+            auto Stream = OpenReadStream( loadFileName_ );
             auto Reader =
                 std::make_unique<System::Json::Bson::TBsonReader>(
                     Stream.get(), false
@@ -640,8 +675,10 @@ protected:
             }
         }
 
-        auto Stream =
-            std::make_unique<TFileStream>( fileName_, fmCreate );
+        std::unique_ptr<TStream> Stream =
+            cryptOptions_.Enabled
+                ? std::unique_ptr<TStream>( new TMemoryStream() )
+                : std::unique_ptr<TStream>( new TFileStream( fileName_, fmCreate ) );
         auto StringReader =
             std::make_unique<TStringReader>( document_->ToJSON() );
         auto Writer =
@@ -654,6 +691,7 @@ protected:
             Writer->WriteToken( Reader.get(), true );
         }
         Writer->Flush();
+        SaveBSONStream( std::move( Stream ) );
     }
 };
 

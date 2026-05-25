@@ -39,6 +39,7 @@
 #include <fkYAML/node.hpp>
 
 #include <anafestica/Cfg.h>
+#include <anafestica/CfgCrypt.h>
 
 //---------------------------------------------------------------------------
 namespace Anafestica {
@@ -55,10 +56,12 @@ private:
 
 public:
     TConfig( String FileName, bool ReadOnly = false,
-             bool /*FlushAllItems*/ = false, bool ExplicitTypes = false )
+             bool /*FlushAllItems*/ = false, bool ExplicitTypes = false,
+             Crypt::TOptions CryptOptions = {} )
         : Anafestica::TConfig( ReadOnly, /*FlushAllItems*/ true )
         , fileName_{ FileName }, loadFileName_{ FileName }
         , explicitTypes_{ ExplicitTypes }
+        , cryptOptions_{ CryptOptions }
     {
         if ( TFile::Exists( loadFileName_ ) ) {
             YAMLObjRAII YAML{ *this, /*Load*/true };
@@ -71,13 +74,15 @@ public:
     /// is already always-on for YAML (see header note).  See @ref Migrate
     /// for a named wrapper that makes the load/save direction unambiguous.
     TConfig( String LoadFileName, String SaveFileName,
-             bool ReadOnly = false, bool ExplicitTypes = false )
+             bool ReadOnly = false, bool ExplicitTypes = false,
+             Crypt::TOptions CryptOptions = {} )
         : Anafestica::TConfig( ReadOnly, /*FlushAllItems*/ true )
         , fileName_{ SaveFileName }
         , loadFileName_{
             TFile::Exists( SaveFileName ) ? SaveFileName : LoadFileName
           }
         , explicitTypes_{ ExplicitTypes }
+        , cryptOptions_{ CryptOptions }
     {
         if ( TFile::Exists( loadFileName_ ) ) {
             YAMLObjRAII YAML{ *this, /*Load*/true };
@@ -89,9 +94,12 @@ public:
     }
 
     static TConfig Migrate( String LoadFileName, String SaveFileName,
-                            bool ReadOnly = false, bool ExplicitTypes = false )
+                            bool ReadOnly = false, bool ExplicitTypes = false,
+                            Crypt::TOptions CryptOptions = {} )
     {
-        return TConfig( LoadFileName, SaveFileName, ReadOnly, ExplicitTypes );
+        return TConfig(
+            LoadFileName, SaveFileName, ReadOnly, ExplicitTypes, CryptOptions
+        );
     }
 
     ~TConfig() {
@@ -128,6 +136,7 @@ private:
     String                             fileName_;
     String                             loadFileName_;
     bool                               explicitTypes_;
+    Crypt::TOptions                    cryptOptions_;
     std::unique_ptr<TBase64Encoding>   base64_ { new TBase64Encoding{ 0 } };
 
     //-----------------------------------------------------------------------
@@ -143,25 +152,50 @@ private:
         return S.empty() ? String() : UTF8ToString( S.c_str() );
     }
 
+    std::string ReadFileBytes( String const & FileName ) const {
+        if ( cryptOptions_.Enabled ) {
+            auto Bytes = Crypt::LoadBytes( FileName, cryptOptions_ );
+            return std::string( Bytes.begin(), Bytes.end() );
+        }
+
+        std::string Content;
+        std::unique_ptr<TFileStream> Stream(
+            new TFileStream(
+                FileName, fmOpenRead | fmShareDenyWrite
+            )
+        );
+        auto const Size = static_cast<size_t>( Stream->Size );
+        if ( Size > 0 ) {
+            Content.resize( Size );
+            Stream->ReadBuffer( &Content[0], static_cast<NativeInt>( Size ) );
+        }
+        return Content;
+    }
+
+    void WriteFileBytes( String const & FileName, std::string const & Content ) const {
+        Crypt::Bytes Bytes( Content.begin(), Content.end() );
+        if ( cryptOptions_.Enabled ) {
+            Crypt::SaveBytes( FileName, Bytes, cryptOptions_ );
+        }
+        else {
+            std::unique_ptr<TFileStream> Stream(
+                new TFileStream( FileName, fmCreate )
+            );
+            if ( !Bytes.empty() ) {
+                Stream->WriteBuffer(
+                    Bytes.data(), static_cast<NativeInt>( Bytes.size() )
+                );
+            }
+        }
+    }
+
     //-----------------------------------------------------------------------
     // Document lifecycle.
     //-----------------------------------------------------------------------
     void CreateYAMLDocument( bool Load ) {
         document_.reset();
         if ( Load && TFile::Exists( loadFileName_ ) ) {
-            std::string Content;
-            {
-                std::unique_ptr<TFileStream> Stream(
-                    new TFileStream(
-                        loadFileName_, fmOpenRead | fmShareDenyWrite
-                    )
-                );
-                auto const Size = static_cast<size_t>( Stream->Size );
-                if ( Size > 0 ) {
-                    Content.resize( Size );
-                    Stream->ReadBuffer( &Content[0], static_cast<NativeInt>( Size ) );
-                }
-            }
+            std::string Content = ReadFileBytes( loadFileName_ );
             try {
                 if ( !Content.empty() ) {
                     document_.reset(
@@ -708,14 +742,7 @@ protected:
         }
 
         std::string Yaml = YamlNode::serialize( *document_ );
-        std::unique_ptr<TFileStream> Stream(
-            new TFileStream( fileName_, fmCreate )
-        );
-        if ( !Yaml.empty() ) {
-            Stream->WriteBuffer(
-                Yaml.data(), static_cast<NativeInt>( Yaml.size() )
-            );
-        }
+        WriteFileBytes( fileName_, Yaml );
     }
 
     virtual bool DoGetForcedWritesFlag() const {

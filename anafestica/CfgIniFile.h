@@ -24,6 +24,7 @@
 #include <string>
 
 #include <anafestica/Cfg.h>
+#include <anafestica/CfgCrypt.h>
 
 //---------------------------------------------------------------------------
 namespace Anafestica {
@@ -54,9 +55,11 @@ namespace INIFile {
 
 class TConfig : public Anafestica::TConfig {
 public:
-    TConfig( String FileName, bool ReadOnly = false, bool FlushAllItems = false )
+    TConfig( String FileName, bool ReadOnly = false, bool FlushAllItems = false,
+             Crypt::TOptions CryptOptions = {} )
         : Anafestica::TConfig( ReadOnly, FlushAllItems )
         , fileName_( FileName ), loadFileName_( FileName )
+        , cryptOptions_( CryptOptions )
     {
         if ( TFile::Exists( loadFileName_ ) ) {
             IniFileRAII Ini( *this, loadFileName_ );
@@ -69,12 +72,14 @@ public:
     /// is forced @c true so that values in @c Operation::None state are
     /// still written to the destination.  See @ref Migrate for a named
     /// wrapper that makes the load/save direction unambiguous.
-    TConfig( String LoadFileName, String SaveFileName, bool ReadOnly = false )
+    TConfig( String LoadFileName, String SaveFileName, bool ReadOnly = false,
+             Crypt::TOptions CryptOptions = {} )
         : Anafestica::TConfig( ReadOnly, /*FlushAllItems*/ true )
         , fileName_( SaveFileName )
         , loadFileName_(
             TFile::Exists( SaveFileName ) ? SaveFileName : LoadFileName
           )
+        , cryptOptions_( CryptOptions )
     {
         if ( TFile::Exists( loadFileName_ ) ) {
             IniFileRAII Ini( *this, loadFileName_ );
@@ -86,9 +91,10 @@ public:
     }
 
     static TConfig Migrate( String LoadFileName, String SaveFileName,
-                            bool ReadOnly = false )
+                            bool ReadOnly = false,
+                            Crypt::TOptions CryptOptions = {} )
     {
-        return TConfig( LoadFileName, SaveFileName, ReadOnly );
+        return TConfig( LoadFileName, SaveFileName, ReadOnly, CryptOptions );
     }
 
     ~TConfig() {
@@ -124,6 +130,7 @@ private:
     std::unique_ptr<TMemIniFile> ini_;
     String fileName_;
     String loadFileName_;
+    Crypt::TOptions cryptOptions_;
 
     static void ValidatePathComponent( String const & Component ) {
         if ( Component.Pos( _D( "\\" ) ) > 0 ||
@@ -144,7 +151,17 @@ private:
     // path, so this is how the load/save split is realised.
     void CreateIniObject( String FilePath ) {
         // Specify UTF-8 so that Unicode strings survive the disk roundtrip.
-        ini_ = std::make_unique<TMemIniFile>( FilePath, TEncoding::UTF8 );
+        if ( cryptOptions_.Enabled ) {
+            ini_ = std::make_unique<TMemIniFile>( String{}, TEncoding::UTF8 );
+            if ( TFile::Exists( FilePath ) ) {
+                auto SL = std::make_unique<TStringList>();
+                SL->Text = Crypt::LoadText( FilePath, TEncoding::UTF8, cryptOptions_ );
+                ini_->SetStrings( SL.get() );
+            }
+        }
+        else {
+            ini_ = std::make_unique<TMemIniFile>( FilePath, TEncoding::UTF8 );
+        }
     }
 
     void DestroyIniObject() {
@@ -652,7 +669,14 @@ protected:
                 TDirectory::CreateDirectory( DirPath );
             }
         }
-        ini_->UpdateFile();
+        if ( cryptOptions_.Enabled ) {
+            auto SL = std::make_unique<TStringList>();
+            ini_->GetStrings( SL.get() );
+            Crypt::SaveText( fileName_, SL->Text, TEncoding::UTF8, cryptOptions_ );
+        }
+        else {
+            ini_->UpdateFile();
+        }
     }
 };
 

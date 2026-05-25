@@ -18,6 +18,7 @@
 
 #include <anafestica/FileVersionInfo.h>
 #include <anafestica/Cfg.h>
+#include <anafestica/CfgCrypt.h>
 
 //---------------------------------------------------------------------------
 namespace Anafestica {
@@ -31,10 +32,12 @@ private:
     static constexpr LPCTSTR NodesNodeName = _D( "nodes" );
 public:
     TConfig( String FileName, bool ReadOnly = false, bool Compact = true,
-             bool FlushAllItems = false, bool ExplicitTypes = false )
+             bool FlushAllItems = false, bool ExplicitTypes = false,
+             Crypt::TOptions CryptOptions = {} )
         : Anafestica::TConfig( ReadOnly, FlushAllItems )
         , fileName_{ FileName }, loadFileName_{ FileName }, compact_{ Compact }
         , explicitTypes_{ ExplicitTypes }
+        , cryptOptions_{ CryptOptions }
     {
         if ( TFile::Exists( loadFileName_ ) ) {
             JSONObjRAII JSON{ *this };
@@ -53,7 +56,7 @@ public:
     /// destination.  See @ref Migrate for a named-constructor wrapper.
     TConfig( String LoadFileName, String SaveFileName,
              bool ReadOnly = false, bool Compact = true,
-             bool ExplicitTypes = false )
+             bool ExplicitTypes = false, Crypt::TOptions CryptOptions = {} )
         : Anafestica::TConfig( ReadOnly, /*FlushAllItems*/ true )
         , fileName_{ SaveFileName }
         , loadFileName_{
@@ -61,6 +64,7 @@ public:
           }
         , compact_{ Compact }
         , explicitTypes_{ ExplicitTypes }
+        , cryptOptions_{ CryptOptions }
     {
         if ( TFile::Exists( loadFileName_ ) ) {
             JSONObjRAII JSON{ *this };
@@ -75,10 +79,12 @@ public:
     /// load/save direction unambiguous at the call site.
     static TConfig Migrate( String LoadFileName, String SaveFileName,
                             bool ReadOnly = false, bool Compact = true,
-                            bool ExplicitTypes = false )
+                            bool ExplicitTypes = false,
+                            Crypt::TOptions CryptOptions = {} )
     {
         return TConfig(
-            LoadFileName, SaveFileName, ReadOnly, Compact, ExplicitTypes
+            LoadFileName, SaveFileName, ReadOnly, Compact, ExplicitTypes,
+            CryptOptions
         );
     }
 
@@ -112,12 +118,28 @@ private:
     String loadFileName_;
     bool compact_;
     bool explicitTypes_;
+    Crypt::TOptions cryptOptions_;
+
+    String ReadFileText( String const & FileName ) const {
+        return cryptOptions_.Enabled
+            ? Crypt::LoadText( FileName, TEncoding::UTF8, cryptOptions_ )
+            : TFile::ReadAllText( FileName );
+    }
+
+    void WriteFileText( String const & FileName, String const & Text ) const {
+        if ( cryptOptions_.Enabled ) {
+            Crypt::SaveText( FileName, Text, TEncoding::UTF8, cryptOptions_ );
+        }
+        else {
+            TFile::WriteAllText( FileName, Text );
+        }
+    }
 
     void CreateJSONObject() {
         document_.reset();
         if ( TFile::Exists( loadFileName_ ) ) {
             document_.reset(
-                TJSONObject::ParseJSONValue( TFile::ReadAllText( loadFileName_ ) )
+                TJSONObject::ParseJSONValue( ReadFileText( loadFileName_ ) )
             );
         }
         if ( !document_ ) {
@@ -715,7 +737,7 @@ protected:
                 TDirectory::CreateDirectory( Path );
             }
         }
-        TFile::WriteAllText(
+        WriteFileText(
             fileName_,
             compact_ ? document_->ToJSON() : document_->Format( 2 )
         );

@@ -10,6 +10,15 @@
 #include <boost/test/unit_test.hpp>
 
 #include <anafestica/CfgSingletonVersionInfo.h>
+#include <anafestica/CfgJSONCryptSingleton.h>
+#include <anafestica/CfgBSONCryptSingleton.h>
+#include <anafestica/CfgXMLCryptSingleton.h>
+#include <anafestica/CfgIniFileCryptSingleton.h>
+
+#if defined( ANAFESTICA_TEST_YAML ) && __has_include(<fkYAML/node.hpp>)
+# define ANAFESTICA_TEST_YAML_CRYPT_SINGLETON_AVAILABLE
+# include <anafestica/CfgYAMLCryptSingleton.h>
+#endif
 
 #include <System.SysUtils.hpp>
 #include <System.IOUtils.hpp>
@@ -84,6 +93,23 @@ BOOST_AUTO_TEST_CASE( MissingFile_DoesNotThrowFriendlyMessage )
     catch ( ... ) {
         BOOST_FAIL( "Expected EOSError for missing file" );
     }
+}
+
+BOOST_AUTO_TEST_CASE( CryptSingletonHeadersExposeExpectedExtensions )
+{
+    BOOST_TEST( String( Anafestica::JSONCrypt::ConfigFileExtension ) == String( _D( ".jsonc" ) ) );
+    BOOST_TEST( String( Anafestica::BSONCrypt::ConfigFileExtension ) == String( _D( ".bsonc" ) ) );
+    BOOST_TEST( String( Anafestica::XMLCrypt::ConfigFileExtension ) == String( _D( ".xmlc" ) ) );
+    BOOST_TEST( String( Anafestica::INIFileCrypt::ConfigFileExtension ) == String( _D( ".inic" ) ) );
+
+    (void)sizeof( Anafestica::TConfigJSONCryptSingleton );
+    (void)sizeof( Anafestica::TConfigBSONCryptSingleton );
+    (void)sizeof( Anafestica::TConfigXMLCryptSingleton );
+    (void)sizeof( Anafestica::TConfigINIFileCryptSingleton );
+#if defined( ANAFESTICA_TEST_YAML_CRYPT_SINGLETON_AVAILABLE )
+    BOOST_TEST( String( Anafestica::YAMLCrypt::ConfigFileExtension ) == String( _D( ".yamlc" ) ) );
+    (void)sizeof( Anafestica::TConfigYAMLCryptSingleton );
+#endif
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -22,7 +22,10 @@ Encrypted file variants are available for the file-generating backends via
 `CfgIniFileCrypt.h`. They preserve the normal backend APIs but encrypt the
 whole file with Windows CNG AES-GCM. By default the key material is bound to
 the current machine and application identity; callers can also pass an explicit
-`Anafestica::Crypt::TOptions`.
+`Anafestica::Crypt::TOptions`. Matching singleton headers are available as
+`CfgJSONCryptSingleton.h`, `CfgBSONCryptSingleton.h`,
+`CfgYAMLCryptSingleton.h`, `CfgXMLCryptSingleton.h`, and
+`CfgIniFileCryptSingleton.h`.
 
 ## Getting Started
 

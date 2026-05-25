@@ -564,6 +564,20 @@ Anafestica::JSONCrypt::TConfig Config(
 The plain backends also accept a final `Crypt::TOptions` parameter for advanced
 code that wants to select encryption without changing namespace.
 
+Encrypted singleton headers are available for the same file backends:
+
+| Header | Singleton alias | Default extension |
+|--------|-----------------|-------------------|
+| `CfgJSONCryptSingleton.h` | `TConfigJSONCryptSingleton` | `.jsonc` |
+| `CfgBSONCryptSingleton.h` | `TConfigBSONCryptSingleton` | `.bsonc` |
+| `CfgYAMLCryptSingleton.h` | `TConfigYAMLCryptSingleton` | `.yamlc` |
+| `CfgXMLCryptSingleton.h` | `TConfigXMLCryptSingleton` | `.xmlc` |
+| `CfgIniFileCryptSingleton.h` | `TConfigINIFileCryptSingleton` | `.inic` |
+
+The crypt-specific extensions keep encrypted files separate from plaintext
+JSON/BSON/YAML/XML/INI files. Encrypted singleton migration searches for prior
+encrypted files with the same crypt extension.
+
 ### YAML::TConfig
 
 Implements configuration storage in YAML files using the external header-only fkYAML library.
@@ -786,6 +800,35 @@ public:
 This singleton creates an INI-file-based configuration. The file path is derived from the application's version info: `$(HOME)\CompanyName\ProductName\ProductVersion\AppName.ini`.
 
 Include `<anafestica/CfgIniFileSingleton.h>` to use this singleton.
+
+### Encrypted File Singletons
+
+Encrypted counterparts are available for all file-based singleton helpers:
+
+```cpp
+#include <anafestica/CfgJSONCryptSingleton.h>
+
+auto& Config = Anafestica::TConfigJSONCryptSingleton::GetConfig();
+```
+
+The aliases are `TConfigJSONCryptSingleton`, `TConfigBSONCryptSingleton`,
+`TConfigYAMLCryptSingleton`, `TConfigXMLCryptSingleton`, and
+`TConfigINIFileCryptSingleton`. They use the same per-version directory layout
+as the plain file singletons, but write crypt-specific file extensions:
+`.jsonc`, `.bsonc`, `.yamlc`, `.xmlc`, and `.inic`.
+
+These helpers use `Crypt::TOptions::Default()`, so the generated file is bound
+to the current machine and application identity. To use explicit key material,
+call the namespace-level helper directly before any other call initializes that
+singleton instance:
+
+```cpp
+Anafestica::Crypt::TOptions Options(
+    _D( "deployment-secret" ),
+    _D( "my-product-id" )
+);
+auto& Config = Anafestica::JSONCrypt::GetConfigSingleton( ParamStr( {} ), Options );
+```
 
 ## Configuration migration
 
